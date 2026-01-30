@@ -1,7 +1,20 @@
 import platform
+import glob
+import os
 # -*- mode: python -*-
 
 block_cipher = None
+
+try:
+    spec_dir = os.path.abspath(os.path.dirname(__file__))
+except NameError:
+    # __file__ may be undefined in some PyInstaller contexts; fall back to cwd
+    spec_dir = os.path.abspath(os.getcwd())
+translation_candidates = [
+    os.path.join(spec_dir, 'translations', 'app_en.qm'),
+    os.path.join(spec_dir, 'translations', 'app_it.qm'),
+]
+translation_datas = [(path, 'translations') for path in translation_candidates if os.path.exists(path)]
 
 if platform.system() == 'Windows':
     a = Analysis(['app/__main__.py'],
@@ -22,7 +35,7 @@ if platform.system() == 'Windows':
                     # AI Person Detector models
                     ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_640.onnx', 'ai_models'),
                     ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_1024.onnx', 'ai_models')
-                    ],
+                    ] + translation_datas,
 
                 hiddenimports=[
                     'shapely',
@@ -78,7 +91,7 @@ elif platform.system() == 'Darwin':
                         # AI Person Detector models
                         ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_640.onnx', 'ai_models'),
                         ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_1024.onnx', 'ai_models')
-                        ],
+                        ] + translation_datas,
                     hiddenimports=[
                         'shapely',
                         'shapely.geometry',

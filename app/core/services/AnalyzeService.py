@@ -126,7 +126,9 @@ class AnalyzeService(QObject):
                         image_files.append(os.path.join(subdir, file))
 
             self.ttl_images = len(image_files)
-            self.sig_msg.emit(f"Processing {self.ttl_images} files")
+            self.sig_msg.emit(
+                self.tr("Processing {count} files").format(count=self.ttl_images)
+            )
 
             self._completed_images = 0
             self._total_aois = 0
@@ -166,10 +168,14 @@ class AnalyzeService(QObject):
                         )
                     else:
                         self.ttl_images -= 1
-                        self.sig_msg.emit(f"Skipping {file} :: File is not an image")
+                        self.sig_msg.emit(
+                            self.tr("Skipping {file} :: File is not an image").format(file=file)
+                        )
 
             # Notify that images are queued and processing has started
-            self.sig_msg.emit(f"All {self.ttl_images} images queued, processing started...")
+            self.sig_msg.emit(
+                self.tr("All {count} images queued, processing started...").format(count=self.ttl_images)
+            )
 
             # Close the pool and ensure all processes are done
             self.pool.close()
@@ -188,9 +194,18 @@ class AnalyzeService(QObject):
             self.xmlService.save_xml_file(file_path)
             ttl_time = round(time.time() - start_time, 3)
             self.sig_done.emit(self.__id, len(self.images_with_aois), file_path)
-            self.sig_msg.emit(f"{len(self.images_with_aois)} images with {self._total_aois} areas of interest identified")
-            self.sig_msg.emit(f"Total Processing Time: {ttl_time} seconds")
-            self.sig_msg.emit(f"Total Images Processed: {self.ttl_images}")
+            self.sig_msg.emit(
+                self.tr("{images} images with {aois} areas of interest identified").format(
+                    images=len(self.images_with_aois),
+                    aois=self._total_aois,
+                )
+            )
+            self.sig_msg.emit(
+                self.tr("Total Processing Time: {seconds} seconds").format(seconds=ttl_time)
+            )
+            self.sig_msg.emit(
+                self.tr("Total Images Processed: {count}").format(count=self.ttl_images)
+            )
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -321,7 +336,12 @@ class AnalyzeService(QObject):
             file_name = path.name
         # Handle errors in processing
         if result.error_message is not None:
-            self.sig_msg.emit("Unable to process " + file_name + " :: " + result.error_message)
+            self.sig_msg.emit(
+                self.tr("Unable to process {file} :: {error}").format(
+                    file=file_name,
+                    error=result.error_message,
+                )
+            )
             return
         # Update progress counters
         self._completed_images += 1
@@ -339,7 +359,13 @@ class AnalyzeService(QObject):
 
             num_aois = len(result.areas_of_interest)
             self._total_aois += num_aois
-            self.sig_msg.emit(f'{num_aois} Areas of interest identified in {file_name} ({percent_complete}%)')
+            self.sig_msg.emit(
+                self.tr("{count} areas of interest identified in {file} ({percent}%)").format(
+                    count=num_aois,
+                    file=file_name,
+                    percent=percent_complete,
+                )
+            )
 
             # Guard against None and ensure integers for comparison
             if (result.base_contour_count is not None
@@ -350,7 +376,12 @@ class AnalyzeService(QObject):
                 self.sig_aois.emit()
                 self.max_aois_limit_exceeded = True
         else:
-            self.sig_msg.emit(f'No areas of interest identified in {file_name} ({percent_complete}%)')
+            self.sig_msg.emit(
+                self.tr("No areas of interest identified in {file} ({percent}%)").format(
+                    file=file_name,
+                    percent=percent_complete,
+                )
+            )
 
     @Slot()
     def process_cancel(self):
@@ -359,7 +390,7 @@ class AnalyzeService(QObject):
         Sets cancellation flag and terminates the process pool.
         """
         self.cancelled = True
-        self.sig_msg.emit("--- Cancelling Image Processing ---")
+        self.sig_msg.emit(self.tr("--- Cancelling Image Processing ---"))
         self.pool.terminate()
 
     @staticmethod

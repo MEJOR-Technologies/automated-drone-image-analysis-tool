@@ -33,7 +33,13 @@ class MRMapWizardController(QWidget, Ui_MRMapWizard, AlgorithmController):
         # Aggressiveness slider with text labels matching mockup
         self.aggressivenessSlider = TextLabeledSlider(
             self,
-            presets=["Very \nConservative", "Conservative", "Moderate", "Aggressive", "Very \nAggressive"]
+            presets=[
+                self.tr("Very \nConservative"),
+                self.tr("Conservative"),
+                self.tr("Moderate"),
+                self.tr("Aggressive"),
+                self.tr("Very \nAggressive"),
+            ]
         )
         placeholder = self.aggressivenessSliderPlaceholder
         layout = QVBoxLayout(placeholder)

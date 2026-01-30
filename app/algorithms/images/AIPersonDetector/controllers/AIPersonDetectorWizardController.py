@@ -29,7 +29,13 @@ class AIPersonDetectorWizardController(QWidget, Ui_AIPersonDetectorWizard, Algor
         # Confidence slider with text labels matching mockup
         self.confidenceSlider = TextLabeledSlider(
             self,
-            presets=["Very \nConfident", "Confident", "Balanced", "Permissive", "Very \nPermissive"]
+            presets=[
+                self.tr("Very \nConfident"),
+                self.tr("Confident"),
+                self.tr("Balanced"),
+                self.tr("Permissive"),
+                self.tr("Very \nPermissive"),
+            ]
         )
         placeholder = self.confidenceSliderPlaceholder
         layout = QVBoxLayout(placeholder)

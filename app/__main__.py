@@ -13,12 +13,13 @@ from helpers.PickleHelper import PickleHelper
 from multiprocessing import freeze_support
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import QTranslator, QLocale
 import traceback
 import sys
 import os
 os.environ['NUMPY_EXPERIMENTAL_DTYPE_API'] = '0'
 
-version = '2.0.2'
+version = '2.0.3_BETA'
 
 
 def update_app_version(app_version):
@@ -183,6 +184,31 @@ def main():
     ImageAnalysisGuide wizard before opening the MainWindow.
     """
     app = QApplication(sys.argv)
+
+    # Load translation
+    settings_service = SettingsService()
+    lang = settings_service.get_setting('Language', 'en')
+    if lang != 'en':
+        translator = QTranslator(app)
+        # Resolve translations path for source vs PyInstaller builds
+        if getattr(sys, "frozen", False):
+            base_dir = path.dirname(sys.executable)
+            translations_path = path.join(base_dir, "_internal", "translations")
+            if not path.exists(translations_path):
+                translations_path = path.join(base_dir, "translations")
+        else:
+            # app/ is the directory of __main__.py, so translations/ is at ../translations
+            translations_path = path.abspath(path.join(path.dirname(__file__), "..", "translations"))
+        try:
+            qm_files = [f for f in os.listdir(translations_path) if f.endswith('.qm')]
+        except Exception as e:
+            qm_files = []
+        qm_name = f"app_{lang}.qm"
+        if translator.load(qm_name, translations_path):
+            app.installTranslator(translator)
+            # Store translator to prevent garbage collection
+            app._translator = translator
+
     qdarktheme.setup_theme()
     app.setWindowIcon(QIcon(path.abspath(path.join(path.dirname(__file__), 'ADIAT.ico'))))
 

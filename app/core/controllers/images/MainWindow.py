@@ -103,7 +103,8 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         self.cancelButton.clicked.connect(self._cancelButton_clicked)
         self.viewResultsButton.clicked.connect(self._viewResultsButton_clicked)
         self.actionLoadFile.triggered.connect(self._open_load_file)
-        self.actionLoadResultsFolder.triggered.connect(self._open_load_results_folder)
+        if hasattr(self, "actionLoadResultsFolder"):
+            self.actionLoadResultsFolder.triggered.connect(self._open_load_results_folder)
         self.actionPreferences.triggered.connect(self._open_preferences)
         self.actionVideoParser.triggered.connect(self._open_video_parser)
 

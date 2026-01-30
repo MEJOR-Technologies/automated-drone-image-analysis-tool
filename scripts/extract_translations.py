@@ -31,7 +31,12 @@ def extract(project_root: Path, translations_dir: Path):
     print(f"Sources: {len(ui_files)} .ui files, {len(py_files)} .py files")
     
     # Find or create .ts files
-    ts_files = list(translations_dir.glob("*.ts")) or [translations_dir / "app_en.ts"]
+    ts_files = list(translations_dir.glob("*.ts")) or [translations_dir / "app_en.ts", translations_dir / "app_it.ts"]
+    
+    # If app_it.ts doesn't exist yet, ensure it's in the list
+    if not (translations_dir / "app_it.ts").exists():
+        if translations_dir / "app_it.ts" not in ts_files:
+            ts_files.append(translations_dir / "app_it.ts")
     
     for ts_file in ts_files:
         print(f"  Updating {ts_file.name}...")

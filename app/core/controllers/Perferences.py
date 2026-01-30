@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox, QComboBox, QHBoxLayout, QLabel, QWidget
 from core.views.Preferences_ui import Ui_Preferences
 from core.services.SettingsService import SettingsService
 from helpers.PickleHelper import PickleHelper
@@ -37,12 +37,39 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         """)
 
         self._terrain_service = None
+        self._add_language_selection()
         self._load_settings()
         self._connect_signals()
         self._update_terrain_cache_display()
 
+    def _add_language_selection(self):
+        """Adds a language selection combo box to the UI dynamically."""
+        # Create a new widget for language selection
+        self.languageWidget = QWidget(self.mainWidget)
+        self.languageLayout = QHBoxLayout(self.languageWidget)
+        
+        self.languageLabel = QLabel(self.tr("Language:"), self.languageWidget)
+        font = self.label.font()
+        self.languageLabel.setFont(font)
+        
+        self.languageComboBox = QComboBox(self.languageWidget)
+        self.languageComboBox.setFont(font)
+        self.languageComboBox.addItem("English", "en")
+        self.languageComboBox.addItem("Italiano", "it")
+        
+        self.languageLayout.addWidget(self.languageLabel)
+        self.languageLayout.addWidget(self.languageComboBox)
+        
+        # Insert it before the theme widget or at the top
+        self.verticalLayout_2.insertWidget(0, self.languageWidget)
+
     def _load_settings(self):
         """Loads the settings from SettingsService and updates the UI accordingly."""
+        lang = self.parent.settings_service.get_setting('Language', 'en')
+        index = self.languageComboBox.findData(lang)
+        if index >= 0:
+            self.languageComboBox.setCurrentIndex(index)
+            
         self.maxAOIsSpinBox.setValue(self.parent.settings_service.get_setting('MaxAOIs'))
         self.themeComboBox.setCurrentText(self.parent.settings_service.get_setting('Theme'))
         self.AOIRadiusSpinBox.setValue(self.parent.settings_service.get_setting('AOIRadius'))
@@ -77,6 +104,7 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
 
     def _connect_signals(self):
         """Connects UI signals to the appropriate update methods."""
+        self.languageComboBox.currentIndexChanged.connect(self._update_language)
         self.maxAOIsSpinBox.valueChanged.connect(self._update_max_aois)
         self.AOIRadiusSpinBox.valueChanged.connect(self._update_aoi_radius)
         self.themeComboBox.currentTextChanged.connect(self._update_theme)
@@ -226,3 +254,16 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
                 date=drone_sensor_version['Date']
             )
         )
+
+    def _update_language(self):
+        """Updates the language setting and informs the user that a restart is required."""
+        lang_code = self.languageComboBox.currentData()
+        current_lang = self.parent.settings_service.get_setting('Language', 'en')
+        
+        if lang_code != current_lang:
+            self.parent.settings_service.set_setting('Language', lang_code)
+            QMessageBox.information(
+                self,
+                self.tr("Restart Required"),
+                self.tr("Please restart the application for language changes to take effect.")
+            )
