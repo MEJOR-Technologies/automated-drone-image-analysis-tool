@@ -211,6 +211,19 @@ def main():
 
     qdarktheme.setup_theme()
     app.setWindowIcon(QIcon(path.abspath(path.join(path.dirname(__file__), 'ADIAT.ico'))))
+    
+    # Load translations
+    translator = QTranslator(app)
+    # Get system locale (e.g., "es_ES", "fr_FR") or use a setting
+    locale = QLocale.system().name()  # e.g., "en_US", "es_ES"
+    translations_path = path.abspath(path.join(path.dirname(__file__), '..', 'translations'))
+    
+    # Try to load translation for system locale (e.g., app_es.qm for Spanish)
+    lang_code = locale.split('_')[0]  # "es_ES" -> "es"
+    if translator.load(f"app_{lang_code}", translations_path):
+        app.installTranslator(translator)
+        # Keep translator reference alive
+        app._translator = translator
 
     # Initialize default settings early (before any windows are created)
     initialize_default_settings()

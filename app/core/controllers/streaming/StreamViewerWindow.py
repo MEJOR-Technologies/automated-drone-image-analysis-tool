@@ -474,7 +474,38 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
 
         stream_url = wizard_data.get("stream_url")
         if stream_url:
-            self.stream_controls.url_input.setText(stream_url)
+            # For HDMI Capture, set the device combo instead of URL input
+            if stream_type == "HDMI Capture":
+                # The stream_url is the device index as a string (e.g., "1")
+                try:
+                    device_index = int(stream_url)
+                    hdmi_backend = wizard_data.get("hdmi_backend")
+                    
+                    # Clear placeholder and add the device from wizard
+                    self.stream_controls.hdmi_device_combo.clear()
+                    
+                    # Use friendly name from wizard if available, otherwise generic
+                    device_label = wizard_data.get("device_label", self.tr("Device {index}").format(index=device_index))
+                    if hdmi_backend is not None:
+                        # Add backend name to label if we have it
+                        backend_names = {1400: "MSMF", 700: "DirectShow", 0: "Auto"}
+                        backend_name = backend_names.get(hdmi_backend, "")
+                        if backend_name and f"({backend_name})" not in device_label:
+                            device_label = f"{device_label} ({backend_name})"
+                    
+                    self.stream_controls.hdmi_device_combo.addItem(device_label, device_index)
+                    self.stream_controls.hdmi_device_combo.setCurrentIndex(0)
+                    self.stream_controls.hdmi_device_combo.setEnabled(True)
+                    
+                    # Store the backend
+                    if hdmi_backend is not None:
+                        if not hasattr(self.stream_controls, '_device_backends'):
+                            self.stream_controls._device_backends = {}
+                        self.stream_controls._device_backends[0] = hdmi_backend
+                except (ValueError, TypeError):
+                    pass
+            else:
+                self.stream_controls.url_input.setText(stream_url)
 
         default_recording_dir = os.path.expanduser("~")
         recording_dir = wizard_data.get("recording_dir") or default_recording_dir
@@ -578,7 +609,9 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 "RTMP Stream": StreamType.RTMP,
             }
             selected_type = stream_type_map.get(combo_text, StreamType.FILE)
-            self.on_connect_requested(stream_url, selected_type)
+            # Extract hdmi_backend if specified in wizard data
+            hdmi_backend = wizard_data.get("hdmi_backend")
+            self.on_connect_requested(stream_url, selected_type, hdmi_backend=hdmi_backend)
 
     def _apply_algorithm_options(self, options: dict):
         """Apply algorithm options from wizard to the current algorithm widget.
@@ -1096,16 +1129,15 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         if not self.algorithm_renders_frame:
             # Render detections using the shared renderer (on main thread)
             rendered_frame = self.detection_renderer.render(frame, detections)
-        else:
-            # Algorithm already rendered onto the frame (e.g., ColorDetection)
-            rendered_frame = frame
 
-        # Draw highlight box if a gallery track is selected
-        if self._highlight_track is not None:
-            rendered_frame = self._draw_gallery_highlight(rendered_frame)
+            # Draw highlight box if a gallery track is selected
+            if self._highlight_track is not None:
+                rendered_frame = self._draw_gallery_highlight(rendered_frame)
 
-        # Update display with rendered frame
-        self.video_display.update_frame(rendered_frame)
+            # Update display with rendered frame
+            self.video_display.update_frame(rendered_frame)
+        # else: Algorithm provides custom rendering via on_algorithm_frame_processed signal
+        # Don't display here to avoid race condition / flickering
 
         # Update thumbnails
         if detections:
@@ -1163,14 +1195,12 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 timestamp=timestamp
             )
 
-        # Record frame if recording
-        if self.stream_coordinator.is_recording:
-            if not self.algorithm_renders_frame:
-                if rendered_frame is None:
-                    rendered_frame = frame
-                self.stream_coordinator.record_frame(rendered_frame, detections)
-            else:
-                self.stream_coordinator.record_frame(frame, detections)
+        # Record frame if recording (only when we handle rendering here)
+        # If algorithm_renders_frame is True, recording is handled in on_algorithm_frame_processed
+        if self.stream_coordinator.is_recording and not self.algorithm_renders_frame:
+            if rendered_frame is None:
+                rendered_frame = frame
+            self.stream_coordinator.record_frame(rendered_frame, detections)
 
         # Emit detections via controller (for compatibility with existing signal connections)
         if self.algorithm_widget:
@@ -1282,10 +1312,17 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             self.tr("Algorithm switched to {label}").format(label=label)
         )
 
-    @Slot(str, object)
-    def on_connect_requested(self, url: str, stream_type: StreamType):
+    @Slot(str, object, object)
+    def on_connect_requested(self, url: str, stream_type: StreamType,
+                             hdmi_backend: Optional[int] = None):
         """Handle stream connection request."""
-        self.stream_coordinator.connect_stream(url, stream_type)
+        # Get FPS limit from algorithm widget config if available
+        fps_limit = None
+        if self.algorithm_widget and hasattr(self.algorithm_widget, 'get_config'):
+            config = self.algorithm_widget.get_config()
+            fps_limit = config.get('target_fps', 0)  # 0 means use default
+        
+        self.stream_coordinator.connect_stream(url, stream_type, hdmi_backend=hdmi_backend, fps_limit=fps_limit)
 
     @Slot()
     def on_disconnect_requested(self):
@@ -1299,6 +1336,14 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         # temporal history, etc. to prevent carryover between videos)
         if self.algorithm_widget:
             self.algorithm_widget.cleanup()
+        
+        # Reset video display to show "No Stream Connected"
+        self.video_display.clear()
+        self.video_display.setText(self.tr("No Stream Connected"))
+        
+        # Clear thumbnails
+        if hasattr(self, 'thumbnail_widget'):
+            self.thumbnail_widget.clear_thumbnails()
 
     @Slot(bool, str)
     def on_connection_changed(self, connected: bool, message: str):
@@ -1456,15 +1501,14 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                     if not self.algorithm_renders_frame:
                         # Render detections using the shared renderer
                         rendered_frame = self.detection_renderer.render(frame, detections)
-                    else:
-                        rendered_frame = frame
 
-                    # Draw highlight box if a gallery track is selected
-                    if self._highlight_track is not None:
-                        rendered_frame = self._draw_gallery_highlight(rendered_frame)
+                        # Draw highlight box if a gallery track is selected
+                        if self._highlight_track is not None:
+                            rendered_frame = self._draw_gallery_highlight(rendered_frame)
 
-                    # Update display with rendered frame
-                    self.video_display.update_frame(rendered_frame)
+                        # Update display with rendered frame
+                        self.video_display.update_frame(rendered_frame)
+                    # else: Algorithm provides custom rendering via on_algorithm_frame_processed
 
                     # Update thumbnails
                     if detections:

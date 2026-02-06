@@ -10,6 +10,7 @@ from algorithms.streaming.ColorDetection.views import ColorDetectionControlWidge
 from algorithms.streaming.ColorDetection.services import ColorDetectionService, HSVConfig, Detection
 from core.services.LoggerService import LoggerService
 from core.controllers.streaming.base import StreamAlgorithmController
+from helpers.TranslationMixin import TranslationMixin
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QGroupBox
 from PySide6.QtCore import Qt, Slot, Signal
@@ -24,7 +25,7 @@ os.environ.setdefault('NPY_DISABLE_SVML', '1')
 # Import control widget from views
 
 
-class ColorDetectionController(StreamAlgorithmController):
+class ColorDetectionController(TranslationMixin, StreamAlgorithmController):
     """
     HSV color detection algorithm controller.
 
@@ -135,7 +136,7 @@ class ColorDetectionController(StreamAlgorithmController):
         """Handle performance metrics update."""
         fps = metrics.get('fps', 0)
         processing_time = metrics.get('avg_processing_time_ms', 0)
-        self._emit_status(f"FPS: {fps:.1f} | Processing: {processing_time:.1f}ms")
+        self._emit_status(self.tr("FPS: {fps} | Processing: {time}ms").format(fps=f"{fps:.1f}", time=f"{processing_time:.1f}"))
 
     @Slot(dict)
     def _on_config_changed(self, config: dict):

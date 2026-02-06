@@ -2,8 +2,8 @@
 
 import os
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QVBoxLayout
+from PySide6.QtCore import Qt, QThread, Signal, QObject
+from PySide6.QtWidgets import QFileDialog, QVBoxLayout, QApplication
 
 try:
     import cv2
@@ -12,6 +12,73 @@ except ImportError:
 
 from .BasePage import BasePage
 from core.views.components.LabeledSlider import TextLabeledSlider
+
+
+class DeviceScanWorker(QObject):
+    """Worker that scans for capture devices in a background thread."""
+    
+    finished = Signal(object, object)  # found_devices, device_backends (use object for dict compatibility)
+    
+    def __init__(self):
+        super().__init__()
+    
+    def run(self):
+        """Scan for devices - runs in background thread."""
+        if cv2 is None:
+            self.finished.emit({}, {})
+            return
+        
+        # Define backends to try (in order of preference for Windows)
+        backends = []
+        if hasattr(cv2, 'CAP_MSMF'):
+            backends.append((cv2.CAP_MSMF, "MSMF"))
+        if hasattr(cv2, 'CAP_DSHOW'):
+            backends.append((cv2.CAP_DSHOW, "DirectShow"))
+        backends.append((cv2.CAP_ANY, "Auto"))
+        
+        found_devices = {}  # {index: (label, backend_id, backend_name)}
+        device_backends = {}  # {combo_idx: backend_id}
+        max_devices = 5  # Reduced from 10 for faster scanning
+        
+        for backend_id, backend_name in backends:
+            consecutive_failures = 0
+            for index in range(max_devices):
+                # Skip if we already found this device with a preferred backend
+                if index in found_devices:
+                    consecutive_failures = 0
+                    continue
+                
+                # Stop scanning this backend after 2 consecutive failures (faster)
+                if consecutive_failures >= 2:
+                    break
+                
+                cap = None
+                try:
+                    cap = cv2.VideoCapture(index, backend_id)
+                    if cap is not None and cap.isOpened():
+                        # Use generic device name - platform-agnostic approach
+                        label = f"Device {index} ({backend_name})"
+                        found_devices[index] = (label, backend_id, backend_name)
+                        consecutive_failures = 0
+                    else:
+                        consecutive_failures += 1
+                except Exception:
+                    consecutive_failures += 1
+                finally:
+                    if cap is not None:
+                        try:
+                            cap.release()
+                        except Exception:
+                            pass
+        
+        # Build device_backends mapping
+        combo_idx = 0
+        for dev_index in sorted(found_devices.keys()):
+            _, backend_id, _ = found_devices[dev_index]
+            device_backends[combo_idx] = backend_id
+            combo_idx += 1
+        
+        self.finished.emit(found_devices, device_backends)
 
 
 class StreamConnectionPage(BasePage):
@@ -108,8 +175,23 @@ class StreamConnectionPage(BasePage):
 
     def on_enter(self) -> None:
         self._apply_stream_type_settings()
+        
+        # Auto-scan for devices when HDMI is selected
+        stream_type = self.wizard_data.get("stream_type", "File")
+        if stream_type == "HDMI Capture":
+            # Only auto-scan if no devices found yet
+            if hasattr(self.dialog, "deviceComboBox"):
+                if self.dialog.deviceComboBox.count() <= 1:  # Only placeholder
+                    self._on_scan_devices_clicked()
 
     def validate(self) -> bool:
+        stream_type = self.wizard_data.get("stream_type", "File")
+        if stream_type == "HDMI Capture":
+            # For HDMI, validate that a device is selected
+            if hasattr(self.dialog, "deviceComboBox"):
+                data = self.dialog.deviceComboBox.currentData()
+                return data is not None
+            return False
         return bool(self.dialog.streamUrlLineEdit.text().strip())
 
     def save_data(self) -> None:
@@ -125,29 +207,51 @@ class StreamConnectionPage(BasePage):
                 index = self.resolution_slider.value()
                 index_to_resolution = {0: 25, 1: 50, 2: 75, 3: 100}
                 self.wizard_data["processing_resolution"] = index_to_resolution.get(index, 75)
+        
+        # For HDMI, also store the selected backend and device label
+        stream_type = self.wizard_data.get("stream_type", "File")
+        if stream_type == "HDMI Capture" and hasattr(self.dialog, "deviceComboBox"):
+            idx = self.dialog.deviceComboBox.currentIndex()
+            # Store the device label (friendly name)
+            if idx >= 0:
+                self.wizard_data["device_label"] = self.dialog.deviceComboBox.currentText()
+            # Store the backend info if available
+            if hasattr(self, "_device_backends") and idx in self._device_backends:
+                self.wizard_data["hdmi_backend"] = self._device_backends[idx]
 
     def _apply_stream_type_settings(self) -> None:
         stream_type = self.wizard_data.get("stream_type", "File")
         settings = self._get_stream_type_settings(stream_type)
         self.dialog.labelConnectionInstructions.setText(settings["instructions"])
-        self.dialog.labelStreamUrl.setText(settings["field_label"])
-        self.dialog.streamUrlLineEdit.setPlaceholderText(settings["placeholder"])
-        self.dialog.browseButton.setVisible(settings["show_browse"])
-
-        # HDMI-specific UI
+        
+        # HDMI-specific UI - hide the manual URL input row entirely
         is_hdmi = stream_type == "HDMI Capture"
+        
+        # Show/hide URL input row based on stream type
+        self.dialog.labelStreamUrl.setVisible(not is_hdmi)
+        self.dialog.streamUrlLineEdit.setVisible(not is_hdmi)
+        self.dialog.browseButton.setVisible(settings["show_browse"] and not is_hdmi)
+        
+        # Only set placeholder for non-HDMI types
+        if not is_hdmi:
+            self.dialog.labelStreamUrl.setText(settings["field_label"])
+            self.dialog.streamUrlLineEdit.setPlaceholderText(settings["placeholder"])
+        
+        # HDMI device selection UI
         if hasattr(self.dialog, "labelHdmiDevices"):
             self.dialog.labelHdmiDevices.setVisible(is_hdmi)
         if hasattr(self.dialog, "deviceComboBox"):
             self.dialog.deviceComboBox.setVisible(is_hdmi)
+            # Enable when HDMI is selected - will be populated by scan
             self.dialog.deviceComboBox.setEnabled(is_hdmi)
         if hasattr(self.dialog, "scanDevicesButton"):
             self.dialog.scanDevicesButton.setVisible(is_hdmi)
 
-        # Auto-populate sensible defaults when switching types
-        current_value = self.dialog.streamUrlLineEdit.text().strip()
-        if not current_value and settings.get("default_value"):
-            self.dialog.streamUrlLineEdit.setText(settings["default_value"])
+        # Auto-populate sensible defaults when switching types (only for non-HDMI)
+        if not is_hdmi:
+            current_value = self.dialog.streamUrlLineEdit.text().strip()
+            if not current_value and settings.get("default_value"):
+                self.dialog.streamUrlLineEdit.setText(settings["default_value"])
 
     def _get_stream_type_settings(self, stream_type: str) -> dict:
         mapping = {
@@ -162,12 +266,12 @@ class StreamConnectionPage(BasePage):
             },
             "HDMI Capture": {
                 "instructions": self.tr(
-                    "Enter the capture device index (0, 1, 2, ...) for your HDMI input."
+                    "Click Scan to detect available capture devices, then select one from the dropdown."
                 ),
-                "field_label": self.tr("Device Index:"),
-                "placeholder": self.tr("0"),
+                "field_label": self.tr("Device:"),
+                "placeholder": self.tr(""),
                 "show_browse": False,
-                "default_value": "0",
+                "default_value": "",
             },
             "RTMP Stream": {
                 "instructions": self.tr(
@@ -182,40 +286,60 @@ class StreamConnectionPage(BasePage):
         return mapping.get(stream_type, mapping["File"])
 
     def _on_scan_devices_clicked(self) -> None:
-        """Scan for available HDMI capture devices using OpenCV."""
+        """Scan for available HDMI capture devices using OpenCV with multiple backends."""
         if cv2 is None:
-            # If OpenCV is not available, we cannot scan
             self.dialog.deviceComboBox.clear()
-            self.dialog.deviceComboBox.addItem(
-                self.tr("OpenCV not available; enter index manually."),
-                None
-            )
+            self.dialog.deviceComboBox.addItem(self.tr("OpenCV not available"), None)
             self.dialog.deviceComboBox.setEnabled(False)
             return
 
+        # Show scanning state
         self.dialog.deviceComboBox.clear()
-        found_any = False
-        max_devices = 10
-        for index in range(max_devices):
-            cap = cv2.VideoCapture(index)
-            if cap is not None and cap.isOpened():
-                found_any = True
-                label = self.tr("Device {index}").format(index=index)
-                self.dialog.deviceComboBox.addItem(label, index)
-                cap.release()
-            else:
-                if cap is not None:
-                    cap.release()
-
-        if not found_any:
-            self.dialog.deviceComboBox.addItem(
-                self.tr("No capture devices found."),
-                None
-            )
+        self.dialog.deviceComboBox.addItem(self.tr("Scanning..."), None)
+        self.dialog.deviceComboBox.setEnabled(False)
+        self.dialog.scanDevicesButton.setEnabled(False)
+        self.dialog.scanDevicesButton.setText(self.tr("Scanning..."))
+        QApplication.processEvents()  # Update UI immediately
+        
+        self._device_backends = {}
+        
+        # Create worker and thread
+        self._scan_thread = QThread()
+        self._scan_worker = DeviceScanWorker()
+        self._scan_worker.moveToThread(self._scan_thread)
+        
+        # Connect signals
+        self._scan_thread.started.connect(self._scan_worker.run)
+        self._scan_worker.finished.connect(self._on_scan_finished)
+        self._scan_worker.finished.connect(self._scan_thread.quit)
+        self._scan_worker.finished.connect(self._scan_worker.deleteLater)
+        self._scan_thread.finished.connect(self._scan_thread.deleteLater)
+        
+        # Start scanning
+        self._scan_thread.start()
+    
+    def _on_scan_finished(self, found_devices: dict, device_backends: dict) -> None:
+        """Handle scan completion - update UI with results."""
+        # Restore button state
+        self.dialog.scanDevicesButton.setEnabled(True)
+        self.dialog.scanDevicesButton.setText(self.tr("Scan"))
+        
+        self._device_backends = device_backends
+        self.dialog.deviceComboBox.clear()
+        
+        if not found_devices:
+            self.dialog.deviceComboBox.addItem(self.tr("No capture devices found"), None)
             self.dialog.deviceComboBox.setEnabled(False)
         else:
+            # Add found devices to combo box, sorted by index
+            for dev_index in sorted(found_devices.keys()):
+                label, backend_id, backend_name = found_devices[dev_index]
+                # Translate the label
+                translated_label = self.tr("Device {index} ({backend})").format(
+                    index=dev_index, backend=backend_name)
+                self.dialog.deviceComboBox.addItem(translated_label, dev_index)
+            
             self.dialog.deviceComboBox.setEnabled(True)
-            # Select first device and update URL field
             self.dialog.deviceComboBox.setCurrentIndex(0)
             self._sync_device_to_url()
 

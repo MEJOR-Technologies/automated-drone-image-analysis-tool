@@ -18,6 +18,7 @@ from algorithms.streaming.ColorAnomalyAndMotionDetection.services import (
 )
 from core.services.LoggerService import LoggerService
 from core.controllers.streaming.base import StreamAlgorithmController
+from helpers.TranslationMixin import TranslationMixin
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget,
                                QLabel, QSpinBox, QDoubleSpinBox, QCheckBox,
                                QComboBox, QHBoxLayout, QGridLayout)
@@ -30,7 +31,7 @@ os.environ.setdefault('NUMBA_DISABLE_INTEL_SVML', '1')
 os.environ.setdefault('NPY_DISABLE_SVML', '1')
 
 
-class ColorAnomalyAndMotionDetectionController(StreamAlgorithmController):
+class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithmController):
     """
     Color anomaly and motion detection algorithm controller.
 
@@ -152,7 +153,7 @@ class ColorAnomalyAndMotionDetectionController(StreamAlgorithmController):
         """Handle performance metrics update."""
         fps = metrics.get('fps', 0)
         processing_time = metrics.get('avg_processing_time_ms', 0)
-        self._emit_status(f"FPS: {fps:.1f} | Processing: {processing_time:.1f}ms")
+        self._emit_status(self.tr("FPS: {fps} | Processing: {time}ms").format(fps=f"{fps:.1f}", time=f"{processing_time:.1f}"))
 
     @Slot(dict)
     def _on_config_changed(self, config: dict):

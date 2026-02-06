@@ -669,11 +669,15 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
         if not updated_color_ranges:
             updated_color_ranges = self.color_ranges  # Fallback to stored ranges
 
+        # Get target FPS from shared InputProcessingTab
+        target_fps = self.input_processing_tab.get_target_fps()
+
         config = {
             # Input & Processing (from shared InputProcessingTab)
             'processing_resolution': processing_resolution,
             'processing_width': processing_width if processing_width != 99999 else None,
             'processing_height': processing_height if processing_height != 99999 else None,
+            'target_fps': target_fps,
             'render_at_processing_res': self.input_processing_tab.render_at_processing_res.isChecked(),
 
             # Color Selection

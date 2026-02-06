@@ -41,6 +41,9 @@ class Ui_MainWindow(object):
         self.actionLoadFile = QAction(MainWindow)
         self.actionLoadFile.setObjectName(u"actionLoadFile")
         self.actionLoadFile.setFont(font)
+        self.actionLoadResultsFolder = QAction(MainWindow)
+        self.actionLoadResultsFolder.setObjectName(u"actionLoadResultsFolder")
+        self.actionLoadResultsFolder.setFont(font)
         self.actionPreferences = QAction(MainWindow)
         self.actionPreferences.setObjectName(u"actionPreferences")
         self.actionPreferences.setFont(font)
@@ -443,6 +446,7 @@ class Ui_MainWindow(object):
         self.menuFile.addAction(self.actionStreaming)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionLoadFile)
+        self.menuFile.addAction(self.actionLoadResultsFolder)
         self.menuFile.addAction(self.actionPreferences)
         self.menuFile.addAction(self.actionVideoParser)
         self.menuHelp.addAction(self.actionHelp)
@@ -478,6 +482,12 @@ class Ui_MainWindow(object):
 "Opens a file dialog to select a results file (.pkl format).\n"
 "Loads the analysis results and opens the Results Viewer.\n"
 "Use this to review results from previous analysis sessions without reprocessing.", None))
+#endif // QT_CONFIG(tooltip)
+        self.actionLoadResultsFolder.setText(QCoreApplication.translate("MainWindow", u"Load Results Folder", None))
+#if QT_CONFIG(tooltip)
+        self.actionLoadResultsFolder.setToolTip(QCoreApplication.translate("MainWindow", u"Scan a folder recursively for ADIAT_DATA.XML files.\n"
+"Displays all found results in a dialog for easy browsing.\n"
+"Use this to quickly find and open results from multiple analysis sessions.", None))
 #endif // QT_CONFIG(tooltip)
         self.actionPreferences.setText(QCoreApplication.translate("MainWindow", u"Preferences", None))
 #if QT_CONFIG(tooltip)

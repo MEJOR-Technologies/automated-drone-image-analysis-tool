@@ -59,13 +59,17 @@ class StreamCoordinator(QObject):
             'dropped_frames': 0
         }
 
-    def connect_stream(self, url: str, stream_type: StreamType) -> bool:
+    def connect_stream(self, url: str, stream_type: StreamType,
+                        hdmi_backend: Optional[int] = None,
+                        fps_limit: Optional[int] = None) -> bool:
         """
         Connect to a stream.
 
         Args:
             url: Stream URL or file path
             stream_type: Type of stream (RTMP, HLS, File, HDMI) - can be StreamType enum or string
+            hdmi_backend: Optional OpenCV backend ID for HDMI capture
+            fps_limit: Optional target FPS limit (0 or None = use defaults)
 
         Returns:
             True if connection initiated successfully
@@ -101,8 +105,8 @@ class StreamCoordinator(QObject):
             if hasattr(self.stream_manager, "videoPositionChanged"):
                 self.stream_manager.videoPositionChanged.connect(self._on_video_position_changed)
 
-            # Connect to stream
-            if self.stream_manager.connect_to_stream(url, stream_type):
+            # Connect to stream (pass hdmi_backend for HDMI capture, fps_limit for rate control)
+            if self.stream_manager.connect_to_stream(url, stream_type, hdmi_backend=hdmi_backend, fps_limit=fps_limit):
                 self.current_stream_url = url
                 self.current_stream_type = stream_type
                 # self.logger.info("Stream connection initiated")
