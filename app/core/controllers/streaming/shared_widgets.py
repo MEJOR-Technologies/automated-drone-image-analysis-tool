@@ -8,6 +8,7 @@ Contains reusable widgets and components used across multiple streaming viewers:
 - StreamControlWidget: Stream connection and recording controls
 """
 
+from core.services.LoggerService import LoggerService
 import numpy as np
 import cv2
 import time
@@ -17,9 +18,93 @@ from PySide6.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout, QGridL
                                QGroupBox, QLineEdit, QPushButton, QComboBox, QFileDialog,
                                QMessageBox, QSizePolicy)
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtCore import Qt, Signal, QObject, QThread
+from PySide6.QtWidgets import QApplication
 from core.services.streaming.RTMPStreamService import StreamType
-from core.services.LoggerService import LoggerService
+
+
+class HDMIDeviceScanWorker(QObject):
+    """Worker that scans for HDMI capture devices in a background thread."""
+
+    finished = Signal(object, object)  # found_devices, device_backends (use object for dict compatibility)
+
+    def run(self):
+        """Scan for devices - runs in background thread.
+
+        Uses multiple retries and delays to handle devices that may be slow to release
+        from previous connections.
+        """
+        import time
+
+        backends = []
+        if hasattr(cv2, 'CAP_MSMF'):
+            backends.append((cv2.CAP_MSMF, "MSMF"))
+        if hasattr(cv2, 'CAP_DSHOW'):
+            backends.append((cv2.CAP_DSHOW, "DirectShow"))
+        backends.append((cv2.CAP_ANY, "Auto"))
+
+        found_devices = {}
+        device_backends = {}
+        max_devices = 5  # Reduced for faster scanning
+        max_retries = 2  # Retry each device up to 2 times if it fails
+
+        for backend_id, backend_name in backends:
+            consecutive_failures = 0
+            for index in range(max_devices):
+                if index in found_devices:
+                    consecutive_failures = 0
+                    continue
+
+                if consecutive_failures >= 2:
+                    break
+
+                # Try multiple times for each device (handles slow device release)
+                for retry in range(max_retries):
+                    cap = None
+                    try:
+                        cap = cv2.VideoCapture(index, backend_id)
+                        if cap is not None and cap.isOpened():
+                            # Verify device is actually working by reading a test frame
+                            ret, test_frame = cap.read()
+                            if ret and test_frame is not None and test_frame.size > 0:
+                                # Use generic device name - Windows device enumeration order
+                                # doesn't match OpenCV device indices reliably
+                                label = f"Device {index} ({backend_name})"
+                                found_devices[index] = (label, backend_id, backend_name)
+                                consecutive_failures = 0
+                                break  # Success, move to next device
+                            else:
+                                # Device opened but couldn't read frame - might be busy
+                                if retry < max_retries - 1:
+                                    time.sleep(0.3)  # Wait before retry
+                        else:
+                            consecutive_failures += 1
+                            if retry < max_retries - 1:
+                                time.sleep(0.2)  # Wait before retry
+                    except Exception:
+                        if retry < max_retries - 1:
+                            time.sleep(0.2)  # Wait before retry
+                    finally:
+                        if cap is not None:
+                            try:
+                                cap.release()
+                            except Exception:
+                                pass
+                            # Small delay after release to ensure device is freed
+                            time.sleep(0.1)
+
+                # If we exhausted retries and didn't find device, increment failure count
+                if index not in found_devices:
+                    consecutive_failures += 1
+
+        # Build device_backends mapping
+        combo_idx = 0
+        for dev_index in sorted(found_devices.keys()):
+            _, backend_id, _ = found_devices[dev_index]
+            device_backends[combo_idx] = backend_id
+            combo_idx += 1
+
+        self.finished.emit(found_devices, device_backends)
 
 
 @dataclass
@@ -678,7 +763,7 @@ class VideoDisplayWidget(QLabel):
 class StreamControlWidget(QWidget):
     """Shared stream connection and control widget with optional recording controls."""
 
-    connectRequested = Signal(str, object)  # url, stream_type (StreamType enum)
+    connectRequested = Signal(str, object, object)  # url, stream_type (StreamType enum), hdmi_backend (Optional[int])
     disconnectRequested = Signal()
     startRecordingRequested = Signal(str)
     stopRecordingRequested = Signal()
@@ -885,9 +970,7 @@ class StreamControlWidget(QWidget):
             self.hdmi_device_combo.setVisible(True)
             self.browse_button.setVisible(False)
             self.scan_button.setVisible(True)
-            # Ensure devices are scanned
-            if self.hdmi_device_combo.count() <= 1:  # Only placeholder item
-                self._scan_hdmi_devices()
+            # Don't auto-scan here - let user click Scan or wizard will set up devices
         elif stream_type == "File":
             # Show URL input, hide HDMI combo
             self.url_input.setVisible(True)
@@ -908,6 +991,7 @@ class StreamControlWidget(QWidget):
     def request_connect(self):
         """Request stream connection."""
         combo_text = self.type_combo.currentText()
+        hdmi_backend = None
 
         # Get URL from appropriate widget
         if combo_text == "HDMI Capture":
@@ -917,6 +1001,10 @@ class StreamControlWidget(QWidget):
                 QMessageBox.warning(self, "Invalid Device", "Please select a valid HDMI capture device.")
                 return
             url = str(device_index)
+            # Get backend for selected device
+            if hasattr(self, '_device_backends'):
+                combo_idx = self.hdmi_device_combo.currentIndex()
+                hdmi_backend = self._device_backends.get(combo_idx)
         else:
             # Get URL from text input
             url = self.url_input.text().strip()
@@ -931,7 +1019,7 @@ class StreamControlWidget(QWidget):
             "RTMP Stream": StreamType.RTMP
         }
         stream_type = stream_type_map.get(combo_text, StreamType.FILE)
-        self.connectRequested.emit(url, stream_type)
+        self.connectRequested.emit(url, stream_type, hdmi_backend)
 
     def update_connection_status(self, connected: bool, message: str):
         """Update connection status display."""
@@ -940,11 +1028,25 @@ class StreamControlWidget(QWidget):
             self.status_label.setStyleSheet("QLabel { color: green; font-weight: bold; }")
             self.connect_button.setEnabled(False)
             self.disconnect_button.setEnabled(True)
+            # Disable device selection while connected
+            self.type_combo.setEnabled(False)
+            self.hdmi_device_combo.setEnabled(False)
+            self.scan_button.setEnabled(False)
+            self.url_input.setEnabled(False)
+            self.browse_button.setEnabled(False)
         else:
             self.status_label.setText(f"Status: {message}")
             self.status_label.setStyleSheet("QLabel { color: red; font-weight: bold; }")
             self.connect_button.setEnabled(True)
             self.disconnect_button.setEnabled(False)
+            # Re-enable device selection after disconnect
+            self.type_combo.setEnabled(True)
+            self.url_input.setEnabled(True)
+            self.browse_button.setEnabled(True)
+            # For HDMI, re-enable device combo and scan button
+            if self.type_combo.currentText() == "HDMI Capture":
+                self.hdmi_device_combo.setEnabled(True)
+                self.scan_button.setEnabled(True)
 
     def update_recording_state(self, recording: bool, path_or_message: str = ""):
         """Update recording state and UI."""
@@ -1013,38 +1115,53 @@ class StreamControlWidget(QWidget):
             self.recordingDirectoryChanged.emit(selected_dir)
 
     def _scan_hdmi_devices(self):
-        """Scan for available HDMI capture devices using OpenCV."""
+        """Scan for available HDMI capture devices using OpenCV with multiple backends."""
+        # Show scanning state
         self.hdmi_device_combo.clear()
+        self.hdmi_device_combo.addItem("Scanning...", None)
         self.hdmi_device_combo.setEnabled(False)
-        self.hdmi_device_combo.addItem("Scanning for devices...", None)
+        self.scan_button.setEnabled(False)
+        self.scan_button.setText("Scanning...")
+        QApplication.processEvents()  # Update UI immediately
 
-        try:
-            found_any = False
-            max_devices = 10
-            for index in range(max_devices):
-                cap = cv2.VideoCapture(index)
-                if cap is not None and cap.isOpened():
-                    found_any = True
-                    label = f"Device {index}"
-                    self.hdmi_device_combo.addItem(label, index)
-                    cap.release()
-                else:
-                    if cap is not None:
-                        cap.release()
+        self._device_backends = {}
 
-            if not found_any:
-                self.hdmi_device_combo.clear()
-                self.hdmi_device_combo.addItem("No capture devices found", None)
-                self.hdmi_device_combo.setEnabled(False)
-            else:
-                self.hdmi_device_combo.setEnabled(True)
-                # Select first device by default
-                if self.hdmi_device_combo.count() > 0:
-                    self.hdmi_device_combo.setCurrentIndex(0)
-        except Exception as e:
-            self.hdmi_device_combo.clear()
-            self.hdmi_device_combo.addItem(f"Error scanning devices: {str(e)}", None)
+        # Create worker and thread
+        self._scan_thread = QThread()
+        self._scan_worker = HDMIDeviceScanWorker()
+        self._scan_worker.moveToThread(self._scan_thread)
+
+        # Connect signals
+        self._scan_thread.started.connect(self._scan_worker.run)
+        self._scan_worker.finished.connect(self._on_hdmi_scan_finished)
+        self._scan_worker.finished.connect(self._scan_thread.quit)
+        self._scan_worker.finished.connect(self._scan_worker.deleteLater)
+        self._scan_thread.finished.connect(self._scan_thread.deleteLater)
+
+        # Start scanning
+        self._scan_thread.start()
+
+    def _on_hdmi_scan_finished(self, found_devices: dict, device_backends: dict) -> None:
+        """Handle HDMI scan completion - update UI with results."""
+        # Restore button state
+        self.scan_button.setEnabled(True)
+        self.scan_button.setText("Scan")
+
+        self._device_backends = device_backends
+        self.hdmi_device_combo.clear()
+
+        if not found_devices:
+            self.hdmi_device_combo.addItem("No capture devices found", None)
             self.hdmi_device_combo.setEnabled(False)
+        else:
+            # Add found devices to combo box, sorted by index
+            for dev_index in sorted(found_devices.keys()):
+                label, backend_id, backend_name = found_devices[dev_index]
+                self.hdmi_device_combo.addItem(label, dev_index)
+
+            self.hdmi_device_combo.setEnabled(True)
+            if self.hdmi_device_combo.count() > 0:
+                self.hdmi_device_combo.setCurrentIndex(0)
 
     def _on_hdmi_device_selected(self, index: int):
         """Handle HDMI device selection from combo box."""

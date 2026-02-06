@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.9.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -41,6 +41,9 @@ class Ui_MainWindow(object):
         self.actionLoadFile = QAction(MainWindow)
         self.actionLoadFile.setObjectName(u"actionLoadFile")
         self.actionLoadFile.setFont(font)
+        self.actionLoadResultsFolder = QAction(MainWindow)
+        self.actionLoadResultsFolder.setObjectName(u"actionLoadResultsFolder")
+        self.actionLoadResultsFolder.setFont(font)
         self.actionPreferences = QAction(MainWindow)
         self.actionPreferences.setObjectName(u"actionPreferences")
         self.actionPreferences.setFont(font)
@@ -64,9 +67,6 @@ class Ui_MainWindow(object):
         self.actionCommunityHelp.setFont(font)
         self.actionYouTube_Channel = QAction(MainWindow)
         self.actionYouTube_Channel.setObjectName(u"actionYouTube_Channel")
-        self.actionLoadResultsFolder = QAction(MainWindow)
-        self.actionLoadResultsFolder.setObjectName(u"actionLoadResultsFolder")
-        self.actionLoadResultsFolder.setFont(font)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -485,12 +485,9 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.actionLoadResultsFolder.setText(QCoreApplication.translate("MainWindow", u"Load Results Folder", None))
 #if QT_CONFIG(tooltip)
-        self.actionLoadResultsFolder.setToolTip(QCoreApplication.translate("MainWindow", u"Scan a folder for multiple ADIAT result files.\n"
-"Recursively searches for ADIAT_DATA.XML files and displays a summary.\n"
-"Features:\n"
-"\u2022 View algorithm, image count, and AOI count for each result\n"
-"\u2022 Open results directly in the Results Viewer\n"
-"\u2022 View image location in Google Maps", None))
+        self.actionLoadResultsFolder.setToolTip(QCoreApplication.translate("MainWindow", u"Scan a folder recursively for ADIAT_DATA.XML files.\n"
+"Displays all found results in a dialog for easy browsing.\n"
+"Use this to quickly find and open results from multiple analysis sessions.", None))
 #endif // QT_CONFIG(tooltip)
         self.actionPreferences.setText(QCoreApplication.translate("MainWindow", u"Preferences", None))
 #if QT_CONFIG(tooltip)

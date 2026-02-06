@@ -18,7 +18,7 @@ import sys
 import os
 os.environ['NUMPY_EXPERIMENTAL_DTYPE_API'] = '0'
 
-version = '2.0.2'
+version = '2.0.3'
 
 
 def update_app_version(app_version):

@@ -69,6 +69,7 @@ class StreamStatistics:
 
         Args:
             timestamp: Optional timestamp of frame (for latency calculation)
+                       Expected to be from time.perf_counter()
         """
         current_time = time.time()
 
@@ -78,8 +79,9 @@ class StreamStatistics:
         self.last_frame_time = current_time
 
         # Calculate latency if timestamp provided
+        # Use perf_counter to match the timestamp source from RTMPStreamService
         if timestamp:
-            latency = (current_time - timestamp) * 1000  # Convert to ms
+            latency = (time.perf_counter() - timestamp) * 1000  # Convert to ms
             self._stats.latency_ms = latency
 
         self.frame_count += 1

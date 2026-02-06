@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'StreamingGuide.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.9.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -200,19 +200,19 @@ class Ui_StreamingGuide(object):
         self.labelAutoConnect.setObjectName(u"labelAutoConnect")
         self.labelAutoConnect.setFont(font1)
 
-        self.gridLayout_connection.addWidget(self.labelAutoConnect, 1, 0, 1, 1)
+        self.gridLayout_connection.addWidget(self.labelAutoConnect, 2, 0, 1, 1)
 
         self.autoConnectCheckBox = QCheckBox(self.pageConnection)
         self.autoConnectCheckBox.setObjectName(u"autoConnectCheckBox")
         self.autoConnectCheckBox.setFont(font2)
 
-        self.gridLayout_connection.addWidget(self.autoConnectCheckBox, 1, 1, 1, 1)
+        self.gridLayout_connection.addWidget(self.autoConnectCheckBox, 2, 1, 1, 1)
 
         self.labelHdmiDevices = QLabel(self.pageConnection)
         self.labelHdmiDevices.setObjectName(u"labelHdmiDevices")
         self.labelHdmiDevices.setFont(font1)
 
-        self.gridLayout_connection.addWidget(self.labelHdmiDevices, 2, 0, 1, 1)
+        self.gridLayout_connection.addWidget(self.labelHdmiDevices, 1, 0, 1, 1)
 
         self.horizontalLayout_hdmiDevices = QHBoxLayout()
         self.horizontalLayout_hdmiDevices.setObjectName(u"horizontalLayout_hdmiDevices")
@@ -229,7 +229,7 @@ class Ui_StreamingGuide(object):
         self.horizontalLayout_hdmiDevices.addWidget(self.scanDevicesButton)
 
 
-        self.gridLayout_connection.addLayout(self.horizontalLayout_hdmiDevices, 2, 1, 1, 1)
+        self.gridLayout_connection.addLayout(self.horizontalLayout_hdmiDevices, 1, 1, 1, 1)
 
         self.verticalSpacer_resolution = QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
