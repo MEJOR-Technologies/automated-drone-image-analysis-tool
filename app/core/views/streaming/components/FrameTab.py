@@ -310,9 +310,14 @@ class FrameTab(TranslationMixin, QWidget):
             if 'frame_buffer_pixels' in config:
                 self.buffer_spinbox.setValue(int(config['frame_buffer_pixels']))
 
-            if 'mask_image_path' in config and config['mask_image_path']:
-                self._mask_image_path = config['mask_image_path']
-                self.mask_path_display.setText(os.path.basename(config['mask_image_path']))
+            if 'mask_image_path' in config:
+                if config['mask_image_path']:
+                    self._mask_image_path = config['mask_image_path']
+                    self.mask_path_display.setText(os.path.basename(config['mask_image_path']))
+                else:
+                    self._mask_image_path = None
+                    self.mask_path_display.clear()
+                    self.mask_path_display.setPlaceholderText("No mask image selected")
 
             if 'show_mask_overlay' in config:
                 self.show_mask_overlay.setChecked(bool(config['show_mask_overlay']))

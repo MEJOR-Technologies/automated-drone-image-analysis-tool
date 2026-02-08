@@ -10,6 +10,7 @@ from core.services.SettingsService import SettingsService
 from core.services.streaming.StreamingUtils import (
     FrameQueue, PerformanceMetrics, StageTimings
 )
+from core.services.streaming.DetectionMath import bbox_iou, centroid_distance
 from PySide6.QtCore import QObject, Signal
 from threading import Lock
 from collections import deque
@@ -247,26 +248,7 @@ class ColorAnomalyAndMotionDetectionOrchestrator(QObject):
 
     def _calculate_iou(self, bbox1: Tuple[int, int, int, int], bbox2: Tuple[int, int, int, int]) -> float:
         """Calculate Intersection over Union (IoU) between two bounding boxes."""
-        x1, y1, w1, h1 = bbox1
-        x2, y2, w2, h2 = bbox2
-
-        x_left = max(x1, x2)
-        y_top = max(y1, y2)
-        x_right = min(x1 + w1, x2 + w2)
-        y_bottom = min(y1 + h1, y2 + h2)
-
-        if x_right < x_left or y_bottom < y_top:
-            return 0.0
-
-        intersection_area = (x_right - x_left) * (y_bottom - y_top)
-        box1_area = w1 * h1
-        box2_area = w2 * h2
-        union_area = box1_area + box2_area - intersection_area
-
-        if union_area == 0:
-            return 0.0
-
-        return intersection_area / union_area
+        return bbox_iou(bbox1, bbox2)
 
     def _merge_detections(self, detections: List[Detection]) -> Detection:
         """Merge multiple overlapping detections into one."""
@@ -374,7 +356,7 @@ class ColorAnomalyAndMotionDetectionOrchestrator(QObject):
 
                 det2 = detections[j]
                 cx2, cy2 = det2.centroid
-                distance = np.sqrt((cx2 - cx1) ** 2 + (cy2 - cy1) ** 2)
+                distance = centroid_distance((cx1, cy1), (cx2, cy2))
 
                 if distance <= config.clustering_distance:
                     cluster.append(det2)

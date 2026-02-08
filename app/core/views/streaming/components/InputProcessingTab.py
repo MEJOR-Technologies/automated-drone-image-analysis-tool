@@ -118,7 +118,7 @@ class InputProcessingTab(TranslationMixin, QWidget):
 
         self.frame_rate_preset.setCurrentText("Original")
         self.frame_rate_preset.setToolTip("Limit the frame rate for processing.\n\n"
-                                          "• Original - Process at video's native frame rate\n"
+                                          "• Original - Use source/default stream rate (stream manager may apply safety cap)\n"
                                           "• 30 FPS - Good balance of smoothness and performance\n"
                                           "• 25 FPS - Standard for PAL video\n"
                                           "• 20 FPS - Reduced CPU usage\n"
@@ -188,6 +188,25 @@ class InputProcessingTab(TranslationMixin, QWidget):
             width: Processing width in pixels
             height: Processing height in pixels
         """
+        # Treat missing/sentinel values as "Original" (no downsampling).
+        if width is None or height is None:
+            self.resolution_preset.setCurrentText("Original")
+            self.on_resolution_preset_changed("Original")
+            return
+
+        try:
+            width = int(width)
+            height = int(height)
+        except (TypeError, ValueError):
+            self.resolution_preset.setCurrentText("Original")
+            self.on_resolution_preset_changed("Original")
+            return
+
+        if width >= 99999 or height >= 99999:
+            self.resolution_preset.setCurrentText("Original")
+            self.on_resolution_preset_changed("Original")
+            return
+
         # Create reverse mapping from dimensions to preset names
         resolution_map = {
             (7680, 4320): "8K (7680x4320)",
@@ -205,18 +224,12 @@ class InputProcessingTab(TranslationMixin, QWidget):
         preset_name = resolution_map.get((width, height))
         if preset_name:
             self.resolution_preset.setCurrentText(preset_name)
-            # This will trigger on_resolution_preset_changed which will hide width/height
+            self.on_resolution_preset_changed(preset_name)
         else:
             # Use custom if dimensions don't match any preset
             self.resolution_preset.setCurrentText("Custom")
-            # Show and set width/height inputs
-            self.width_label.setVisible(True)
-            self.processing_width.setVisible(True)
-            self.processing_width.setEnabled(True)
+            self.on_resolution_preset_changed("Custom")
             self.processing_width.setValue(width)
-            self.height_label.setVisible(True)
-            self.processing_height.setVisible(True)
-            self.processing_height.setEnabled(True)
             self.processing_height.setValue(height)
 
     def get_target_fps(self) -> int:

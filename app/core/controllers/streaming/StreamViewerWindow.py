@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (QMainWindow, QMessageBox, QLabel, QComboBox, QHBo
                                QFileDialog, QApplication, QDialog, QTabWidget, QSpinBox)
 from PySide6.QtCore import Qt, QTimer, Slot, QSettings, QUrl, QThread, QObject
 from PySide6.QtGui import QAction, QDesktopServices
-from typing import Optional, Dict, Any, List, Callable
+from typing import Optional, Dict, Any, List, Callable, Tuple
 import numpy as np
 import cv2
 from types import SimpleNamespace
@@ -54,6 +54,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
 
     Similar architecture to MainWindow for image analysis.
     """
+    _lingering_processing_threads: List[QThread] = []
+    _MAX_ORIGINAL_FRAME_CACHE = 12
 
     def __init__(self, algorithm_name: Optional[str] = None, theme: str = 'dark'):
         """
@@ -77,6 +79,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         self._pending_record_dir = None
         self._pending_algorithm_options = None
         self._pending_processing_resolution = None  # Desired resolution from wizard (to be capped to native)
+        self._active_stream_fps_limit: Optional[int] = None
 
         # Setup UI
         self.ui = Ui_StreamViewerWindow()
@@ -129,6 +132,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         self._processing_thread: Optional[QThread] = None
         self._processing_worker: Optional[FrameProcessingWorker] = None
         self._is_stopping_worker = False  # Flag to prevent new frames from being queued during cleanup
+        self._worker_frame_in_flight = False
+        self._pending_worker_frame: Optional[Tuple[np.ndarray, float, int]] = None
 
         # Setup custom widgets
         self.setup_custom_widgets()
@@ -480,10 +485,10 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 try:
                     device_index = int(stream_url)
                     hdmi_backend = wizard_data.get("hdmi_backend")
-                    
+
                     # Clear placeholder and add the device from wizard
                     self.stream_controls.hdmi_device_combo.clear()
-                    
+
                     # Use friendly name from wizard if available, otherwise generic
                     device_label = wizard_data.get("device_label", self.tr("Device {index}").format(index=device_index))
                     if hdmi_backend is not None:
@@ -492,11 +497,11 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                         backend_name = backend_names.get(hdmi_backend, "")
                         if backend_name and f"({backend_name})" not in device_label:
                             device_label = f"{device_label} ({backend_name})"
-                    
+
                     self.stream_controls.hdmi_device_combo.addItem(device_label, device_index)
                     self.stream_controls.hdmi_device_combo.setCurrentIndex(0)
                     self.stream_controls.hdmi_device_combo.setEnabled(True)
-                    
+
                     # Store the backend
                     if hdmi_backend is not None:
                         if not hasattr(self.stream_controls, '_device_backends'):
@@ -636,6 +641,24 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         except Exception as e:
             self.logger.error(f"Error applying algorithm options: {e}")
 
+    def _apply_stream_resolution_to_mask_controls(self, resolution: Optional[Tuple[int, int]]):
+        """Propagate active stream resolution to algorithm frame mask controls."""
+        if not self.algorithm_widget or not resolution:
+            return
+
+        width, height = resolution
+        if width <= 0 or height <= 0:
+            return
+
+        frame_tab = None
+        if hasattr(self.algorithm_widget, 'control_widget'):
+            frame_tab = getattr(self.algorithm_widget.control_widget, 'frame_tab', None)
+        elif hasattr(self.algorithm_widget, 'integrated_controls'):
+            frame_tab = getattr(self.algorithm_widget.integrated_controls, 'frame_tab', None)
+
+        if frame_tab and hasattr(frame_tab, 'set_video_resolution'):
+            frame_tab.set_video_resolution(width, height)
+
     def _open_streaming_guide(self):
         """Open the Streaming Analysis Guide wizard."""
         try:
@@ -763,6 +786,10 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                     self.algorithm_widget.frameProcessed.disconnect(self.on_algorithm_frame_processed)
                 except Exception:
                     pass
+                try:
+                    self.algorithm_widget.configChanged.disconnect(self.on_algorithm_config_changed)
+                except Exception:
+                    pass
                 self.ui.algorithmControlLayout.removeWidget(self.algorithm_widget)
                 self.algorithm_widget.deleteLater()
                 self.algorithm_widget = None
@@ -825,6 +852,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             # Connect algorithm signals
             self.algorithm_widget.detectionsReady.connect(self.on_detections_ready)
             self.algorithm_widget.frameProcessed.connect(self.on_algorithm_frame_processed)
+            self.algorithm_widget.configChanged.connect(self.on_algorithm_config_changed)
             self.algorithm_widget.statusUpdate.connect(self.on_status_update)
             self.algorithm_widget.requestRecording.connect(self.on_recording_request)
 
@@ -875,10 +903,6 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         # ColorAnomalyAndMotionDetectionController has integrated_detector
         if hasattr(self.algorithm_widget, 'integrated_detector'):
             return self.algorithm_widget.integrated_detector
-
-        # MotionDetectionController has motion_detector
-        if hasattr(self.algorithm_widget, 'motion_detector'):
-            return self.algorithm_widget.motion_detector
 
         return None
 
@@ -958,26 +982,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 # Return detections and whether frame was skipped due to frame rate limiting
                 was_skipped = timings.was_skipped if hasattr(timings, 'was_skipped') else False
                 return (detection_dicts, was_skipped)
-            return process_integrated
 
-        # MotionDetectionService
-        if hasattr(service, 'detect_motion'):
-            def process_motion(frame: np.ndarray, timestamp: float) -> List[Dict]:
-                detections = service.detect_motion(frame, timestamp)
-                # Convert to standard format
-                detection_dicts = []
-                for detection in detections:
-                    detection_dicts.append({
-                        'bbox': detection.bbox,
-                        'area': detection.area,
-                        'confidence': detection.confidence,
-                        'class_name': detection.detection_type,
-                        'detection_type': detection.detection_type,
-                        'timestamp': detection.timestamp,
-                        'metadata': detection.metadata
-                    })
-                return detection_dicts
-            return process_motion
+            return process_integrated
 
         # Fallback: use controller's process_frame (but this won't work from worker thread)
         # So we return None to indicate we can't use worker thread
@@ -1032,6 +1038,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
 
             # Reset stopping flag when starting new worker
             self._is_stopping_worker = False
+            self._worker_frame_in_flight = False
+            self._pending_worker_frame = None
 
             # self.logger.info("Frame processing worker thread started")
 
@@ -1067,21 +1075,36 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 pass
 
         # Stop and cleanup thread
-        thread_terminated_forcefully = False
+        thread_stopped = True
         if self._processing_thread:
             if self._processing_thread.isRunning():
                 self._processing_thread.quit()
-                if not self._processing_thread.wait(2000):  # Wait up to 2 seconds
-                    self.logger.warning("Processing thread didn't stop gracefully, terminating")
-                    self._processing_thread.terminate()
-                    self._processing_thread.wait(1000)
-                    thread_terminated_forcefully = True
+                if not self._processing_thread.wait(3000):
+                    # Retry once more before giving up; avoid terminate() to keep shutdown graceful.
+                    self.logger.warning("Processing thread did not stop within 3s, retrying graceful quit")
+                    self._processing_thread.quit()
+                    thread_stopped = self._processing_thread.wait(3000)
+                    if not thread_stopped:
+                        self.logger.error("Processing thread still running after graceful shutdown timeout")
             # Thread will delete itself via deleteLater() connected to finished signal
-            self._processing_thread = None
+            if thread_stopped:
+                self._processing_thread = None
+            else:
+                lingering_thread = self._processing_thread
+
+                def _release_lingering_thread():
+                    try:
+                        StreamViewerWindow._lingering_processing_threads.remove(lingering_thread)
+                    except ValueError:
+                        pass
+                    lingering_thread.deleteLater()
+
+                StreamViewerWindow._lingering_processing_threads.append(lingering_thread)
+                lingering_thread.finished.connect(_release_lingering_thread, Qt.QueuedConnection)
+                self._processing_thread = None
 
         # Disconnect remaining signals after thread is stopped to prevent queued signals from accessing deleted objects
-        # IMPORTANT: Skip this if thread was forcefully terminated - worker may be in invalid state
-        if not thread_terminated_forcefully and self._processing_worker:
+        if self._processing_worker:
             try:
                 self._processing_worker.frameProcessed.disconnect()
                 self._processing_worker.errorOccurred.disconnect()
@@ -1090,10 +1113,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 # Signals may already be disconnected, ignore
                 pass
 
-        # Move service back to main thread after thread is stopped
-        # IMPORTANT: Don't try to move service if thread was forcefully terminated -
-        # the service object may be in an inconsistent state
-        if not thread_terminated_forcefully:
+        # Move service back to main thread after thread is stopped.
+        if thread_stopped:
             service = self._get_algorithm_service()
             if service:
                 try:
@@ -1107,28 +1128,156 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
 
         # Clear worker reference (worker will be deleted when thread is deleted)
         self._processing_worker = None
+        self._worker_frame_in_flight = False
+        if self._pending_worker_frame is not None:
+            _, dropped_timestamp, _ = self._pending_worker_frame
+            self._discard_original_frame(dropped_timestamp)
+        self._pending_worker_frame = None
         self._is_stopping_worker = False  # Reset flag after cleanup
 
-    @Slot(np.ndarray, list, float, bool, int)
+    def _discard_original_frame(self, timestamp: float):
+        """Remove a frame from the original-frame queue if present."""
+        if timestamp in self._original_frames_queue:
+            del self._original_frames_queue[timestamp]
+
+    def _queue_worker_frame(self, frame: np.ndarray, timestamp: float, video_frame_pos: int) -> bool:
+        """
+        Queue a frame for worker processing with bounded backpressure.
+
+        Uses a single in-flight frame and one pending latest frame to avoid
+        unbounded queued work under high input rates.
+        """
+        if not (self._processing_worker and self._processing_thread and self._processing_thread.isRunning()):
+            return False
+
+        if self._worker_frame_in_flight:
+            if self._pending_worker_frame is not None:
+                _, dropped_timestamp, _ = self._pending_worker_frame
+                self._discard_original_frame(dropped_timestamp)
+                self.stream_statistics.on_frame_dropped()
+            self._pending_worker_frame = (frame, timestamp, video_frame_pos)
+            return True
+
+        try:
+            self._processing_worker.processFrameRequested.emit(frame, timestamp, video_frame_pos)
+            self._worker_frame_in_flight = True
+            return True
+        except RuntimeError:
+            return False
+
+    def _dispatch_pending_worker_frame(self):
+        """Dispatch pending latest frame to worker if available."""
+        if self._pending_worker_frame is None:
+            self._worker_frame_in_flight = False
+            return
+
+        if not (self._processing_worker and self._processing_thread and self._processing_thread.isRunning()):
+            _, dropped_timestamp, _ = self._pending_worker_frame
+            self._discard_original_frame(dropped_timestamp)
+            self.stream_statistics.on_frame_dropped()
+            self._pending_worker_frame = None
+            self._worker_frame_in_flight = False
+            return
+
+        frame, timestamp, video_frame_pos = self._pending_worker_frame
+        self._pending_worker_frame = None
+        try:
+            self._processing_worker.processFrameRequested.emit(frame, timestamp, video_frame_pos)
+            self._worker_frame_in_flight = True
+        except RuntimeError:
+            self._discard_original_frame(timestamp)
+            self.stream_statistics.on_frame_dropped()
+            self._worker_frame_in_flight = False
+
+    @staticmethod
+    def _detections_to_thumbnail_objects(detections: List[Dict]) -> List[SimpleNamespace]:
+        """Convert detection dictionaries to object form required by thumbnail tracker."""
+        detection_objects = []
+        for det_dict in detections:
+            obj = SimpleNamespace()
+            obj.bbox = det_dict.get('bbox', (0, 0, 0, 0))
+
+            if 'centroid' in det_dict:
+                obj.centroid = det_dict['centroid']
+            else:
+                x, y, w, h = obj.bbox
+                obj.centroid = (x + w // 2, y + h // 2)
+
+            obj.area = det_dict.get('area', 0.0)
+            obj.confidence = det_dict.get('confidence', 0.0)
+            obj.metadata = det_dict.get('metadata', {})
+            for key, value in det_dict.items():
+                if not hasattr(obj, key):
+                    setattr(obj, key, value)
+
+            detection_objects.append(obj)
+
+        return detection_objects
+
+    @staticmethod
+    def _get_resolution_metadata(detection_objects: List[SimpleNamespace]) -> Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]:
+        """Extract processing/original resolution metadata from detections."""
+        processing_resolution = None
+        original_resolution = None
+
+        for det in detection_objects:
+            metadata = getattr(det, "metadata", {}) or {}
+            if metadata and processing_resolution is None:
+                processing_resolution = metadata.get('processing_resolution')
+            if metadata and original_resolution is None:
+                original_resolution = metadata.get('original_resolution')
+            if processing_resolution and original_resolution:
+                break
+
+        return processing_resolution, original_resolution
+
+    def _update_thumbnails(
+            self,
+            frame: np.ndarray,
+            detections: List[Dict],
+            timestamp: float,
+            frame_index: int):
+        """Update thumbnails for a processed frame."""
+        if not detections:
+            self._discard_original_frame(timestamp)
+            return
+
+        detection_objects = self._detections_to_thumbnail_objects(detections)
+        processing_resolution, original_resolution = self._get_resolution_metadata(detection_objects)
+
+        thumbnail_frame = self._original_frames_queue.get(timestamp, frame)
+        self._discard_original_frame(timestamp)
+
+        self.thumbnail_widget.update_thumbnails(
+            thumbnail_frame,
+            detection_objects,
+            processing_resolution=processing_resolution,
+            original_resolution=original_resolution,
+            frame_index=frame_index,
+            timestamp=timestamp
+        )
+
+    @Slot(np.ndarray, list, float, float, bool, int)
     def _on_worker_frame_processed(
             self,
             frame: np.ndarray,
             detections: List[Dict],
+            timestamp: float,
             processing_time_ms: float,
             was_skipped: bool = False,
             video_frame_pos: int = 0):
         """Handle frame processed by worker thread."""
         # This runs on main thread (via QueuedConnection)
-        self.stream_statistics.on_frame_processed(processing_time_ms, len(detections), was_skipped=was_skipped)
-        self._latest_detections_for_rendering = detections
+        self._worker_frame_in_flight = False
+        try:
+            self.stream_statistics.on_frame_processed(processing_time_ms, len(detections), was_skipped=was_skipped)
+            self._latest_detections_for_rendering = detections
 
-        # Use video_frame_pos that was passed through the worker (not stale instance variable)
-        current_video_frame_pos = video_frame_pos
-
-        rendered_frame = None
-        if not self.algorithm_renders_frame:
-            # Render detections using the shared renderer (on main thread)
-            rendered_frame = self.detection_renderer.render(frame, detections)
+            rendered_frame = frame
+            if not self.algorithm_renders_frame:
+                # Render detections using the shared renderer (on main thread)
+                rendered_frame = self.detection_renderer.render(frame, detections)
+            # else: Frame already carries algorithm-rendered overlays.
 
             # Draw highlight box if a gallery track is selected
             if self._highlight_track is not None:
@@ -1136,81 +1285,26 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
 
             # Update display with rendered frame
             self.video_display.update_frame(rendered_frame)
-        # else: Algorithm provides custom rendering via on_algorithm_frame_processed signal
-        # Don't display here to avoid race condition / flickering
 
-        # Update thumbnails
-        if detections:
-            # Convert detection dicts to objects with required attributes for tracker
-            detection_objects = []
-            for det_dict in detections:
-                obj = SimpleNamespace()
-                obj.bbox = det_dict.get('bbox', (0, 0, 0, 0))
+            self._update_thumbnails(frame, detections, timestamp, video_frame_pos)
 
-                if 'centroid' in det_dict:
-                    obj.centroid = det_dict['centroid']
-                else:
-                    x, y, w, h = obj.bbox
-                    obj.centroid = (x + w // 2, y + h // 2)
+            # Record exactly what is displayed.
+            if self.stream_coordinator.is_recording:
+                self.stream_coordinator.record_frame(rendered_frame, detections)
 
-                obj.area = det_dict.get('area', 0.0)
-                obj.confidence = det_dict.get('confidence', 0.0)
-                obj.metadata = det_dict.get('metadata', {})
-                for key, value in det_dict.items():
-                    if not hasattr(obj, key):
-                        setattr(obj, key, value)
-
-                detection_objects.append(obj)
-
-            processing_resolution = None
-            original_resolution = None
-            for det in detection_objects:
-                metadata = getattr(det, "metadata", {}) or {}
-                if metadata and processing_resolution is None:
-                    processing_resolution = metadata.get('processing_resolution')
-                if metadata and original_resolution is None:
-                    original_resolution = metadata.get('original_resolution')
-                if processing_resolution and original_resolution:
-                    break
-
-            # Use video frame position that was passed through the worker thread
-            # (This is the correct position for THIS specific frame, not affected by race conditions)
-            frame_index = current_video_frame_pos
-            timestamp = self._current_frame_timestamp
-
-            # Use original frame (without detections) for crisp thumbnails
-            # Get synchronized original frame from queue if available
-            thumbnail_frame = self._original_frames_queue.get(timestamp, frame)
-
-            # Clean up used frame from queue
-            if timestamp in self._original_frames_queue:
-                del self._original_frames_queue[timestamp]
-
-            self.thumbnail_widget.update_thumbnails(
-                thumbnail_frame,
-                detection_objects,
-                processing_resolution=processing_resolution,
-                original_resolution=original_resolution,
-                frame_index=frame_index,
-                timestamp=timestamp
-            )
-
-        # Record frame if recording (only when we handle rendering here)
-        # If algorithm_renders_frame is True, recording is handled in on_algorithm_frame_processed
-        if self.stream_coordinator.is_recording and not self.algorithm_renders_frame:
-            if rendered_frame is None:
-                rendered_frame = frame
-            self.stream_coordinator.record_frame(rendered_frame, detections)
-
-        # Emit detections via controller (for compatibility with existing signal connections)
-        if self.algorithm_widget:
-            # Emit signal directly (we're already on main thread)
-            self.algorithm_widget.detectionsReady.emit(detections)
+            # Emit detections via controller (for compatibility with existing signal connections)
+            if self.algorithm_widget:
+                # Emit signal directly (we're already on main thread)
+                self.algorithm_widget.detectionsReady.emit(detections)
+        finally:
+            self._dispatch_pending_worker_frame()
 
     @Slot(str)
     def _on_worker_error(self, error_msg: str):
         """Handle error from worker thread."""
         self.logger.error(f"Worker thread error: {error_msg}")
+        self._worker_frame_in_flight = False
+        self._dispatch_pending_worker_frame()
 
     def _get_algorithm_config(self, algorithm_name: str) -> Optional[Dict[str, Any]]:
         """
@@ -1304,6 +1398,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             resolution = self.stream_coordinator.stream_info.get('resolution') or (1920, 1080)
             try:
                 self.algorithm_widget.on_stream_connected(resolution)
+                self._apply_stream_resolution_to_mask_controls(resolution)
             except Exception as e:
                 self.logger.error(f"Error notifying algorithm of active stream: {e}")
         config = self._get_algorithm_config(algorithm_name) or {}
@@ -1316,13 +1411,31 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
     def on_connect_requested(self, url: str, stream_type: StreamType,
                              hdmi_backend: Optional[int] = None):
         """Handle stream connection request."""
-        # Get FPS limit from algorithm widget config if available
-        fps_limit = None
-        if self.algorithm_widget and hasattr(self.algorithm_widget, 'get_config'):
+        fps_limit = self._get_target_fps_limit_from_widget()
+        self._active_stream_fps_limit = fps_limit
+        connected = self.stream_coordinator.connect_stream(
+            url,
+            stream_type,
+            hdmi_backend=hdmi_backend,
+            fps_limit=fps_limit
+        )
+        if not connected:
+            self._active_stream_fps_limit = None
+
+    def _get_target_fps_limit_from_widget(self) -> Optional[int]:
+        """Read target FPS from the loaded algorithm widget config."""
+        if not self.algorithm_widget or not hasattr(self.algorithm_widget, 'get_config'):
+            return None
+        try:
             config = self.algorithm_widget.get_config()
-            fps_limit = config.get('target_fps', 0)  # 0 means use default
-        
-        self.stream_coordinator.connect_stream(url, stream_type, hdmi_backend=hdmi_backend, fps_limit=fps_limit)
+            if not isinstance(config, dict):
+                return None
+            raw_fps_limit = config.get('target_fps')
+            if raw_fps_limit is None:
+                return None
+            return int(raw_fps_limit)
+        except (TypeError, ValueError, AttributeError):
+            return None
 
     @Slot()
     def on_disconnect_requested(self):
@@ -1330,17 +1443,18 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         # Disconnect the stream first - this stops frame delivery
         # and signals the stream reader to stop
         self.stream_coordinator.disconnect_stream()
+        self._active_stream_fps_limit = None
         # Then cleanup the processing worker (should be quick since no frames coming)
         self._cleanup_processing_worker()
         # Reset algorithm state for next video session (clears background models,
         # temporal history, etc. to prevent carryover between videos)
         if self.algorithm_widget:
             self.algorithm_widget.cleanup()
-        
+
         # Reset video display to show "No Stream Connected"
         self.video_display.clear()
         self.video_display.setText(self.tr("No Stream Connected"))
-        
+
         # Clear thumbnails
         if hasattr(self, 'thumbnail_widget'):
             self.thumbnail_widget.clear_thumbnails()
@@ -1359,6 +1473,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             self.stream_controls.update_connection_status(connected, message)
 
         if connected:
+            if self._active_stream_fps_limit is None:
+                self._active_stream_fps_limit = self._get_target_fps_limit_from_widget()
             self.ui.infoPanel.append(
                 self.tr("✓ Connected: {message}").format(message=message)
             )
@@ -1374,6 +1490,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 # Get stream resolution from stream_info if available, otherwise use placeholder
                 resolution = self.stream_coordinator.stream_info.get('resolution') or (1920, 1080)
                 self.algorithm_widget.on_stream_connected(resolution)
+                self._apply_stream_resolution_to_mask_controls(resolution)
 
             # Recreate processing worker if it was cleaned up during disconnect
             # This ensures second video also uses worker thread for processing
@@ -1386,6 +1503,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 self.on_start_recording_requested(record_dir)
                 self._pending_auto_record = False
         else:
+            self._active_stream_fps_limit = None
             self.ui.infoPanel.append(
                 self.tr("✗ Disconnected: {message}").format(message=message)
             )
@@ -1405,9 +1523,37 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 self.gallery_widget.clear()
             if hasattr(self, 'thumbnail_widget'):
                 self.thumbnail_widget.tracker.tracks.clear()
+            self._original_frames_queue.clear()
+            self._pending_worker_frame = None
+            self._worker_frame_in_flight = False
 
             # Clear pending resolution (will be reapplied on next connection if wizard runs again)
             self._pending_processing_resolution = None
+
+    @Slot(dict)
+    def on_algorithm_config_changed(self, config: dict):
+        """
+        Apply runtime FPS-limit changes immediately while connected.
+
+        Controllers emit this whenever controls change; only target_fps is handled here.
+        """
+        if not self.stream_coordinator.is_connected:
+            return
+        if not isinstance(config, dict):
+            return
+        raw_fps_limit = config.get('target_fps')
+        if raw_fps_limit is None:
+            return
+        try:
+            fps_limit = int(raw_fps_limit)
+        except (TypeError, ValueError):
+            return
+
+        if fps_limit == self._active_stream_fps_limit:
+            return
+
+        if self.stream_coordinator.update_fps_limit(fps_limit):
+            self._active_stream_fps_limit = fps_limit
 
     @Slot(np.ndarray, float, int)
     def on_frame_received(self, frame: np.ndarray, timestamp: float, video_frame_pos: int = 0):
@@ -1419,16 +1565,26 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         # Record frame receipt in statistics
         self.stream_statistics.on_frame_received(timestamp)
 
-        # Store original frame for thumbnails (before detection rendering)
-        # This ensures thumbnails are crisp without detection overlays
-        self._original_frame_for_thumbnails = frame.copy()
+        # Check if stream is paused (for file playback) - skip processing if paused
+        is_paused = False
+        if (self.stream_coordinator.stream_manager and
+                hasattr(self.stream_coordinator.stream_manager, 'is_playing')):
+            is_paused = not self.stream_coordinator.stream_manager.is_playing()
 
-        # Add to queue for synchronization with worker thread
-        self._original_frames_queue[timestamp] = self._original_frame_for_thumbnails
-        # Prune queue to prevent memory leak (keep last 50 frames)
-        if len(self._original_frames_queue) > 50:
-            oldest_ts = sorted(self._original_frames_queue.keys())[0]
-            del self._original_frames_queue[oldest_ts]
+        if self.algorithm_widget and not is_paused:
+            # Store original frame for thumbnails (before detection rendering)
+            # This ensures thumbnails are crisp without detection overlays.
+            self._original_frame_for_thumbnails = frame.copy()
+
+            # Add to queue for synchronization with worker thread.
+            self._original_frames_queue[timestamp] = self._original_frame_for_thumbnails
+
+            # Prune queue aggressively to keep memory bounded under long sessions.
+            if len(self._original_frames_queue) > self._MAX_ORIGINAL_FRAME_CACHE:
+                oldest_ts = min(self._original_frames_queue.keys())
+                del self._original_frames_queue[oldest_ts]
+        else:
+            self._original_frame_for_thumbnails = None
 
         # Apply resolution capping on first frame (to prevent upscaling)
         if self._pending_processing_resolution is not None:
@@ -1460,12 +1616,6 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             # Clear pending resolution (only apply once)
             self._pending_processing_resolution = None
 
-        # Check if stream is paused (for file playback) - skip processing if paused
-        is_paused = False
-        if (self.stream_coordinator.stream_manager and
-                hasattr(self.stream_coordinator.stream_manager, 'is_playing')):
-            is_paused = not self.stream_coordinator.stream_manager.is_playing()
-
         # Process frame with algorithm if loaded and not paused
         if self.algorithm_widget and not is_paused:
             # Use worker thread if available, otherwise fall back to main thread
@@ -1473,14 +1623,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             # Check if worker is available, running, and not in the process of stopping
             if (self._processing_worker and self._processing_thread and
                     self._processing_thread.isRunning() and not self._is_stopping_worker):
-                # Process frame in worker thread (non-blocking)
-                # Emit signal to request processing in worker thread
-                try:
-                    self._processing_worker.processFrameRequested.emit(frame, timestamp, self._current_video_frame_pos)
-                    use_worker = True
-                except RuntimeError:
-                    # Worker may have been deleted, fall back to main thread processing
-                    use_worker = False
+                use_worker = self._queue_worker_frame(frame, timestamp, video_frame_pos)
 
             if not use_worker:
                 # Fallback to main thread processing (for compatibility)
@@ -1510,58 +1653,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                         self.video_display.update_frame(rendered_frame)
                     # else: Algorithm provides custom rendering via on_algorithm_frame_processed
 
-                    # Update thumbnails
-                    if detections:
-                        # Convert detection dicts to objects with required attributes for tracker
-                        detection_objects = []
-                        for det_dict in detections:
-                            # Create object with required attributes (bbox, centroid, metadata)
-                            obj = SimpleNamespace()
-                            obj.bbox = det_dict.get('bbox', (0, 0, 0, 0))
-
-                            # Calculate centroid from bbox if not provided
-                            if 'centroid' in det_dict:
-                                obj.centroid = det_dict['centroid']
-                            else:
-                                # Calculate from bbox: (x, y, width, height) -> centroid
-                                x, y, w, h = obj.bbox
-                                obj.centroid = (x + w // 2, y + h // 2)
-
-                            obj.area = det_dict.get('area', 0.0)
-                            obj.confidence = det_dict.get('confidence', 0.0)
-                            obj.metadata = det_dict.get('metadata', {})
-                            # Copy any other attributes
-                            for key, value in det_dict.items():
-                                if not hasattr(obj, key):
-                                    setattr(obj, key, value)
-
-                            detection_objects.append(obj)
-
-                        processing_resolution = None
-                        original_resolution = None
-                        for det in detection_objects:
-                            metadata = getattr(det, "metadata", {}) or {}
-                            if metadata and processing_resolution is None:
-                                processing_resolution = metadata.get('processing_resolution')
-                            if metadata and original_resolution is None:
-                                original_resolution = metadata.get('original_resolution')
-                            if processing_resolution and original_resolution:
-                                break
-
-                        # Use video frame position that was passed through the signal chain
-                        # (This is the correct position for THIS frame, not affected by race conditions)
-                        frame_index = self._current_video_frame_pos
-
-                        # Use original frame (without detections) for crisp thumbnails
-                        thumbnail_frame = self._original_frame_for_thumbnails if self._original_frame_for_thumbnails is not None else frame
-                        self.thumbnail_widget.update_thumbnails(
-                            thumbnail_frame,
-                            detection_objects,
-                            processing_resolution=processing_resolution,
-                            original_resolution=original_resolution,
-                            frame_index=frame_index,
-                            timestamp=timestamp
-                        )
+                    self._update_thumbnails(frame, detections, timestamp, video_frame_pos)
 
                     # Record frame if recording (when rendering is handled here)
                     if self.stream_coordinator.is_recording and not self.algorithm_renders_frame:
@@ -1571,9 +1663,16 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
 
                 except Exception as e:
                     self.logger.error(f"Error processing frame: {str(e)}")
+                    self._discard_original_frame(timestamp)
         else:
-            # No algorithm loaded, just display frame
-            self.video_display.update_frame(frame)
+            # No algorithm loaded (or stream paused), display raw frame.
+            display_frame = frame
+            if self._highlight_track is not None:
+                display_frame = self._draw_gallery_highlight(display_frame)
+            self.video_display.update_frame(display_frame)
+            self._discard_original_frame(timestamp)
+            if self.stream_coordinator.is_recording:
+                self.stream_coordinator.record_frame(display_frame, [])
 
     @Slot(np.ndarray)
     def on_algorithm_frame_processed(self, annotated_frame: np.ndarray):
@@ -1749,13 +1848,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             if not stream_mgr:
                 return
 
-            # StreamManager wraps RTMPStreamService as _service
-            service = getattr(stream_mgr, '_service', None)
-            if not service:
-                return
-
             # Pause video so user can see the highlighted detection
-            is_playing = getattr(service, '_is_playing', True)
+            is_playing = stream_mgr.is_playing() if hasattr(stream_mgr, "is_playing") else True
             if is_playing:
                 stream_mgr.play_pause()
 
@@ -1765,9 +1859,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             # Switch to Live View tab
             self.tab_widget.setCurrentIndex(0)
 
-            # Directly seek, read, and display the frame with highlight
-            # Use a short delay to ensure pause has taken effect
-            QTimer.singleShot(50, lambda: self._display_highlighted_frame(track, service))
+            # Seek to track timestamp after pause has taken effect.
+            QTimer.singleShot(50, lambda: self._seek_to_track_frame(track))
         else:
             # Live stream - cannot seek, show info dialog
             QMessageBox.information(
@@ -1779,67 +1872,26 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 ).format(frame=track.first_frame_index)
             )
 
-    def _display_highlighted_frame(self, track, service):
-        """Read frame at track position from video and display with highlight."""
+    def _seek_to_track_frame(self, track):
+        """Seek to the frame associated with a gallery track using public stream APIs."""
         try:
-            cap = getattr(service, '_cap', None)
-            if not cap or not cap.isOpened():
+            stream_mgr = self.stream_coordinator.stream_manager
+            if not stream_mgr:
                 return
 
-            # Seek to the exact frame where detection was first seen
-            target_frame = track.first_frame_index
-            cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
-
-            # Read the frame
-            ret, frame = cap.read()
-            if not ret or frame is None:
+            playback_info = stream_mgr.get_playback_info() if hasattr(stream_mgr, "get_playback_info") else {}
+            fps = float(playback_info.get("fps", 0) or 0)
+            if fps <= 0:
+                fps = float(self.stream_coordinator.stream_info.get("fps", 0) or 0)
+            if fps <= 0:
+                self.logger.warning("Cannot seek to track frame: playback FPS is unavailable")
                 return
 
-            # Draw the highlight circle
-            frame_with_highlight = self._draw_gallery_highlight_on_frame(frame, track)
-
-            # Display it
-            self.video_display.update_frame(frame_with_highlight)
+            target_time = max(0.0, track.first_frame_index / fps)
+            if hasattr(stream_mgr, "seek_to_time"):
+                stream_mgr.seek_to_time(target_time)
         except Exception as e:
-            self.logger.error(f"Error displaying highlighted frame: {e}")
-
-    def _draw_gallery_highlight_on_frame(self, frame: np.ndarray, track) -> np.ndarray:
-        """Draw highlight circle on a specific frame for a track."""
-        if track is None:
-            return frame
-
-        x, y, w, h = track.bbox
-        cx, cy = track.centroid
-
-        # Scale coordinates if frame resolution differs from when detection was captured
-        current_h, current_w = frame.shape[:2]
-        stored_w, stored_h = track.frame_resolution
-
-        if stored_w > 0 and stored_h > 0 and (stored_w != current_w or stored_h != current_h):
-            scale_x = current_w / stored_w
-            scale_y = current_h / stored_h
-            x = int(x * scale_x)
-            y = int(y * scale_y)
-            w = int(w * scale_x)
-            h = int(h * scale_y)
-            cx = int(cx * scale_x)
-            cy = int(cy * scale_y)
-
-        # Use detection color if available, otherwise bright yellow
-        if track.detection_color is not None:
-            highlight_color = track.detection_color
-        else:
-            highlight_color = (0, 255, 255)  # Yellow in BGR as fallback
-
-        # Calculate circle radius to encompass the detection
-        radius = int(max(w, h) * 0.75)
-        radius = max(radius, 30)  # Minimum radius for visibility
-        thickness = 4
-
-        # Draw single circle around the detection
-        cv2.circle(frame, (cx, cy), radius, highlight_color, thickness)
-
-        return frame
+            self.logger.error(f"Error seeking to highlighted frame: {e}")
 
     def _draw_gallery_highlight(self, frame: np.ndarray) -> np.ndarray:
         """Draw a highlight circle around the selected gallery track's detection.
@@ -1930,7 +1982,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             proc_width = config.get('processing_width', 0)
             proc_height = config.get('processing_height', 0)
             # Check for "Original" setting (marker value 99999)
-            if proc_width < 99999 and proc_height < 99999 and proc_width > 0 and proc_height > 0:
+            if (isinstance(proc_width, (int, float)) and isinstance(proc_height, (int, float)) and
+                    proc_width < 99999 and proc_height < 99999 and proc_width > 0 and proc_height > 0):
                 processing_resolution = (proc_width, proc_height)
             elif video_resolution:
                 processing_resolution = video_resolution  # Using original resolution

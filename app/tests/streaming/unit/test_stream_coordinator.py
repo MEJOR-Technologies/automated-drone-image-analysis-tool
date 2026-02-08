@@ -137,3 +137,28 @@ class TestStreamCoordinator:
         coordinator.frameReceived.emit(sample_frame, 0.0, 0)
 
         # Signal should be emitted (async, so we just verify it exists)
+
+    def test_frame_ready_does_not_record_raw_frame(self, mock_logger, sample_frame):
+        """Recorded output should be controlled by StreamViewerWindow display path."""
+        coordinator = StreamCoordinator(mock_logger)
+        coordinator.is_recording = True
+        coordinator.record_frame = Mock()
+
+        coordinator._on_frame_ready(sample_frame, 1.25, 12)
+
+        coordinator.record_frame.assert_not_called()
+
+    def test_update_fps_limit_returns_false_without_stream_manager(self, mock_logger):
+        """FPS update should fail safely when no stream is active."""
+        coordinator = StreamCoordinator(mock_logger)
+
+        assert coordinator.update_fps_limit(15) is False
+
+    def test_update_fps_limit_applies_when_supported(self, mock_logger):
+        """FPS update should delegate to StreamManager when available."""
+        coordinator = StreamCoordinator(mock_logger)
+        coordinator.stream_manager = Mock()
+        coordinator.stream_manager.set_fps_limit = Mock(return_value=True)
+
+        assert coordinator.update_fps_limit(20) is True
+        coordinator.stream_manager.set_fps_limit.assert_called_once_with(20)

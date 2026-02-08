@@ -256,18 +256,33 @@ class ColorDetectionController(TranslationMixin, StreamAlgorithmController):
             width = config['processing_width']
             height = config['processing_height']
             self.control_widget.input_processing_tab.set_processing_resolution(width, height)
+        elif config.get('processing_resolution') is None and hasattr(self.control_widget, 'input_processing_tab'):
+            # Backward compatibility for older configs that used None to mean "Original".
+            self.control_widget.input_processing_tab.set_processing_resolution(99999, 99999)
+        if hasattr(self.control_widget, 'input_processing_tab'):
+            if 'target_fps' in config:
+                self.control_widget.input_processing_tab.set_target_fps(int(config['target_fps']))
+            if 'render_at_processing_res' in config:
+                self.control_widget.input_processing_tab.render_at_processing_res.setChecked(
+                    bool(config['render_at_processing_res'])
+                )
 
         # Update rendering config in RenderingTab
         if hasattr(self.control_widget, 'rendering_tab'):
             rendering_config = {}
-            for key in ['render_shape', 'render_text', 'render_contours',
-                        'use_detection_color_for_rendering', 'max_detections_to_render']:
+            for key in [
+                'render_shape', 'render_text', 'render_contours',
+                'use_detection_color_for_rendering', 'max_detections_to_render',
+                'enable_temporal_voting', 'temporal_window_frames', 'temporal_threshold_frames',
+                'enable_aspect_ratio_filter', 'min_aspect_ratio', 'max_aspect_ratio',
+                'enable_detection_clustering', 'clustering_distance'
+            ]:
                 if key in config:
                     rendering_config[key] = config[key]
             if rendering_config:
                 self.control_widget.rendering_tab.set_config(rendering_config)
 
-        # Update cleanup config in CleanupTab
+        # Keep hidden cleanup tab synchronized for backwards compatibility.
         if hasattr(self.control_widget, 'cleanup_tab'):
             cleanup_config = {}
             for key in ['enable_temporal_voting', 'temporal_window_frames', 'temporal_threshold_frames',

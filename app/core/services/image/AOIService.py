@@ -140,7 +140,6 @@ class AOIService:
             # --- Step 4: Determine altitude to use ---
             # Check if we should use terrain-based altitude calculation
             terrain_service = _get_terrain_service() if use_terrain else None
-            use_terrain_agl = False
             geoid_undulation = None
 
             # If RelativeAltitude is very low (< 10m) but we have AbsoluteAltitude and terrain,

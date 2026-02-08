@@ -205,6 +205,7 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
         self.input_processing_tab.resolution_preset.currentTextChanged.connect(
             self.input_processing_tab.on_resolution_preset_changed)
         self.input_processing_tab.resolution_preset.currentTextChanged.connect(self._emit_config_changed)
+        self.input_processing_tab.frame_rate_preset.currentTextChanged.connect(self._emit_config_changed)
         self.input_processing_tab.processing_width.valueChanged.connect(self._emit_config_changed)
         self.input_processing_tab.processing_height.valueChanged.connect(self._emit_config_changed)
         self.input_processing_tab.render_at_processing_res.toggled.connect(self._emit_config_changed)
@@ -219,16 +220,6 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
             self.max_area_spinbox.valueChanged.connect(self._emit_config_changed)
             self.confidence_slider.valueChanged.connect(self._update_confidence_label)
             self.confidence_slider.valueChanged.connect(self._emit_config_changed)
-
-        # Cleanup (from shared CleanupTab)
-        self.cleanup_tab.enable_temporal_voting.toggled.connect(self._emit_config_changed)
-        self.cleanup_tab.temporal_window_frames.valueChanged.connect(self._emit_config_changed)
-        self.cleanup_tab.temporal_threshold_frames.valueChanged.connect(self._emit_config_changed)
-        self.cleanup_tab.enable_aspect_ratio_filter.toggled.connect(self._emit_config_changed)
-        self.cleanup_tab.min_aspect_ratio.valueChanged.connect(self._emit_config_changed)
-        self.cleanup_tab.max_aspect_ratio.valueChanged.connect(self._emit_config_changed)
-        self.cleanup_tab.enable_detection_clustering.toggled.connect(self._emit_config_changed)
-        self.cleanup_tab.clustering_distance.valueChanged.connect(self._emit_config_changed)
 
         # Frame/Mask (from shared FrameTab)
         self.frame_tab.configChanged.connect(self._emit_config_changed)
@@ -604,9 +595,6 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
         else:
             processing_resolution = (processing_width, processing_height)
 
-        # Get cleanup config from shared CleanupTab
-        cleanup_config = self.cleanup_tab.get_config()
-
         # Get frame/mask config from shared FrameTab
         frame_config = self.frame_tab.get_config()
 
@@ -617,30 +605,6 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
         # Collect color ranges from widgets
         updated_color_ranges = []
         for widget in self.color_range_widgets:
-            # Save colors to recent colors when config is retrieved (when actually used)
-            try:
-                color = widget.get_color()
-                hsv_ranges = widget.get_hsv_ranges()
-                rgb = (color.red(), color.green(), color.blue())
-
-                # HSVColorRowWidget always returns hsv_ranges with h, s, v, h_minus, h_plus, etc.
-                # All values are in normalized 0-1 format
-                if hsv_ranges and isinstance(hsv_ranges, dict):
-                    hsv_config = {
-                        'selected_color': rgb,
-                        'hsv_ranges': hsv_ranges  # Already in correct format (0-1 normalized)
-                    }
-                    self.recent_colors_service.add_hsv_color(hsv_config)
-                else:
-                    # Fallback: RGB color without HSV ranges
-                    color_config = {
-                        'selected_color': rgb,
-                        'color_range': None
-                    }
-                    self.recent_colors_service.add_rgb_color(color_config)
-            except Exception as e:
-                # Log error for debugging instead of silently failing
-                self.logger.debug(f"Error saving color to recent colors: {e}")
             # Convert from HSVColorRowWidget format to our format
             hsv_ranges = widget.get_hsv_ranges()
             color = widget.get_color()
@@ -675,8 +639,8 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
         config = {
             # Input & Processing (from shared InputProcessingTab)
             'processing_resolution': processing_resolution,
-            'processing_width': processing_width if processing_width != 99999 else None,
-            'processing_height': processing_height if processing_height != 99999 else None,
+            'processing_width': processing_width,
+            'processing_height': processing_height,
             'target_fps': target_fps,
             'render_at_processing_res': self.input_processing_tab.render_at_processing_res.isChecked(),
 
@@ -687,9 +651,6 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
             'min_area': self.min_area_spinbox.value() if hasattr(self, 'min_area_spinbox') else 100,
             'max_area': self.max_area_spinbox.value() if hasattr(self, 'max_area_spinbox') else 100000,
             'confidence_threshold': self.confidence_slider.value() / 100.0 if hasattr(self, 'confidence_slider') else 0.5,
-
-            # Cleanup (from shared CleanupTab)
-            **cleanup_config,
 
             # Frame/Mask (from shared FrameTab)
             **frame_config,

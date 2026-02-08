@@ -22,22 +22,22 @@ def extract(project_root: Path, translations_dir: Path):
     """Extract translatable strings from source files."""
     # Collect all source files
     ui_files = list((project_root / "resources" / "views").rglob("*.ui"))
-    py_files = [f for f in (project_root / "app").rglob("*.py") 
+    py_files = [f for f in (project_root / "app").rglob("*.py")
                 if not f.name.endswith(("_ui.py", "_rc.py"))]
-    
-    all_files = [str(f.relative_to(project_root)).replace("\\", "/") 
+
+    all_files = [str(f.relative_to(project_root)).replace("\\", "/")
                  for f in ui_files + py_files]
-    
+
     print(f"Sources: {len(ui_files)} .ui files, {len(py_files)} .py files")
-    
+
     # Find or create .ts files
     ts_files = list(translations_dir.glob("*.ts")) or [translations_dir / "app_en.ts", translations_dir / "app_it.ts"]
-    
+
     # If app_it.ts doesn't exist yet, ensure it's in the list
     if not (translations_dir / "app_it.ts").exists():
         if translations_dir / "app_it.ts" not in ts_files:
             ts_files.append(translations_dir / "app_it.ts")
-    
+
     for ts_file in ts_files:
         print(f"  Updating {ts_file.name}...")
         result = subprocess.run(
@@ -53,13 +53,13 @@ def extract(project_root: Path, translations_dir: Path):
 def compile_translations(translations_dir: Path):
     """Compile .ts files to .qm binary files."""
     ts_files = list(translations_dir.glob("*.ts"))
-    
+
     if not ts_files:
         print("No .ts files found to compile.")
         return
-    
+
     print(f"\nCompiling {len(ts_files)} translation file(s)...")
-    
+
     for ts_file in ts_files:
         qm_file = ts_file.with_suffix(".qm")
         result = subprocess.run(
@@ -76,25 +76,25 @@ def compile_translations(translations_dir: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="Manage translations")
-    parser.add_argument("--compile", "-c", action="store_true", 
+    parser.add_argument("--compile", "-c", action="store_true",
                         help="Compile .ts files to .qm after extraction")
     parser.add_argument("--compile-only", action="store_true",
                         help="Only compile, don't extract")
     args = parser.parse_args()
-    
+
     project_root = Path(__file__).parent.parent.resolve()
     os.chdir(project_root)
-    
+
     translations_dir = project_root / "translations"
     translations_dir.mkdir(exist_ok=True)
-    
+
     if not args.compile_only:
         print("Extracting translatable strings...")
         extract(project_root, translations_dir)
-    
+
     if args.compile or args.compile_only:
         compile_translations(translations_dir)
-    
+
     print("\nDone!")
 
 

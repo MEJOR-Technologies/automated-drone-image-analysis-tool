@@ -376,3 +376,13 @@ class TestColorAnomalyAndMotionDetectionControlWidget:
         # Original should set very large values (99999)
         assert config['processing_width'] >= 99999
         assert config['processing_height'] >= 99999
+
+    def test_set_processing_resolution_handles_original_marker(self, qapp):
+        """Setting sentinel resolution should restore Original preset, not Custom."""
+        widget = ColorAnomalyAndMotionDetectionControlWidget()
+
+        widget.input_processing_tab.set_processing_resolution(99999, 99999)
+
+        assert widget.input_processing_tab.resolution_preset.currentText() == "Original"
+        assert widget.input_processing_tab.processing_width.isEnabled() is False
+        assert widget.input_processing_tab.processing_height.isEnabled() is False

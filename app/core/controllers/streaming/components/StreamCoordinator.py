@@ -60,8 +60,8 @@ class StreamCoordinator(QObject):
         }
 
     def connect_stream(self, url: str, stream_type: StreamType,
-                        hdmi_backend: Optional[int] = None,
-                        fps_limit: Optional[int] = None) -> bool:
+                       hdmi_backend: Optional[int] = None,
+                       fps_limit: Optional[int] = None) -> bool:
         """
         Connect to a stream.
 
@@ -69,7 +69,8 @@ class StreamCoordinator(QObject):
             url: Stream URL or file path
             stream_type: Type of stream (RTMP, HLS, File, HDMI) - can be StreamType enum or string
             hdmi_backend: Optional OpenCV backend ID for HDMI capture
-            fps_limit: Optional target FPS limit (0 or None = use defaults)
+            fps_limit: Optional target FPS limit (`None`/`0` = safe default cap,
+                `>0` = explicit cap)
 
         Returns:
             True if connection initiated successfully
@@ -157,6 +158,27 @@ class StreamCoordinator(QObject):
             self.current_stream_type = None
 
             self.connectionChanged.emit(False, "Disconnected")
+
+    def update_fps_limit(self, fps_limit: Optional[int]) -> bool:
+        """
+        Update active stream FPS limit while connected.
+
+        Args:
+            fps_limit: Requested FPS limit (`None`/`0` = safe default cap)
+
+        Returns:
+            True if update applied, False otherwise.
+        """
+        if not self.stream_manager:
+            return False
+        if not hasattr(self.stream_manager, "set_fps_limit"):
+            return False
+        try:
+            return bool(self.stream_manager.set_fps_limit(fps_limit))
+        except Exception as e:
+            self.logger.error(f"Failed to update FPS limit: {e}")
+            self.errorOccurred.emit(f"Failed to update FPS limit: {e}")
+            return False
 
     def start_recording(self, output_directory: str, metadata: Optional[dict] = None) -> bool:
         """
@@ -255,10 +277,6 @@ class StreamCoordinator(QObject):
 
         # Update stream info
         self._update_stream_info()
-
-        # Record frame if recording
-        if self.is_recording:
-            self.record_frame(frame)
 
         # Emit frame for processing with video position
         self.frameReceived.emit(frame, timestamp, video_frame_pos)

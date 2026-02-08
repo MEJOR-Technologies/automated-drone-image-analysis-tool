@@ -131,7 +131,7 @@ class StreamAlgorithmParametersPage(BasePage):
                 raise ValueError(f"Unknown algorithm: {current_algorithm_name}")
 
             # Import the module and get the wizard controller class
-            # The module_path is the full path to the module (e.g., algorithms.streaming.MotionDetection.controllers.MotionDetectionWizardController)
+            # The module_path is the full path to the module (e.g., algorithms.streaming.ColorDetection.controllers.ColorDetectionWizardController)
             # The class name is the same as the module name (last part)
             module_parts = module_path.split('.')
             module_name = module_path  # Import the full module path

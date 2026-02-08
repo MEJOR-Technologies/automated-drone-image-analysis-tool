@@ -29,6 +29,7 @@ from core.services.SettingsService import SettingsService
 from core.services.streaming.StreamingUtils import (
     FrameQueue, PerformanceMetrics, StageTimings
 )
+from core.services.streaming.DetectionMath import bbox_iou, centroid_distance
 from enum import Enum
 from collections import deque
 import threading
@@ -1486,10 +1487,7 @@ class ColorDetectionService(QObject):
                         continue
 
                     # Calculate centroid distance
-                    dist = np.sqrt(
-                        (det1.centroid[0] - det2.centroid[0])**2 +
-                        (det1.centroid[1] - det2.centroid[1])**2
-                    )
+                    dist = centroid_distance(det1.centroid, det2.centroid)
 
                     if dist <= config.clustering_distance:
                         cluster.append(det2)
@@ -1676,24 +1674,7 @@ class ColorDetectionService(QObject):
             IoU value (0-1)
         """
         try:
-            x1, y1, w1, h1 = det1.bbox
-            x2, y2, w2, h2 = det2.bbox
-
-            # Calculate intersection
-            x_left = max(x1, x2)
-            y_top = max(y1, y2)
-            x_right = min(x1 + w1, x2 + w2)
-            y_bottom = min(y1 + h1, y2 + h2)
-
-            if x_right < x_left or y_bottom < y_top:
-                return 0.0
-
-            intersection = (x_right - x_left) * (y_bottom - y_top)
-            area1 = w1 * h1
-            area2 = w2 * h2
-            union = area1 + area2 - intersection
-
-            return intersection / union if union > 0 else 0.0
+            return bbox_iou(det1.bbox, det2.bbox)
 
         except Exception:
             return 0.0

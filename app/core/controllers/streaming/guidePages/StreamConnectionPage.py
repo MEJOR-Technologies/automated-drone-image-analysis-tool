@@ -16,18 +16,18 @@ from core.views.components.LabeledSlider import TextLabeledSlider
 
 class DeviceScanWorker(QObject):
     """Worker that scans for capture devices in a background thread."""
-    
+
     finished = Signal(object, object)  # found_devices, device_backends (use object for dict compatibility)
-    
+
     def __init__(self):
         super().__init__()
-    
+
     def run(self):
         """Scan for devices - runs in background thread."""
         if cv2 is None:
             self.finished.emit({}, {})
             return
-        
+
         # Define backends to try (in order of preference for Windows)
         backends = []
         if hasattr(cv2, 'CAP_MSMF'):
@@ -35,11 +35,11 @@ class DeviceScanWorker(QObject):
         if hasattr(cv2, 'CAP_DSHOW'):
             backends.append((cv2.CAP_DSHOW, "DirectShow"))
         backends.append((cv2.CAP_ANY, "Auto"))
-        
+
         found_devices = {}  # {index: (label, backend_id, backend_name)}
         device_backends = {}  # {combo_idx: backend_id}
         max_devices = 5  # Reduced from 10 for faster scanning
-        
+
         for backend_id, backend_name in backends:
             consecutive_failures = 0
             for index in range(max_devices):
@@ -47,11 +47,11 @@ class DeviceScanWorker(QObject):
                 if index in found_devices:
                     consecutive_failures = 0
                     continue
-                
+
                 # Stop scanning this backend after 2 consecutive failures (faster)
                 if consecutive_failures >= 2:
                     break
-                
+
                 cap = None
                 try:
                     cap = cv2.VideoCapture(index, backend_id)
@@ -70,14 +70,14 @@ class DeviceScanWorker(QObject):
                             cap.release()
                         except Exception:
                             pass
-        
+
         # Build device_backends mapping
         combo_idx = 0
         for dev_index in sorted(found_devices.keys()):
             _, backend_id, _ = found_devices[dev_index]
             device_backends[combo_idx] = backend_id
             combo_idx += 1
-        
+
         self.finished.emit(found_devices, device_backends)
 
 
@@ -175,7 +175,7 @@ class StreamConnectionPage(BasePage):
 
     def on_enter(self) -> None:
         self._apply_stream_type_settings()
-        
+
         # Auto-scan for devices when HDMI is selected
         stream_type = self.wizard_data.get("stream_type", "File")
         if stream_type == "HDMI Capture":
@@ -207,7 +207,7 @@ class StreamConnectionPage(BasePage):
                 index = self.resolution_slider.value()
                 index_to_resolution = {0: 25, 1: 50, 2: 75, 3: 100}
                 self.wizard_data["processing_resolution"] = index_to_resolution.get(index, 75)
-        
+
         # For HDMI, also store the selected backend and device label
         stream_type = self.wizard_data.get("stream_type", "File")
         if stream_type == "HDMI Capture" and hasattr(self.dialog, "deviceComboBox"):
@@ -223,20 +223,20 @@ class StreamConnectionPage(BasePage):
         stream_type = self.wizard_data.get("stream_type", "File")
         settings = self._get_stream_type_settings(stream_type)
         self.dialog.labelConnectionInstructions.setText(settings["instructions"])
-        
+
         # HDMI-specific UI - hide the manual URL input row entirely
         is_hdmi = stream_type == "HDMI Capture"
-        
+
         # Show/hide URL input row based on stream type
         self.dialog.labelStreamUrl.setVisible(not is_hdmi)
         self.dialog.streamUrlLineEdit.setVisible(not is_hdmi)
         self.dialog.browseButton.setVisible(settings["show_browse"] and not is_hdmi)
-        
+
         # Only set placeholder for non-HDMI types
         if not is_hdmi:
             self.dialog.labelStreamUrl.setText(settings["field_label"])
             self.dialog.streamUrlLineEdit.setPlaceholderText(settings["placeholder"])
-        
+
         # HDMI device selection UI
         if hasattr(self.dialog, "labelHdmiDevices"):
             self.dialog.labelHdmiDevices.setVisible(is_hdmi)
@@ -300,33 +300,33 @@ class StreamConnectionPage(BasePage):
         self.dialog.scanDevicesButton.setEnabled(False)
         self.dialog.scanDevicesButton.setText(self.tr("Scanning..."))
         QApplication.processEvents()  # Update UI immediately
-        
+
         self._device_backends = {}
-        
+
         # Create worker and thread
         self._scan_thread = QThread()
         self._scan_worker = DeviceScanWorker()
         self._scan_worker.moveToThread(self._scan_thread)
-        
+
         # Connect signals
         self._scan_thread.started.connect(self._scan_worker.run)
         self._scan_worker.finished.connect(self._on_scan_finished)
         self._scan_worker.finished.connect(self._scan_thread.quit)
         self._scan_worker.finished.connect(self._scan_worker.deleteLater)
         self._scan_thread.finished.connect(self._scan_thread.deleteLater)
-        
+
         # Start scanning
         self._scan_thread.start()
-    
+
     def _on_scan_finished(self, found_devices: dict, device_backends: dict) -> None:
         """Handle scan completion - update UI with results."""
         # Restore button state
         self.dialog.scanDevicesButton.setEnabled(True)
         self.dialog.scanDevicesButton.setText(self.tr("Scan"))
-        
+
         self._device_backends = device_backends
         self.dialog.deviceComboBox.clear()
-        
+
         if not found_devices:
             self.dialog.deviceComboBox.addItem(self.tr("No capture devices found"), None)
             self.dialog.deviceComboBox.setEnabled(False)
@@ -338,7 +338,7 @@ class StreamConnectionPage(BasePage):
                 translated_label = self.tr("Device {index} ({backend})").format(
                     index=dev_index, backend=backend_name)
                 self.dialog.deviceComboBox.addItem(translated_label, dev_index)
-            
+
             self.dialog.deviceComboBox.setEnabled(True)
             self.dialog.deviceComboBox.setCurrentIndex(0)
             self._sync_device_to_url()

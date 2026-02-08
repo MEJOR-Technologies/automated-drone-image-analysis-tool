@@ -73,6 +73,29 @@ class TestColorDetectionControlWidget:
             widget._on_remove_color_range(widget.color_range_widgets[0])
             assert len(widget.color_ranges) == initial_count  # Should have removed one
 
+    def test_get_config_has_no_recent_color_side_effects(self, qapp):
+        """Reading config should not write to recent-colors storage."""
+        widget = ColorDetectionControlWidget()
+        widget._on_color_selected_from_menu(QColor(255, 0, 0))
+
+        widget.recent_colors_service.add_hsv_color = Mock()
+        widget.recent_colors_service.add_rgb_color = Mock()
+
+        _ = widget.get_config()
+
+        widget.recent_colors_service.add_hsv_color.assert_not_called()
+        widget.recent_colors_service.add_rgb_color.assert_not_called()
+
+    def test_frame_tab_config_can_clear_mask_path(self, qapp):
+        """FrameTab set_config should clear mask path when given None."""
+        widget = ColorDetectionControlWidget()
+
+        widget.frame_tab.set_config({'mask_image_path': '/tmp/mask.png'})
+        assert widget.frame_tab.get_config()['mask_image_path'] == '/tmp/mask.png'
+
+        widget.frame_tab.set_config({'mask_image_path': None})
+        assert widget.frame_tab.get_config()['mask_image_path'] is None
+
 
 class TestHSVColorRangeRowWidget:
     """Test suite for HSVColorRowWidget (shared widget)."""

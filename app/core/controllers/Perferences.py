@@ -47,19 +47,19 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         # Create a new widget for language selection
         self.languageWidget = QWidget(self.mainWidget)
         self.languageLayout = QHBoxLayout(self.languageWidget)
-        
+
         self.languageLabel = QLabel(self.tr("Language:"), self.languageWidget)
         font = self.label.font()
         self.languageLabel.setFont(font)
-        
+
         self.languageComboBox = QComboBox(self.languageWidget)
         self.languageComboBox.setFont(font)
         self.languageComboBox.addItem("English", "en")
         self.languageComboBox.addItem("Italiano", "it")
-        
+
         self.languageLayout.addWidget(self.languageLabel)
         self.languageLayout.addWidget(self.languageComboBox)
-        
+
         # Insert it before the theme widget or at the top
         self.verticalLayout_2.insertWidget(0, self.languageWidget)
 
@@ -69,7 +69,7 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         index = self.languageComboBox.findData(lang)
         if index >= 0:
             self.languageComboBox.setCurrentIndex(index)
-            
+
         self.maxAOIsSpinBox.setValue(self.parent.settings_service.get_setting('MaxAOIs'))
         self.themeComboBox.setCurrentText(self.parent.settings_service.get_setting('Theme'))
         self.AOIRadiusSpinBox.setValue(self.parent.settings_service.get_setting('AOIRadius'))
@@ -259,7 +259,7 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         """Updates the language setting and informs the user that a restart is required."""
         lang_code = self.languageComboBox.currentData()
         current_lang = self.parent.settings_service.get_setting('Language', 'en')
-        
+
         if lang_code != current_lang:
             self.parent.settings_service.set_setting('Language', lang_code)
             QMessageBox.information(

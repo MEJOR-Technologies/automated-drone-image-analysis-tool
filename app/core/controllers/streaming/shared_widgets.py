@@ -26,39 +26,39 @@ from helpers.TranslationMixin import TranslationMixin
 
 class HDMIDeviceScanWorker(QObject):
     """Worker that scans for HDMI capture devices in a background thread."""
-    
+
     finished = Signal(object, object)  # found_devices, device_backends (use object for dict compatibility)
-    
+
     def run(self):
         """Scan for devices - runs in background thread.
-        
+
         Uses multiple retries and delays to handle devices that may be slow to release
         from previous connections.
         """
-        import time
-        
+        # time is imported at module level
+
         backends = []
         if hasattr(cv2, 'CAP_MSMF'):
             backends.append((cv2.CAP_MSMF, "MSMF"))
         if hasattr(cv2, 'CAP_DSHOW'):
             backends.append((cv2.CAP_DSHOW, "DirectShow"))
         backends.append((cv2.CAP_ANY, "Auto"))
-        
+
         found_devices = {}
         device_backends = {}
         max_devices = 5  # Reduced for faster scanning
         max_retries = 2  # Retry each device up to 2 times if it fails
-        
+
         for backend_id, backend_name in backends:
             consecutive_failures = 0
             for index in range(max_devices):
                 if index in found_devices:
                     consecutive_failures = 0
                     continue
-                
+
                 if consecutive_failures >= 2:
                     break
-                
+
                 # Try multiple times for each device (handles slow device release)
                 for retry in range(max_retries):
                     cap = None
@@ -92,18 +92,18 @@ class HDMIDeviceScanWorker(QObject):
                                 pass
                             # Small delay after release to ensure device is freed
                             time.sleep(0.1)
-                
+
                 # If we exhausted retries and didn't find device, increment failure count
                 if index not in found_devices:
                     consecutive_failures += 1
-        
+
         # Build device_backends mapping
         combo_idx = 0
         for dev_index in sorted(found_devices.keys()):
             _, backend_id, _ = found_devices[dev_index]
             device_backends[combo_idx] = backend_id
             combo_idx += 1
-        
+
         self.finished.emit(found_devices, device_backends)
 
 
@@ -763,7 +763,7 @@ class VideoDisplayWidget(TranslationMixin, QLabel):
 class StreamControlWidget(TranslationMixin, QWidget):
     """Shared stream connection and control widget with optional recording controls."""
 
-    connectRequested = Signal(str, object)  # url, stream_type (StreamType enum)
+    connectRequested = Signal(str, object, object)  # url, stream_type, hdmi_backend
     disconnectRequested = Signal()
     startRecordingRequested = Signal(str)
     stopRecordingRequested = Signal()
@@ -1032,6 +1032,7 @@ class StreamControlWidget(TranslationMixin, QWidget):
     def request_connect(self):
         """Request stream connection."""
         combo_text = self.type_combo.currentData() or self.type_combo.currentText()
+        hdmi_backend = None
 
         # Get URL from appropriate widget
         if combo_text == "HDMI Capture":
@@ -1045,6 +1046,8 @@ class StreamControlWidget(TranslationMixin, QWidget):
                 )
                 return
             url = str(device_index)
+            if hasattr(self, '_device_backends'):
+                hdmi_backend = self._device_backends.get(self.hdmi_device_combo.currentIndex())
         else:
             # Get URL from text input
             url = self.url_input.text().strip()
@@ -1063,7 +1066,7 @@ class StreamControlWidget(TranslationMixin, QWidget):
             "RTMP Stream": StreamType.RTMP
         }
         stream_type = stream_type_map.get(combo_text, StreamType.FILE)
-        self.connectRequested.emit(url, stream_type)
+        self.connectRequested.emit(url, stream_type, hdmi_backend)
 
     def update_connection_status(self, connected: bool, message: str):
         """Update connection status display."""
@@ -1179,33 +1182,33 @@ class StreamControlWidget(TranslationMixin, QWidget):
         self.scan_button.setEnabled(False)
         self.scan_button.setText(self.tr("Scanning..."))
         QApplication.processEvents()  # Update UI immediately
-        
+
         self._device_backends = {}
-        
+
         # Create worker and thread
         self._scan_thread = QThread()
         self._scan_worker = HDMIDeviceScanWorker()
         self._scan_worker.moveToThread(self._scan_thread)
-        
+
         # Connect signals
         self._scan_thread.started.connect(self._scan_worker.run)
         self._scan_worker.finished.connect(self._on_hdmi_scan_finished)
         self._scan_worker.finished.connect(self._scan_thread.quit)
         self._scan_worker.finished.connect(self._scan_worker.deleteLater)
         self._scan_thread.finished.connect(self._scan_thread.deleteLater)
-        
+
         # Start scanning
         self._scan_thread.start()
-    
+
     def _on_hdmi_scan_finished(self, found_devices: dict, device_backends: dict) -> None:
         """Handle HDMI scan completion - update UI with results."""
         # Restore button state
         self.scan_button.setEnabled(True)
         self.scan_button.setText(self.tr("Scan"))
-        
+
         self._device_backends = device_backends
         self.hdmi_device_combo.clear()
-        
+
         if not found_devices:
             self.hdmi_device_combo.addItem(self.tr("No capture devices found"), None)
             self.hdmi_device_combo.setEnabled(False)
@@ -1217,7 +1220,7 @@ class StreamControlWidget(TranslationMixin, QWidget):
                 translated_label = self.tr("Device {index} ({backend})").format(
                     index=dev_index, backend=backend_name)
                 self.hdmi_device_combo.addItem(translated_label, dev_index)
-            
+
             self.hdmi_device_combo.setEnabled(True)
             if self.hdmi_device_combo.count() > 0:
                 self.hdmi_device_combo.setCurrentIndex(0)

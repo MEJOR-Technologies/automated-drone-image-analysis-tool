@@ -5,13 +5,13 @@ from PySide6.QtWidgets import QAbstractButton, QComboBox, QGroupBox, QLabel, QTa
 class TranslationMixin:
     """
     Mixin that provides translation support for any class.
-    
+
     - For QObject subclasses: This tr() works alongside Qt's built-in tr()
     - For non-QObject classes: This provides the tr() method they need
-    
+
     The tr() method is named to match Qt's convention so pyside6-lupdate
     can automatically extract strings.
-    
+
     To override the translation context, set _translation_context in your class:
         class MyWidget(TranslationMixin, QWidget):
             _translation_context = "SharedContext"

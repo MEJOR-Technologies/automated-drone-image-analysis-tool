@@ -200,9 +200,9 @@ def main():
             # app/ is the directory of __main__.py, so translations/ is at ../translations
             translations_path = path.abspath(path.join(path.dirname(__file__), "..", "translations"))
         try:
-            qm_files = [f for f in os.listdir(translations_path) if f.endswith('.qm')]
-        except Exception as e:
-            qm_files = []
+            os.listdir(translations_path)
+        except Exception:
+            pass
         qm_name = f"app_{lang}.qm"
         if translator.load(qm_name, translations_path):
             app.installTranslator(translator)
@@ -211,13 +211,13 @@ def main():
 
     qdarktheme.setup_theme()
     app.setWindowIcon(QIcon(path.abspath(path.join(path.dirname(__file__), 'ADIAT.ico'))))
-    
+
     # Load translations
     translator = QTranslator(app)
     # Get system locale (e.g., "es_ES", "fr_FR") or use a setting
     locale = QLocale.system().name()  # e.g., "en_US", "es_ES"
     translations_path = path.abspath(path.join(path.dirname(__file__), '..', 'translations'))
-    
+
     # Try to load translation for system locale (e.g., app_es.qm for Spanish)
     lang_code = locale.split('_')[0]  # "es_ES" -> "es"
     if translator.load(f"app_{lang_code}", translations_path):

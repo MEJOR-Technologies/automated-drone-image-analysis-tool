@@ -14,6 +14,7 @@ from algorithms.streaming.ColorAnomalyAndMotionDetection.services import (
     MotionAlgorithm,
     FusionMode,
     ColorSpace,
+    ContourMethod,
     Detection
 )
 from core.services.LoggerService import LoggerService
@@ -128,25 +129,13 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
 
     @Slot(np.ndarray, list, object)
     def _on_frame_processed(self, annotated_frame: np.ndarray, detections: List[Detection], metrics: object):
-        """Handle frame processed signal from service."""
-        # Convert detections to standard format
-        detection_dicts = []
-        for detection in detections:
-            detection_dicts.append({
-                'bbox': detection.bbox,
-                'area': detection.area,
-                'confidence': detection.confidence,
-                'class_name': detection.detection_type,
-                'centroid': detection.centroid
-            })
+        """Handle frame processed signal from service.
 
-        self.detection_count += len(detections)
-
-        # Emit detections
-        self.detectionsReady.emit(detection_dicts)
-
-        # Emit processed frame
-        self.frameProcessed.emit(annotated_frame)
+        This signal is emitted during process_frame(). The controller already emits
+        detections/frame once in process_frame(), so this handler intentionally avoids
+        re-emitting to prevent duplicates.
+        """
+        _ = (annotated_frame, detections, metrics)
 
     @Slot(dict)
     def _on_performance_update(self, metrics: dict):
@@ -172,25 +161,58 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
         processing_height = ui_config.get('processing_height', base_config.processing_height)
 
         # Handle "Original" resolution (99999 means no downsampling)
-        if processing_width >= 99999 or processing_height >= 99999:
-            # Use very large values - service will handle this as "no downsampling"
+        try:
+            processing_width = int(processing_width)
+            processing_height = int(processing_height)
+        except (TypeError, ValueError):
             processing_width = base_config.processing_width
             processing_height = base_config.processing_height
+
+        if processing_width >= 99999 or processing_height >= 99999:
+            # Keep sentinel values so the orchestrator can skip downsampling.
+            processing_width = 99999
+            processing_height = 99999
 
         # Map motion algorithm (widget returns enum)
         motion_algorithm = ui_config.get('motion_algorithm', base_config.motion_algorithm)
         if not isinstance(motion_algorithm, MotionAlgorithm):
-            motion_algorithm = base_config.motion_algorithm
+            motion_algorithm_str = str(motion_algorithm).split('.')[-1].upper().replace(" ", "_")
+            motion_algorithm = {
+                "FRAME_DIFF": MotionAlgorithm.FRAME_DIFF,
+                "MOG2": MotionAlgorithm.MOG2,
+                "KNN": MotionAlgorithm.KNN,
+            }.get(motion_algorithm_str, base_config.motion_algorithm)
 
         # Map fusion mode (widget returns enum)
         fusion_mode = ui_config.get('fusion_mode', base_config.fusion_mode)
         if not isinstance(fusion_mode, FusionMode):
-            fusion_mode = base_config.fusion_mode
+            fusion_mode_str = str(fusion_mode).split('.')[-1].upper().replace(" ", "_")
+            fusion_mode = {
+                "UNION": FusionMode.UNION,
+                "INTERSECTION": FusionMode.INTERSECTION,
+                "COLOR_PRIORITY": FusionMode.COLOR_PRIORITY,
+                "MOTION_PRIORITY": FusionMode.MOTION_PRIORITY,
+            }.get(fusion_mode_str, base_config.fusion_mode)
 
         # Map color space (widget returns enum)
         color_space = ui_config.get('color_space', base_config.color_space)
         if not isinstance(color_space, ColorSpace):
-            color_space = base_config.color_space
+            color_space_str = str(color_space).split('.')[-1].upper().replace(" ", "_")
+            color_space = {
+                "BGR": ColorSpace.BGR,
+                "RGB": ColorSpace.BGR,  # UI label is RGB but service uses BGR enum.
+                "HSV": ColorSpace.HSV,
+                "LAB": ColorSpace.LAB,
+            }.get(color_space_str, base_config.color_space)
+
+        # Map contour method (widget returns enum)
+        contour_method = ui_config.get('contour_method', base_config.contour_method)
+        if not isinstance(contour_method, ContourMethod):
+            contour_method_str = str(contour_method).split('.')[-1].upper().replace(" ", "_")
+            contour_method = {
+                "FIND_CONTOURS": ContourMethod.FIND_CONTOURS,
+                "CONNECTED_COMPONENTS": ContourMethod.CONNECTED_COMPONENTS,
+            }.get(contour_method_str, base_config.contour_method)
 
         return ColorAnomalyAndMotionDetectionConfig(
             processing_width=processing_width,
@@ -216,6 +238,7 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
             color_rarity_percentile=ui_config.get('color_rarity_percentile', base_config.color_rarity_percentile),
             color_min_detection_area=ui_config.get('color_min_detection_area', base_config.color_min_detection_area),
             color_max_detection_area=ui_config.get('color_max_detection_area', base_config.color_max_detection_area),
+            contour_method=contour_method,
             color_space=color_space,
             hsv_min_saturation=ui_config.get('hsv_min_saturation', base_config.hsv_min_saturation),
             lab_min_chroma=ui_config.get('lab_min_chroma', base_config.lab_min_chroma),
@@ -261,91 +284,167 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
             self._on_config_changed(config)
             return
 
-        # Update processing resolution in InputProcessingTab
-        if ('processing_width' in config and 'processing_height' in config and
-                hasattr(self.integrated_controls, 'input_processing_tab')):
-            width = config['processing_width']
-            height = config['processing_height']
-            self.integrated_controls.input_processing_tab.set_processing_resolution(width, height)
+        controls = self.integrated_controls
 
-        # Update rendering config in RenderingTab
-        if hasattr(self.integrated_controls, 'rendering_tab'):
+        # Update processing resolution and frame-rate settings
+        if ('processing_width' in config and 'processing_height' in config and
+                hasattr(controls, 'input_processing_tab')):
+            controls.input_processing_tab.set_processing_resolution(
+                config['processing_width'],
+                config['processing_height']
+            )
+        elif config.get('processing_resolution') is None and hasattr(controls, 'input_processing_tab'):
+            # Backward compatibility for older configs that used None to mean "Original".
+            controls.input_processing_tab.set_processing_resolution(99999, 99999)
+        if hasattr(controls, 'input_processing_tab'):
+            if 'target_fps' in config:
+                controls.input_processing_tab.set_target_fps(int(config['target_fps']))
+            if 'render_at_processing_res' in config:
+                controls.input_processing_tab.render_at_processing_res.setChecked(
+                    bool(config['render_at_processing_res'])
+                )
+
+        # Update shared Rendering and Frame tab configs
+        if hasattr(controls, 'rendering_tab'):
             rendering_config = {}
-            for key in ['render_shape', 'render_text', 'render_contours',
-                        'use_detection_color_for_rendering', 'max_detections_to_render']:
+            for key in [
+                'render_shape', 'render_text', 'render_contours',
+                'use_detection_color_for_rendering', 'max_detections_to_render',
+                'enable_temporal_voting', 'temporal_window_frames', 'temporal_threshold_frames',
+                'enable_aspect_ratio_filter', 'min_aspect_ratio', 'max_aspect_ratio',
+                'enable_detection_clustering', 'clustering_distance'
+            ]:
                 if key in config:
                     rendering_config[key] = config[key]
             if rendering_config:
-                self.integrated_controls.rendering_tab.set_config(rendering_config)
+                controls.rendering_tab.set_config(rendering_config)
 
-        # Update frame/mask config in FrameTab
-        if hasattr(self.integrated_controls, 'frame_tab'):
+        if hasattr(controls, 'frame_tab'):
             frame_config = {}
             for key in ['mask_enabled', 'frame_mask_enabled', 'image_mask_enabled',
                         'frame_buffer_pixels', 'mask_image_path', 'show_mask_overlay']:
                 if key in config:
                     frame_config[key] = config[key]
             if frame_config:
-                self.integrated_controls.frame_tab.set_config(frame_config)
+                controls.frame_tab.set_config(frame_config)
 
-        # Update motion detection checkbox
-        if 'enable_motion' in config and hasattr(self.integrated_controls, 'enable_motion'):
-            self.integrated_controls.enable_motion.setChecked(bool(config['enable_motion']))
+        # Update basic toggles
+        checkbox_keys = [
+            'enable_motion',
+            'enable_color_quantization',
+            'enable_fusion',
+            'enable_hue_expansion',
+            'enable_color_exclusion',
+            'bg_detect_shadows',
+            'pause_on_camera_movement',
+        ]
+        for key in checkbox_keys:
+            if key in config and hasattr(controls, key):
+                getattr(controls, key).setChecked(bool(config[key]))
 
-        # Update motion algorithm combo box
-        if 'motion_algorithm' in config and hasattr(self.integrated_controls, 'motion_algorithm'):
+        # Update numeric controls directly mapped by name.
+        numeric_keys = [
+            'motion_threshold',
+            'min_detection_area',
+            'max_detection_area',
+            'color_min_detection_area',
+            'color_max_detection_area',
+            'blur_kernel_size',
+            'morphology_kernel_size',
+            'persistence_frames',
+            'persistence_threshold',
+            'bg_history',
+            'bg_var_threshold',
+            'color_quantization_bits',
+            'hue_expansion_range',
+            'hsv_min_saturation',
+            'lab_min_chroma',
+        ]
+        for key in numeric_keys:
+            if key in config and hasattr(controls, key):
+                getattr(controls, key).setValue(config[key])
+
+        # Compatibility mapping for legacy keys.
+        if 'min_area' in config and 'min_detection_area' not in config and hasattr(controls, 'min_detection_area'):
+            controls.min_detection_area.setValue(config['min_area'])
+        if 'max_area' in config and 'max_detection_area' not in config and hasattr(controls, 'max_detection_area'):
+            controls.max_detection_area.setValue(config['max_area'])
+
+        # Mode/enum-based combo controls.
+        if 'motion_algorithm' in config and hasattr(controls, 'motion_algorithm'):
             motion_algo = config['motion_algorithm']
-            # Handle both string and enum values
-            if isinstance(motion_algo, str):
-                # Map "MOG2 Background" to "MOG2" for combo box
-                if motion_algo == "MOG2 Background":
-                    motion_algo = "MOG2"
-                if motion_algo in ["FRAME_DIFF", "MOG2", "KNN"]:
-                    self.integrated_controls.motion_algorithm.setCurrentText(motion_algo)
+            if isinstance(motion_algo, MotionAlgorithm):
+                motion_text = motion_algo.name
             else:
-                # If it's an enum, convert to string
-                algo_str = str(motion_algo).split('.')[-1]  # Get enum name
-                if algo_str in ["FRAME_DIFF", "MOG2", "KNN"]:
-                    self.integrated_controls.motion_algorithm.setCurrentText(algo_str)
+                motion_text = str(motion_algo).split('.')[-1].upper().replace("MOG2 BACKGROUND", "MOG2")
+            if motion_text in ["FRAME_DIFF", "MOG2", "KNN"]:
+                controls.motion_algorithm.setCurrentText(motion_text)
 
-        # Update motion threshold
-        if 'motion_threshold' in config and hasattr(self.integrated_controls, 'motion_threshold'):
-            self.integrated_controls.motion_threshold.setValue(config['motion_threshold'])
+        if 'fusion_mode' in config and hasattr(controls, 'fusion_mode'):
+            fusion_mode = config['fusion_mode']
+            fusion_text = fusion_mode.name if isinstance(fusion_mode, FusionMode) else str(fusion_mode).split('.')[-1].upper()
+            if fusion_text in ["UNION", "INTERSECTION", "COLOR_PRIORITY", "MOTION_PRIORITY"]:
+                controls.fusion_mode.setCurrentText(fusion_text)
 
-        # Update color quantization checkbox
-        if 'enable_color_quantization' in config and hasattr(self.integrated_controls, 'enable_color_quantization'):
-            self.integrated_controls.enable_color_quantization.setChecked(bool(config['enable_color_quantization']))
+        if 'color_space' in config and hasattr(controls, 'color_space'):
+            color_space = config['color_space']
+            if isinstance(color_space, ColorSpace):
+                color_space_name = color_space.name
+            else:
+                color_space_name = str(color_space).split('.')[-1].upper().replace(" ", "_")
+            color_space_text = {"BGR": "RGB", "RGB": "RGB", "HSV": "HSV", "LAB": "LAB"}.get(color_space_name)
+            if color_space_text:
+                controls.color_space.setCurrentText(color_space_text)
 
-        # Update color rarity percentile slider
-        if 'color_rarity_percentile' in config and hasattr(self.integrated_controls, 'color_rarity_percentile'):
-            percentile = float(config['color_rarity_percentile'])
-            # Clamp to slider range (0-100)
-            percentile = max(0, min(100, int(percentile)))
-            self.integrated_controls.color_rarity_percentile.setValue(percentile)
-            # Update the label if the method exists
-            if hasattr(self.integrated_controls, 'update_color_percentile_label'):
-                self.integrated_controls.update_color_percentile_label()
+        if 'contour_method' in config and hasattr(controls, 'contour_method'):
+            contour_method = config['contour_method']
+            if isinstance(contour_method, ContourMethod):
+                contour_name = contour_method.name
+            else:
+                contour_name = str(contour_method).split('.')[-1].upper().replace(" ", "_")
+            contour_text = {
+                "FIND_CONTOURS": "Find Contours",
+                "CONNECTED_COMPONENTS": "Connected Components",
+            }.get(contour_name)
+            if contour_text:
+                controls.contour_method.setCurrentText(contour_text)
 
-        # Update detection area spinboxes
-        if 'min_detection_area' in config and hasattr(self.integrated_controls, 'min_detection_area'):
-            self.integrated_controls.min_detection_area.setValue(config['min_detection_area'])
-        if 'max_detection_area' in config and hasattr(self.integrated_controls, 'max_detection_area'):
-            self.integrated_controls.max_detection_area.setValue(config['max_detection_area'])
-        if 'color_min_detection_area' in config and hasattr(self.integrated_controls, 'color_min_detection_area'):
-            self.integrated_controls.color_min_detection_area.setValue(config['color_min_detection_area'])
-        if 'color_max_detection_area' in config and hasattr(self.integrated_controls, 'color_max_detection_area'):
-            self.integrated_controls.color_max_detection_area.setValue(config['color_max_detection_area'])
-        # Also handle min_area/max_area for compatibility
-        if 'min_area' in config and 'min_detection_area' not in config:
-            if hasattr(self.integrated_controls, 'min_detection_area'):
-                self.integrated_controls.min_detection_area.setValue(config['min_area'])
-        if 'max_area' in config and 'max_detection_area' not in config:
-            if hasattr(self.integrated_controls, 'max_detection_area'):
-                self.integrated_controls.max_detection_area.setValue(config['max_area'])
+        # Slider values with model-space conversions.
+        if 'color_rarity_percentile' in config and hasattr(controls, 'color_rarity_percentile'):
+            percentile = max(0, min(100, int(float(config['color_rarity_percentile']))))
+            controls.color_rarity_percentile.setValue(percentile)
+            if hasattr(controls, 'update_color_percentile_label'):
+                controls.update_color_percentile_label()
+
+        if 'camera_movement_threshold' in config and hasattr(controls, 'camera_movement_threshold'):
+            cam_thresh = float(config['camera_movement_threshold'])
+            cam_percent = int(round(cam_thresh * 100)) if cam_thresh <= 1.0 else int(round(cam_thresh))
+            cam_percent = max(1, min(100, cam_percent))
+            controls.camera_movement_threshold.setValue(cam_percent)
+            if hasattr(controls, 'update_camera_movement_label'):
+                controls.update_camera_movement_label()
+
+        # Restore selected excluded hues into color wheel.
+        if 'excluded_hue_ranges' in config and hasattr(controls, 'color_wheel'):
+            selected_hues = []
+            for hue_range in config.get('excluded_hue_ranges', []) or []:
+                if not isinstance(hue_range, (list, tuple)) or len(hue_range) != 2:
+                    continue
+                h_min, h_max = float(hue_range[0]), float(hue_range[1])
+                if h_min <= h_max:
+                    center = (h_min + h_max) / 2.0
+                else:
+                    center = ((h_min + (h_max + 180.0)) / 2.0) % 180.0
+                hue_360 = int(round(center * 2.0)) % 360
+                if hasattr(controls.color_wheel, 'hue_colors'):
+                    available = [entry[1] for entry in controls.color_wheel.hue_colors]
+                    hue_360 = min(available, key=lambda h: abs(((h - hue_360 + 180) % 360) - 180))
+                selected_hues.append(hue_360)
+            controls.color_wheel.set_selected_hues(sorted(set(selected_hues)))
 
         # Get the updated config from the controls (includes all defaults)
         # This ensures we have a complete config with all fields, not just wizard fields
-        updated_config = self.integrated_controls.get_config()
+        updated_config = controls.get_config()
 
         # Apply the config to update the detector
         self._on_config_changed(updated_config)

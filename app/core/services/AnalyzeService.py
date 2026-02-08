@@ -17,14 +17,7 @@ from core.services.LoggerService import LoggerService
 from core.services.advancedFeatures.HistogramNormalizationService import HistogramNormalizationService
 from core.services.advancedFeatures.KMeansClustersService import KMeansClustersService
 from core.services.XmlService import XmlService
-from algorithms.images.ColorRange.services.ColorRangeService import ColorRangeService
-from algorithms.images.RXAnomaly.services.RXAnomalyService import RXAnomalyService
-from algorithms.images.MatchedFilter.services.MatchedFilterService import MatchedFilterService
-from algorithms.images.MRMap.services.MRMapService import MRMapService
-from algorithms.images.AIPersonDetector.services.AIPersonDetectorService import AIPersonDetectorService
-from algorithms.images.HSVColorRange.services.HSVColorRangeService import HSVColorRangeService
-from algorithms.images.ThermalRange.services.ThermalRangeService import ThermalRangeService
-from algorithms.images.ThermalAnomaly.services.ThermalAnomalyService import ThermalAnomalyService
+# Algorithm services imported lazily in process_file() to avoid worker startup overhead
 
 
 class AnalyzeService(QObject):
@@ -284,7 +277,26 @@ class AnalyzeService(QObject):
                     img = kmeans_service.generate_clusters(img)
 
             # Instantiate the algorithm class and process the image
-            cls = globals()[algorithm['service']]
+            # Lazy import to avoid loading all algorithm services in worker processes
+            service_name = algorithm['service']
+            if service_name == 'ColorRangeService':
+                from algorithms.images.ColorRange.services.ColorRangeService import ColorRangeService as cls
+            elif service_name == 'RXAnomalyService':
+                from algorithms.images.RXAnomaly.services.RXAnomalyService import RXAnomalyService as cls
+            elif service_name == 'MatchedFilterService':
+                from algorithms.images.MatchedFilter.services.MatchedFilterService import MatchedFilterService as cls
+            elif service_name == 'MRMapService':
+                from algorithms.images.MRMap.services.MRMapService import MRMapService as cls
+            elif service_name == 'AIPersonDetectorService':
+                from algorithms.images.AIPersonDetector.services.AIPersonDetectorService import AIPersonDetectorService as cls
+            elif service_name == 'HSVColorRangeService':
+                from algorithms.images.HSVColorRange.services.HSVColorRangeService import HSVColorRangeService as cls
+            elif service_name == 'ThermalRangeService':
+                from algorithms.images.ThermalRange.services.ThermalRangeService import ThermalRangeService as cls
+            elif service_name == 'ThermalAnomalyService':
+                from algorithms.images.ThermalAnomaly.services.ThermalAnomalyService import ThermalAnomalyService as cls
+            else:
+                raise ValueError(f"Unknown algorithm service: {service_name}")
             instance = cls(identifier_color, min_area, max_area, aoi_radius, algorithm['combine_overlapping_aois'], options)
             instance.set_scale_factor(scale_factor)  # Pass scale factor to algorithm for coordinate transformation
             result = instance.process_image(img, full_path, input_dir, output_dir)

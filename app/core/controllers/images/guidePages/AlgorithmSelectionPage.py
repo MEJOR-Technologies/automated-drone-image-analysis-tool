@@ -3,11 +3,10 @@ Algorithm Selection page for the Image Analysis Guide wizard.
 """
 
 import platform
-from helpers.TranslationMixin import TranslationMixin
 from .BasePage import BasePage
 
 
-class AlgorithmSelectionPage(TranslationMixin, BasePage):
+class AlgorithmSelectionPage(BasePage):
     """Page for algorithm selection via decision tree."""
 
     def __init__(self, wizard_data, settings_service, dialog):
@@ -28,7 +27,6 @@ class AlgorithmSelectionPage(TranslationMixin, BasePage):
     def setup_ui(self):
         """Initialize UI components."""
         self._reset_algorithm_selection()
-
 
     def connect_signals(self):
         """Connect UI signals to handlers."""
