@@ -162,7 +162,7 @@ class AlgorithmSelectionPage(BasePage):
                 self.selected_algorithm = "Temperature Range"
                 self._show_algorithm_result()
             else:  # No - temperature anomaly
-                self.selected_algorithm = "Temperature Anomaly"
+                self.selected_algorithm = "Temperature Residual Anomaly"
                 self._show_algorithm_result()
 
         elif not state['thermal'] and state['person_only'] is None:
