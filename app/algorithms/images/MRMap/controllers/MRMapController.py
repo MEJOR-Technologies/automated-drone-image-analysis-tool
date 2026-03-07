@@ -20,7 +20,20 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
         QWidget.__init__(self)
         AlgorithmController.__init__(self, config)
         self.setupUi(self)
+        self._init_combo_data()
         self.thresholdSlider.valueChanged.connect(self.updatethreshold)
+
+    def _init_combo_data(self):
+        """Attach stable option keys so translated labels do not affect config values."""
+        for index in range(self.segmentsComboBox.count()):
+            text = self.segmentsComboBox.itemText(index)
+            try:
+                self.segmentsComboBox.setItemData(index, int(text))
+            except ValueError:
+                continue
+
+        for index in range(self.colorspaceComboBox.count()):
+            self.colorspaceComboBox.setItemData(index, self.colorspaceComboBox.itemText(index))
 
     def get_options(self):
         """
@@ -31,9 +44,9 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
         """
         options = dict()
         options['threshold'] = int(self.thresholdValueLabel.text())
-        options['segments'] = int(self.segmentsComboBox.currentText())
+        options['segments'] = int(self.segmentsComboBox.currentData())
         options['window'] = self.windowSpinBox.value()
-        options['colorspace'] = self.colorspaceComboBox.currentText()
+        options['colorspace'] = str(self.colorspaceComboBox.currentData())
         return options
 
     def updatethreshold(self):
@@ -64,8 +77,16 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
             self.thresholdValueLabel.setText(str(options['threshold']))
             self.thresholdSlider.setProperty("value", int(options['threshold']))
         if 'segments' in options:
-            self.segmentsComboBox.setCurrentText(str(options['segments']))
+            index = self.segmentsComboBox.findData(int(options['segments']))
+            if index >= 0:
+                self.segmentsComboBox.setCurrentIndex(index)
+            else:
+                self.segmentsComboBox.setCurrentText(str(options['segments']))
         if 'window' in options:
             self.windowSpinBox.setValue(int(options['window']))
         if 'colorspace' in options:
-            self.colorspaceComboBox.setCurrentText(str(options['colorspace']))
+            index = self.colorspaceComboBox.findData(str(options['colorspace']))
+            if index >= 0:
+                self.colorspaceComboBox.setCurrentIndex(index)
+            else:
+                self.colorspaceComboBox.setCurrentText(str(options['colorspace']))

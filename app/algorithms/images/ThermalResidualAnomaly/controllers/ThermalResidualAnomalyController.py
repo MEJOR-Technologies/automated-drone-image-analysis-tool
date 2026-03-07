@@ -13,12 +13,30 @@ class ThermalResidualAnomalyController(QWidget, Ui_ThermalResidualAnomaly, Algor
         AlgorithmController.__init__(self, config)
         self.settings_service = SettingsService()
         self.setupUi(self)
+        self._init_type_combo_data()
         self.sensitivitySlider.valueChanged.connect(self.update_sensitivity)
+
+    def _init_type_combo_data(self):
+        """Attach stable option keys so translated labels do not affect config values."""
+        if self.anomalyTypeComboBox.count() >= 3:
+            self.anomalyTypeComboBox.setItemData(0, 'Both')
+            self.anomalyTypeComboBox.setItemData(1, 'Hot')
+            self.anomalyTypeComboBox.setItemData(2, 'Cold')
+
+    @staticmethod
+    def _normalize_type(value):
+        """Normalize legacy and UI values to canonical type keys."""
+        normalized = str(value or 'Both').strip().lower()
+        if normalized in {'hot', 'above mean', 'warmer than surroundings'}:
+            return 'Hot'
+        if normalized in {'cold', 'below mean', 'cooler than surroundings'}:
+            return 'Cold'
+        return 'Both'
 
     def get_options(self):
         options = dict()
         options['sensitivity'] = int(self.sensitivityValueLabel.text())
-        options['type'] = self.anomalyTypeComboBox.currentText()
+        options['type'] = self._normalize_type(self.anomalyTypeComboBox.currentData())
         return options
 
     def update_sensitivity(self):
@@ -56,7 +74,12 @@ class ThermalResidualAnomalyController(QWidget, Ui_ThermalResidualAnomaly, Algor
             self.sensitivitySlider.setProperty("value", sensitivity)
             self.sensitivityValueLabel.setText(str(sensitivity))
         if 'type' in options:
-            self.anomalyTypeComboBox.setCurrentText(options['type'])
+            type_key = self._normalize_type(options['type'])
+            index = self.anomalyTypeComboBox.findData(type_key)
+            if index >= 0:
+                self.anomalyTypeComboBox.setCurrentIndex(index)
+            else:
+                self.anomalyTypeComboBox.setCurrentText(str(options['type']))
 
         # Legacy no-op: tolerate historic settings that still include segments.
         _ = options.get('segments')

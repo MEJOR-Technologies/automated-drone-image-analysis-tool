@@ -374,40 +374,67 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
         if 'motion_algorithm' in config and hasattr(controls, 'motion_algorithm'):
             motion_algo = config['motion_algorithm']
             if isinstance(motion_algo, MotionAlgorithm):
-                motion_text = motion_algo.name
+                motion_value = motion_algo
             else:
                 motion_text = str(motion_algo).split('.')[-1].upper().replace("MOG2 BACKGROUND", "MOG2")
-            if motion_text in ["FRAME_DIFF", "MOG2", "KNN"]:
-                controls.motion_algorithm.setCurrentText(motion_text)
+                motion_value = {
+                    "FRAME_DIFF": MotionAlgorithm.FRAME_DIFF,
+                    "MOG2": MotionAlgorithm.MOG2,
+                    "KNN": MotionAlgorithm.KNN,
+                }.get(motion_text)
+            if motion_value is not None:
+                index = controls.motion_algorithm.findData(motion_value)
+                if index >= 0:
+                    controls.motion_algorithm.setCurrentIndex(index)
 
         if 'fusion_mode' in config and hasattr(controls, 'fusion_mode'):
             fusion_mode = config['fusion_mode']
-            fusion_text = fusion_mode.name if isinstance(fusion_mode, FusionMode) else str(fusion_mode).split('.')[-1].upper()
-            if fusion_text in ["UNION", "INTERSECTION", "COLOR_PRIORITY", "MOTION_PRIORITY"]:
-                controls.fusion_mode.setCurrentText(fusion_text)
+            if isinstance(fusion_mode, FusionMode):
+                fusion_value = fusion_mode
+            else:
+                fusion_text = str(fusion_mode).split('.')[-1].upper()
+                fusion_value = {
+                    "UNION": FusionMode.UNION,
+                    "INTERSECTION": FusionMode.INTERSECTION,
+                    "COLOR_PRIORITY": FusionMode.COLOR_PRIORITY,
+                    "MOTION_PRIORITY": FusionMode.MOTION_PRIORITY,
+                }.get(fusion_text)
+            if fusion_value is not None:
+                index = controls.fusion_mode.findData(fusion_value)
+                if index >= 0:
+                    controls.fusion_mode.setCurrentIndex(index)
 
         if 'color_space' in config and hasattr(controls, 'color_space'):
             color_space = config['color_space']
             if isinstance(color_space, ColorSpace):
-                color_space_name = color_space.name
+                color_space_value = color_space
             else:
                 color_space_name = str(color_space).split('.')[-1].upper().replace(" ", "_")
-            color_space_text = {"BGR": "RGB", "RGB": "RGB", "HSV": "HSV", "LAB": "LAB"}.get(color_space_name)
-            if color_space_text:
-                controls.color_space.setCurrentText(color_space_text)
+                color_space_value = {
+                    "BGR": ColorSpace.BGR,
+                    "RGB": ColorSpace.BGR,
+                    "HSV": ColorSpace.HSV,
+                    "LAB": ColorSpace.LAB,
+                }.get(color_space_name)
+            if color_space_value is not None:
+                index = controls.color_space.findData(color_space_value)
+                if index >= 0:
+                    controls.color_space.setCurrentIndex(index)
 
         if 'contour_method' in config and hasattr(controls, 'contour_method'):
             contour_method = config['contour_method']
             if isinstance(contour_method, ContourMethod):
-                contour_name = contour_method.name
+                contour_value = contour_method
             else:
                 contour_name = str(contour_method).split('.')[-1].upper().replace(" ", "_")
-            contour_text = {
-                "FIND_CONTOURS": "Find Contours",
-                "CONNECTED_COMPONENTS": "Connected Components",
-            }.get(contour_name)
-            if contour_text:
-                controls.contour_method.setCurrentText(contour_text)
+                contour_value = {
+                    "FIND_CONTOURS": ContourMethod.FIND_CONTOURS,
+                    "CONNECTED_COMPONENTS": ContourMethod.CONNECTED_COMPONENTS,
+                }.get(contour_name)
+            if contour_value is not None:
+                index = controls.contour_method.findData(contour_value)
+                if index >= 0:
+                    controls.contour_method.setCurrentIndex(index)
 
         # Slider values with model-space conversions.
         if 'color_rarity_percentile' in config and hasattr(controls, 'color_rarity_percentile'):

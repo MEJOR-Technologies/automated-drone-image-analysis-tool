@@ -47,7 +47,7 @@ class AIPersonDetectorControlWidget(TranslationMixin, QWidget):
         self.tabs.addTab(self.rendering_tab, self.tr("Rendering && Cleanup"))
 
         # Better defaults for person detection overlays.
-        self.rendering_tab.render_shape.setCurrentText("Box")
+        self.rendering_tab.render_shape.setCurrentIndex(0)
         self.rendering_tab.render_text.setChecked(True)
         self.rendering_tab.max_detections_to_render.setValue(25)
 
@@ -56,20 +56,20 @@ class AIPersonDetectorControlWidget(TranslationMixin, QWidget):
         widget = QWidget()
         layout = QVBoxLayout(widget)
 
-        model_group = QGroupBox("Model")
+        model_group = QGroupBox(self.tr("Model"))
         model_layout = QVBoxLayout(model_group)
-        self.cpu_only_checkbox = QCheckBox("Force CPU (disable DirectML)")
-        self.high_res_checkbox = QCheckBox("Use 1024 model (higher quality, slower)")
+        self.cpu_only_checkbox = QCheckBox(self.tr("Force CPU (disable DirectML)"))
+        self.high_res_checkbox = QCheckBox(self.tr("Use 1024 model (higher quality, slower)"))
         model_layout.addWidget(self.cpu_only_checkbox)
         model_layout.addWidget(self.high_res_checkbox)
         layout.addWidget(model_group)
 
-        detection_group = QGroupBox("Detection")
+        detection_group = QGroupBox(self.tr("Detection"))
         detection_layout = QGridLayout(detection_group)
         detection_layout.setColumnMinimumWidth(0, 180)
         detection_layout.setColumnStretch(1, 1)
 
-        detection_layout.addWidget(QLabel("Confidence Threshold:"), 0, 0)
+        detection_layout.addWidget(QLabel(self.tr("Confidence Threshold:")), 0, 0)
         confidence_layout = QHBoxLayout()
         self.confidence_slider = QSlider(Qt.Horizontal)
         self.confidence_slider.setRange(1, 100)

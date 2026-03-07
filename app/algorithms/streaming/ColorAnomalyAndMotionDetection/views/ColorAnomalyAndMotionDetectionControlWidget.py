@@ -87,8 +87,10 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
 
         algo_layout.addWidget(QLabel("Type:"), 0, 0)
         self.motion_algorithm = QComboBox()
-        self.motion_algorithm.addItems(["FRAME_DIFF", "MOG2", "KNN"])
-        self.motion_algorithm.setCurrentText("MOG2")
+        self.motion_algorithm.addItem("FRAME_DIFF", MotionAlgorithm.FRAME_DIFF)
+        self.motion_algorithm.addItem("MOG2", MotionAlgorithm.MOG2)
+        self.motion_algorithm.addItem("KNN", MotionAlgorithm.KNN)
+        self.motion_algorithm.setCurrentIndex(1)
         self.motion_algorithm.setToolTip("Motion detection algorithm (advanced setting):\n\n"
                                          "• FRAME_DIFF – Fast and simple; very sensitive to any motion.\n"
                                          "• MOG2 – Balanced and adaptive (recommended for most scenes).\n"
@@ -316,7 +318,7 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
                                                 "Recommended: 4-5 for a balanced number of detections; use lower for very clean results,\n"
                                                 "and higher only when you need to pull out very subtle color differences.")
         bits_layout.addWidget(self.color_quantization_bits)
-        self.color_bits_label = QLabel("4 bits")
+        self.color_bits_label = QLabel(self.tr("4 bits"))
         bits_layout.addWidget(self.color_bits_label)
         quant_layout.addLayout(bits_layout, 0, 1)
 
@@ -360,8 +362,9 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
 
         quant_layout.addWidget(QLabel("Blob Detection Method:"), 4, 0)
         self.contour_method = QComboBox()
-        self.contour_method.addItems(["Find Contours", "Connected Components"])
-        self.contour_method.setCurrentText("Find Contours")
+        self.contour_method.addItem(self.tr("Find Contours"), ContourMethod.FIND_CONTOURS)
+        self.contour_method.addItem(self.tr("Connected Components"), ContourMethod.CONNECTED_COMPONENTS)
+        self.contour_method.setCurrentIndex(0)
         self.contour_method.setToolTip("Method for extracting blob regions from the detection mask:\n\n"
                                        "Find Contours: Traditional OpenCV contour detection (default).\n"
                                        "  Better for irregular shapes, provides detailed contour outlines.\n\n"
@@ -379,8 +382,10 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
 
         colorspace_layout.addWidget(QLabel("Color Space:"), 0, 0)
         self.color_space = QComboBox()
-        self.color_space.addItems(["RGB", "HSV", "LAB"])
-        self.color_space.setCurrentText("RGB")
+        self.color_space.addItem("RGB", ColorSpace.BGR)
+        self.color_space.addItem("HSV", ColorSpace.HSV)
+        self.color_space.addItem("LAB", ColorSpace.LAB)
+        self.color_space.setCurrentIndex(0)
         self.color_space.setToolTip("Color space for histogram-based anomaly detection:\n\n"
                                     "RGB: Uses all 3 color channels. Fast, but sensitive to lighting.\n"
                                     "  A red shirt in shadow may not match a red shirt in sunlight.\n\n"
@@ -455,7 +460,7 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
                                             "Larger values = include a wider range of similar colors (more forgiving).\n"
                                             "Recommended: low values for precise colors, higher values when lighting or camera color shifts a lot.")
         hue_range_layout.addWidget(self.hue_expansion_range)
-        self.hue_range_label = QLabel("±5 (~10°)")
+        self.hue_range_label = QLabel(self.tr("±5 (~10°)"))
         hue_range_layout.addWidget(self.hue_range_label)
         hue_layout.addLayout(hue_range_layout)
 
@@ -508,8 +513,11 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
         mode_layout = QHBoxLayout()
         mode_layout.addWidget(QLabel("Fusion Mode:"))
         self.fusion_mode = QComboBox()
-        self.fusion_mode.addItems(["UNION", "INTERSECTION", "COLOR_PRIORITY", "MOTION_PRIORITY"])
-        self.fusion_mode.setCurrentText("UNION")
+        self.fusion_mode.addItem("UNION", FusionMode.UNION)
+        self.fusion_mode.addItem("INTERSECTION", FusionMode.INTERSECTION)
+        self.fusion_mode.addItem("COLOR_PRIORITY", FusionMode.COLOR_PRIORITY)
+        self.fusion_mode.addItem("MOTION_PRIORITY", FusionMode.MOTION_PRIORITY)
+        self.fusion_mode.setCurrentIndex(0)
         self.fusion_mode.setToolTip("How to combine motion and color detections:\n\n"
                                     "• UNION: Show all detections from both (most detections).\n"
                                     "  Use for: Maximum coverage, don't miss anything.\n\n"
@@ -609,7 +617,7 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
     def update_color_bits_label(self):
         """Update color bits label."""
         value = self.color_quantization_bits.value()
-        self.color_bits_label.setText(f"{value} bits")
+        self.color_bits_label.setText(self.tr("{value} bits").format(value=value))
         self.emit_config()
 
     def update_color_percentile_label(self):
@@ -621,7 +629,9 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
     def update_hue_range_label(self):
         """Update hue expansion range label."""
         value = self.hue_expansion_range.value()
-        self.hue_range_label.setText(f"±{value} (~{value * 2}°)")
+        self.hue_range_label.setText(
+            self.tr("±{value} (~{degrees}°)").format(value=value, degrees=value * 2)
+        )
         self.emit_config()
 
     def update_hsv_sat_label(self):
@@ -638,16 +648,16 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
 
     def _update_color_space_controls_visibility(self):
         """Show/hide HSV and LAB sliders based on selected color space."""
-        selected_space = self.color_space.currentText()
+        selected_space = self.color_space.currentData()
 
         # Show HSV controls only when HSV is selected
-        show_hsv = (selected_space == "HSV")
+        show_hsv = selected_space == ColorSpace.HSV
         self.hsv_sat_label_widget.setVisible(show_hsv)
         self.hsv_min_saturation.setVisible(show_hsv)
         self.hsv_sat_label.setVisible(show_hsv)
 
         # Show LAB controls only when LAB is selected
-        show_lab = (selected_space == "LAB")
+        show_lab = selected_space == ColorSpace.LAB
         self.lab_chroma_label_widget.setVisible(show_lab)
         self.lab_min_chroma.setVisible(show_lab)
         self.lab_chroma_label.setVisible(show_lab)
@@ -663,34 +673,21 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
 
     def get_config(self) -> Dict[str, Any]:
         """Get current configuration as dictionary - matches original format exactly."""
-        # Map string algorithm names to enum
-        algo_map = {
-            "FRAME_DIFF": MotionAlgorithm.FRAME_DIFF,
-            "MOG2": MotionAlgorithm.MOG2,
-            "KNN": MotionAlgorithm.KNN
-        }
+        motion_algorithm = self.motion_algorithm.currentData()
+        if not isinstance(motion_algorithm, MotionAlgorithm):
+            motion_algorithm = MotionAlgorithm.MOG2
 
-        # Map string fusion modes to enum
-        fusion_map = {
-            "UNION": FusionMode.UNION,
-            "INTERSECTION": FusionMode.INTERSECTION,
-            "COLOR_PRIORITY": FusionMode.COLOR_PRIORITY,
-            "MOTION_PRIORITY": FusionMode.MOTION_PRIORITY
-        }
+        contour_method = self.contour_method.currentData()
+        if not isinstance(contour_method, ContourMethod):
+            contour_method = ContourMethod.FIND_CONTOURS
 
-        # Map string contour methods to enum
-        contour_map = {
-            "Find Contours": ContourMethod.FIND_CONTOURS,
-            "Connected Components": ContourMethod.CONNECTED_COMPONENTS
-        }
+        color_space = self.color_space.currentData()
+        if not isinstance(color_space, ColorSpace):
+            color_space = ColorSpace.BGR
 
-        # Map string color spaces to enum
-        # Note: "RGB" in UI maps to BGR enum since OpenCV uses BGR internally
-        colorspace_map = {
-            "RGB": ColorSpace.BGR,
-            "HSV": ColorSpace.HSV,
-            "LAB": ColorSpace.LAB
-        }
+        fusion_mode = self.fusion_mode.currentData()
+        if not isinstance(fusion_mode, FusionMode):
+            fusion_mode = FusionMode.UNION
 
         # Map shape names to indices
 
@@ -723,7 +720,7 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
             'render_at_processing_res': self.input_processing_tab.render_at_processing_res.isChecked(),
 
             'enable_motion': self.enable_motion.isChecked(),
-            'motion_algorithm': algo_map[self.motion_algorithm.currentText()],
+            'motion_algorithm': motion_algorithm,
             'motion_threshold': self.motion_threshold.value(),
             'min_detection_area': self.min_detection_area.value(),
             'max_detection_area': self.max_detection_area.value(),
@@ -742,15 +739,15 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
             'color_rarity_percentile': float(self.color_rarity_percentile.value()),
             'color_min_detection_area': self.color_min_detection_area.value(),
             'color_max_detection_area': self.color_max_detection_area.value(),
-            'contour_method': contour_map[self.contour_method.currentText()],
-            'color_space': colorspace_map[self.color_space.currentText()],
+            'contour_method': contour_method,
+            'color_space': color_space,
             'hsv_min_saturation': self.hsv_min_saturation.value(),
             'lab_min_chroma': self.lab_min_chroma.value(),
             'enable_hue_expansion': self.enable_hue_expansion.isChecked(),
             'hue_expansion_range': self.hue_expansion_range.value(),
 
             'enable_fusion': self.enable_fusion.isChecked(),
-            'fusion_mode': fusion_map[self.fusion_mode.currentText()],
+            'fusion_mode': fusion_mode,
             'enable_color_exclusion': self.enable_color_exclusion.isChecked(),
             'excluded_hue_ranges': excluded_hue_ranges,
 
