@@ -178,6 +178,39 @@ class ImageLoadController(TranslationMixin):
         if hasattr(self.parent, 'aoiListWidget') and aoi_scroll_pos > 0:
             self.parent.aoiListWidget.verticalScrollBar().setValue(aoi_scroll_pos)
 
+    def refresh_image_preserving_view_from_cache(self):
+        """
+        Re-render the current image using cached services and preserve the view.
+
+        This path is used by lightweight overlay updates such as thermal histogram
+        hover highlighting, where reloading metadata from disk would be wasteful.
+        """
+        if not hasattr(self.parent, 'main_image') or self.parent.main_image is None:
+            return
+
+        image = self.parent.images[self.parent.current_image]
+        image_service = getattr(self.parent, 'current_image_service', None)
+        if image_service is None:
+            self.reload_image_preserving_view()
+            return
+
+        saved_zoom_stack = self.parent.main_image.zoomStack.copy() if self.parent.main_image.zoomStack else []
+        saved_transform = self.parent.main_image.transform()
+        aoi_scroll_pos = self.parent.aoiListWidget.verticalScrollBar().value() if hasattr(self.parent, 'aoiListWidget') else 0
+
+        mask_path = image.get('mask_path', '')
+        augmented_image = self._apply_augmentations(image_service, image, mask_path)
+        img = QImage(qimage2ndarray.array2qimage(augmented_image))
+
+        self.parent.main_image.zoomStack = saved_zoom_stack
+        self.parent.main_image.setImage(img)
+        self.parent.main_image.setTransform(saved_transform)
+        self.parent.main_image.zoomStack = saved_zoom_stack
+        self.parent.main_image._emit_zoom_if_changed()
+
+        if hasattr(self.parent, 'aoiListWidget') and aoi_scroll_pos > 0:
+            self.parent.aoiListWidget.verticalScrollBar().setValue(aoi_scroll_pos)
+
     def _sync_thumbnail_state(self, image):
         """Sync the active thumbnail state."""
         if 'thumbnail' in image:
@@ -241,6 +274,23 @@ class ImageLoadController(TranslationMixin):
                     image['areas_of_interest']
                 )
 
+        if hasattr(self.parent, 'thermal_histogram_controller'):
+            visibility_mask = self.parent.thermal_histogram_controller.get_visibility_mask()
+            if visibility_mask is not None:
+                augmented_image = ImageHighlightService.apply_visibility_mask(
+                    augmented_image,
+                    visibility_mask
+                )
+
+            hover_mask = self.parent.thermal_histogram_controller.get_hover_mask()
+            if hover_mask is not None:
+                augmented_image = ImageHighlightService.apply_boolean_mask_highlight(
+                    augmented_image,
+                    hover_mask,
+                    highlight_color=(0, 255, 255),
+                    alpha=0.55
+                )
+
         return augmented_image
 
     def _reset_zoom_if_valid(self):
@@ -260,6 +310,8 @@ class ImageLoadController(TranslationMixin):
 
     def _update_metadata_displays(self, image_service):
         """Update metadata displays in status bar."""
+        image = self.parent.images[self.parent.current_image]
+
         # Altitude
         altitude = image_service.get_relative_altitude(self.parent.distance_unit)
         if altitude:
@@ -303,13 +355,19 @@ class ImageLoadController(TranslationMixin):
             self.parent.coordinate_controller.update_current_coordinates(None)
 
         # Thermal data
+        temperature_data = None
         if self.parent.is_thermal and hasattr(self.parent, 'thermal_controller'):
-            image = self.parent.images[self.parent.current_image]
             image_path = image.get('path', '')
-            self.parent.thermal_controller.load_thermal_data(
+            temperature_data = self.parent.thermal_controller.load_thermal_data(
                 image_service,
                 image_path,
                 self.parent.temperature_unit
+            )
+
+        if hasattr(self.parent, 'thermal_histogram_controller'):
+            self.parent.thermal_histogram_controller.on_temperature_data_updated(
+                temperature_data,
+                image.get('areas_of_interest', [])
             )
 
     def _update_overlay(self, image_service):

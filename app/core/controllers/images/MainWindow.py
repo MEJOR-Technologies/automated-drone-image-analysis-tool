@@ -35,6 +35,7 @@ from core.controllers.images.ImageAnalysisGuide import ImageAnalysisGuide
 from helpers.IconHelper import IconHelper
 from helpers.TranslationMixin import TranslationMixin
 import os
+import xml.etree.ElementTree as ET
 os.environ['NUMPY_EXPERIMENTAL_DTYPE_API'] = '0'
 
 
@@ -683,7 +684,9 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         Opens a file dialog to select a file to load.
         """
         try:
-            file, _ = QFileDialog.getOpenFileName(self, self.tr("Select File"))
+            file, _ = QFileDialog.getOpenFileName(
+                self, self.tr("Select File"), "", self.tr("XML Files (*.xml);;All Files (*)")
+            )
             if file:
                 self._process_xml_file(file)
         except Exception as e:
@@ -847,6 +850,11 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
             if image_count > 0:
                 self._set_ViewResultsButton(True)
             self.AdvancedFeaturesWidget.setVisible(not self.algorithmWidget.is_thermal)
+        except ET.ParseError:
+            self.logger.error(f"Failed to parse XML file: {full_path}")
+            self._show_error(
+                self.tr("The selected file is not a valid XML file: {path}").format(path=full_path)
+            )
         except Exception as e:
             self.logger.error(e)
 

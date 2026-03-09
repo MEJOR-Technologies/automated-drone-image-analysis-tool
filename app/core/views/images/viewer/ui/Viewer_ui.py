@@ -162,6 +162,12 @@ class Ui_Viewer(object):
 
         self.horizontalLayout_5.addWidget(self.showAOIsButton)
 
+        self.thermalHistogramButton = QToolButton(self.mainHeaderWidget)
+        self.thermalHistogramButton.setObjectName(u"thermalHistogramButton")
+        self.thermalHistogramButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_5.addWidget(self.thermalHistogramButton)
+
         self.line_7 = QFrame(self.mainHeaderWidget)
         self.line_7.setObjectName(u"line_7")
         self.line_7.setFrameShape(QFrame.Shape.VLine)
@@ -578,6 +584,10 @@ class Ui_Viewer(object):
         self.showAOIsButton.setToolTip(QCoreApplication.translate("Viewer", u"Show AOIs", None))
 #endif // QT_CONFIG(tooltip)
         self.showAOIsButton.setText("")
+#if QT_CONFIG(tooltip)
+        self.thermalHistogramButton.setToolTip(QCoreApplication.translate("Viewer", u"Open Temperature Histogram", None))
+#endif // QT_CONFIG(tooltip)
+        self.thermalHistogramButton.setText("")
 #if QT_CONFIG(tooltip)
         self.GPSMapButton.setToolTip(QCoreApplication.translate("Viewer", u"Map with Image Locations (M)", None))
 #endif // QT_CONFIG(tooltip)

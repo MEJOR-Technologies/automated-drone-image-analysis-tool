@@ -294,6 +294,22 @@ Shows all AOIs from all images in a grid view</string>
                </widget>
               </item>
               <item>
+               <widget class="QToolButton" name="thermalHistogramButton">
+                <property name="toolTip">
+                 <string>Open Temperature Histogram</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>25</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="Line" name="line_7">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>

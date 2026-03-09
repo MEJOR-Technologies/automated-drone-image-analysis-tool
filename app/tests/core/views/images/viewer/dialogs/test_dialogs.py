@@ -5,6 +5,7 @@ Tests all dialogs used in the viewer.
 """
 
 import pytest
+import numpy as np
 from unittest.mock import patch, MagicMock
 from PySide6.QtWidgets import QApplication
 
@@ -24,6 +25,7 @@ from core.views.images.viewer.dialogs.MapExportDialog import MapExportDialog
 from core.views.images.viewer.dialogs.MeasureDialog import MeasureDialog
 from core.views.images.viewer.dialogs.PDFExportDialog import PDFExportDialog
 from core.views.images.viewer.dialogs.ReviewerNameDialog import ReviewerNameDialog
+from core.views.images.viewer.dialogs.ThermalHistogramDialog import ThermalHistogramDialog
 from core.views.images.viewer.dialogs.UpscaleDialog import UpscaleDialog
 from core.views.images.viewer.dialogs.ZipExportDialog import ZipExportDialog
 
@@ -145,6 +147,69 @@ def test_reviewer_name_dialog_initialization(app):
     """Test ReviewerNameDialog initialization."""
     dialog = ReviewerNameDialog(None)
     assert dialog is not None
+
+
+def test_thermal_histogram_dialog_initialization(app):
+    """Test ThermalHistogramDialog initialization."""
+    dialog = ThermalHistogramDialog(None)
+    assert dialog is not None
+
+
+def test_thermal_histogram_dialog_updates_range_from_slider(app, qtbot):
+    """Slider edits should update the chart selection and emit range changes."""
+    dialog = ThermalHistogramDialog(None)
+    qtbot.addWidget(dialog)
+
+    dialog.set_histogram_data(
+        {
+            'bin_edges': np.array([10.0, 11.0, 12.0, 13.0], dtype=np.float32),
+            'bin_centers': np.array([10.5, 11.5, 12.5], dtype=np.float32),
+            'counts': np.array([2, 4, 1], dtype=np.int32),
+            'anomaly_counts': np.array([0, 2, 1], dtype=np.int32),
+            'min_temperature': 10.0,
+            'max_temperature': 13.0,
+            'total_pixels': 7,
+            'anomaly_pixels': 3,
+        },
+        'C'
+    )
+
+    with qtbot.waitSignal(dialog.rangeChanged):
+        dialog.rangeSlider.set_values(11.0, 13.0, emit_signal=True)
+
+    minimum, maximum = dialog.chartWidget.selection_range()
+    assert minimum == 11.0
+    assert maximum == 13.0
+    assert "11.0" in dialog.minValueLabel.text()
+    assert "13.0" in dialog.maxValueLabel.text()
+
+
+def test_thermal_histogram_dialog_resets_zoom(app, qtbot):
+    """Reset Zoom should restore the full histogram x-axis range."""
+    dialog = ThermalHistogramDialog(None)
+    qtbot.addWidget(dialog)
+
+    dialog.set_histogram_data(
+        {
+            'bin_edges': np.array([10.0, 11.0, 12.0, 13.0], dtype=np.float32),
+            'bin_centers': np.array([10.5, 11.5, 12.5], dtype=np.float32),
+            'counts': np.array([2, 4, 1], dtype=np.int32),
+            'anomaly_counts': np.array([0, 2, 1], dtype=np.int32),
+            'min_temperature': 10.0,
+            'max_temperature': 13.0,
+            'total_pixels': 7,
+            'anomaly_pixels': 3,
+        },
+        'C'
+    )
+
+    dialog.chartWidget.set_view_range(11.0, 12.0)
+    dialog._update_zoom_button_state()
+    assert dialog.resetZoomButton.isEnabled()
+
+    dialog.reset_zoom()
+    assert dialog.chartWidget.view_range() == (10.0, 13.0)
+    assert not dialog.resetZoomButton.isEnabled()
 
 
 def test_upscale_dialog_initialization(app):
