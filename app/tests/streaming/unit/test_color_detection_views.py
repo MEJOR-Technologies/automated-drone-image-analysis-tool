@@ -35,6 +35,8 @@ class TestColorDetectionControlWidget:
         assert 'render_shape' in config
         assert 'min_area' in config
         assert 'max_area' in config
+        assert config['target_fps'] is None
+        assert widget.input_processing_tab.frame_rate_preset.currentText() == "Source FPS"
 
     def test_add_color(self, qapp):
         """Test adding a color range."""

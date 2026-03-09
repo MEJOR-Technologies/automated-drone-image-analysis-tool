@@ -298,7 +298,7 @@ class TestColorAnomalyAndMotionDetectionController:
             # enable_morphology uses service default (not in UI)
 
     def test_config_conversion_preserves_original_resolution(self, qapp, algorithm_config, mock_logger):
-        """Original resolution marker should remain as no-downsample sentinel."""
+        """Original resolution marker should normalize to native-resolution mode."""
         patch_path = (
             'algorithms.streaming.ColorAnomalyAndMotionDetection.controllers.'
             'ColorAnomalyAndMotionDetectionController.LoggerService'
@@ -311,8 +311,8 @@ class TestColorAnomalyAndMotionDetectionController:
                 'processing_height': 99999,
             })
 
-            assert service_config.processing_width == 99999
-            assert service_config.processing_height == 99999
+            assert service_config.processing_width is None
+            assert service_config.processing_height is None
 
     def test_config_conversion_maps_string_enums(self, qapp, algorithm_config, mock_logger):
         """String-based config values should map to expected enums."""

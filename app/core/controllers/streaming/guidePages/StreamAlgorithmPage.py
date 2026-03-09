@@ -11,8 +11,8 @@ class StreamAlgorithmPage(BasePage):
         super().__init__(wizard_data, settings_service, dialog)
         # Algorithm selection state
         self.algorithm_decision_state = {
+            'person_target': None,
             'specific_color': None,
-            'person_detection': None,
         }
         self.selected_algorithm = None
 
@@ -78,14 +78,16 @@ class StreamAlgorithmPage(BasePage):
     def _reset_algorithm_selection(self):
         """Reset algorithm selection to initial state."""
         self.algorithm_decision_state = {
+            'person_target': None,
             'specific_color': None,
-            'person_detection': None,
         }
         self.selected_algorithm = None
         # Clear algorithm from wizard_data to ensure fresh start
         self.wizard_data["algorithm"] = None
+        self.wizard_data.pop("algorithm_reason", None)
+        self.wizard_data.pop("secondary_recommendation", None)
         self.dialog.labelCurrentQuestion.setText(
-            self.tr("Are you looking for specific colors?")
+            self.tr("Are you primarily looking for a person?")
         )
         self.dialog.labelAlgorithmResult.setVisible(False)
         self.dialog.buttonYes.setVisible(True)
@@ -142,27 +144,33 @@ class StreamAlgorithmPage(BasePage):
         """Handle algorithm selection decision tree answers."""
         state = self.algorithm_decision_state
 
-        if state['specific_color'] is None:
-            state['specific_color'] = answer
-            if answer:  # Yes - looking for specific colors
-                # Color Detection (color range)
-                self.selected_algorithm = "ColorDetection"
+        if state['person_target'] is None:
+            state['person_target'] = answer
+            if answer:
+                self.selected_algorithm = "AIPersonDetector"
+                self.wizard_data["secondary_recommendation"] = "ColorDetection"
+                self.wizard_data["algorithm_reason"] = "person_target"
                 self._show_algorithm_result()
-            else:  # No - not looking for specific colors
+            else:
                 self.dialog.labelCurrentQuestion.setText(
-                    self.tr("Are you primarily trying to detect people?")
+                    self.tr("Do you know a distinctive target color?")
                 )
                 self.dialog.labelAlgorithmResult.setVisible(False)
                 self.selected_algorithm = None
                 if hasattr(self, "on_validation_changed"):
                     self.on_validation_changed()
                 return
-        elif state['person_detection'] is None:
-            state['person_detection'] = answer
+        elif state['specific_color'] is None:
+            state['specific_color'] = answer
             if answer:
-                self.selected_algorithm = "AIPersonDetector"
+                self.selected_algorithm = "ColorDetection"
+                self.wizard_data["algorithm_reason"] = "known_color_target"
+                self.wizard_data.pop("secondary_recommendation", None)
             else:
                 self.selected_algorithm = "ColorAnomalyAndMotionDetection"
+                self.wizard_data["algorithm_reason"] = "unknown_target_or_anomaly_scan"
+                self.wizard_data.pop("secondary_recommendation", None)
+                self._show_algorithm_result()
             self._show_algorithm_result()
 
     def _show_algorithm_result(self):
@@ -175,9 +183,17 @@ class StreamAlgorithmPage(BasePage):
                 "AIPersonDetector": self.tr("AI Person Detector"),
             }
             display_name = algorithm_names.get(self.selected_algorithm, self.selected_algorithm)
-            self.dialog.labelAlgorithmResult.setText(
-                self.tr("Selected Algorithm: {algorithm}").format(algorithm=display_name)
-            )
+            result_text = self.tr("Selected Algorithm: {algorithm}").format(algorithm=display_name)
+            secondary = self.wizard_data.get("secondary_recommendation")
+            if secondary:
+                secondary_name = algorithm_names.get(secondary, secondary)
+                result_text = self.tr(
+                    "{result}\nSecondary Recommendation: {secondary}"
+                ).format(
+                    result=result_text,
+                    secondary=secondary_name,
+                )
+            self.dialog.labelAlgorithmResult.setText(result_text)
             self.dialog.labelAlgorithmResult.setVisible(True)
             self.dialog.buttonYes.setVisible(False)
             self.dialog.buttonNo.setVisible(False)

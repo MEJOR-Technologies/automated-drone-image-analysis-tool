@@ -33,10 +33,20 @@ class ThermalResidualAnomalyController(QWidget, Ui_ThermalResidualAnomaly, Algor
             return 'Cold'
         return 'Both'
 
+    @staticmethod
+    def _serialize_type(value):
+        """Persist canonical type keys as the legacy labels expected by saved configs."""
+        type_key = ThermalResidualAnomalyController._normalize_type(value)
+        return {
+            'Hot': 'Above Mean',
+            'Cold': 'Below Mean',
+            'Both': 'Above or Below Mean',
+        }.get(type_key, 'Above or Below Mean')
+
     def get_options(self):
         options = dict()
         options['sensitivity'] = int(self.sensitivityValueLabel.text())
-        options['type'] = self._normalize_type(self.anomalyTypeComboBox.currentData())
+        options['type'] = self._serialize_type(self.anomalyTypeComboBox.currentData())
         return options
 
     def update_sensitivity(self):

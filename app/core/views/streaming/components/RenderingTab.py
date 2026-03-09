@@ -8,13 +8,19 @@ across all streaming detection algorithms.
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QGridLayout,
                                QLabel, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QGroupBox)
 from PySide6.QtCore import Qt
+from core.services.streaming.contracts import StreamAlgorithmCapabilities
 from helpers.TranslationMixin import TranslationMixin
 
 
 class RenderingTab(TranslationMixin, QWidget):
     """Shared Rendering tab widget for streaming algorithms."""
 
-    def __init__(self, parent=None, show_detection_color_option: bool = True):
+    def __init__(
+        self,
+        parent=None,
+        show_detection_color_option: bool = True,
+        capabilities: StreamAlgorithmCapabilities | None = None,
+    ):
         """
         Initialize the Rendering tab.
 
@@ -25,7 +31,9 @@ class RenderingTab(TranslationMixin, QWidget):
         """
         super().__init__(parent)
         self.show_detection_color_option = show_detection_color_option
+        self.capabilities = capabilities or StreamAlgorithmCapabilities()
         self.setup_ui()
+        self.apply_capabilities(self.capabilities)
         self._apply_translations()
 
     def setup_ui(self):
@@ -33,8 +41,8 @@ class RenderingTab(TranslationMixin, QWidget):
         layout = QVBoxLayout(self)
 
         # Shape Options
-        shape_group = QGroupBox("Shape Options")
-        shape_layout = QGridLayout(shape_group)
+        self.shape_group = QGroupBox("Shape Options")
+        shape_layout = QGridLayout(self.shape_group)
 
         shape_layout.addWidget(QLabel("Shape Mode:"), 0, 0)
         self.render_shape = QComboBox()
@@ -51,11 +59,11 @@ class RenderingTab(TranslationMixin, QWidget):
                                      "  Use for: Clean video with minimal overlays.")
         shape_layout.addWidget(self.render_shape, 0, 1)
 
-        layout.addWidget(shape_group)
+        layout.addWidget(self.shape_group)
 
         # Text & Contours
-        vis_group = QGroupBox("Visual Options")
-        vis_layout = QVBoxLayout(vis_group)
+        self.vis_group = QGroupBox("Visual Options")
+        vis_layout = QVBoxLayout(self.vis_group)
 
         self.render_text = QCheckBox("Show Text Labels (slower)")
         self.render_text.setToolTip("Displays text labels near detections showing detection information.\n"
@@ -81,11 +89,11 @@ class RenderingTab(TranslationMixin, QWidget):
                                                 "Recommended: ON for color detection, OFF for motion-only.")
             vis_layout.addWidget(self.use_detection_color)
 
-        layout.addWidget(vis_group)
+        layout.addWidget(self.vis_group)
 
         # Detection Limits
-        limit_group = QGroupBox("Performance Limits")
-        limit_layout = QGridLayout(limit_group)
+        self.limit_group = QGroupBox("Performance Limits")
+        limit_layout = QGridLayout(self.limit_group)
 
         limit_layout.addWidget(QLabel("Max Detections:"), 0, 0)
         self.max_detections_to_render = QSpinBox()
@@ -99,11 +107,11 @@ class RenderingTab(TranslationMixin, QWidget):
                                                  "Recommended: 10 for general use, 50 for complex rendering (text+contours).")
         limit_layout.addWidget(self.max_detections_to_render, 0, 1)
 
-        layout.addWidget(limit_group)
+        layout.addWidget(self.limit_group)
 
         # Temporal Voting
-        temporal_group = QGroupBox("Temporal Voting")
-        temporal_layout = QVBoxLayout(temporal_group)
+        self.temporal_group = QGroupBox("Temporal Voting")
+        temporal_layout = QVBoxLayout(self.temporal_group)
 
         self.enable_temporal_voting = QCheckBox("Enable Temporal Voting (reduce flicker)")
         self.enable_temporal_voting.setChecked(True)
@@ -140,11 +148,11 @@ class RenderingTab(TranslationMixin, QWidget):
 
         temporal_layout.addLayout(window_layout)
 
-        layout.addWidget(temporal_group)
+        layout.addWidget(self.temporal_group)
 
         # Detection Cleanup (aspect ratio + clustering)
-        cleanup_group = QGroupBox("Detection Cleanup")
-        cleanup_layout = QVBoxLayout(cleanup_group)
+        self.cleanup_group = QGroupBox("Detection Cleanup")
+        cleanup_layout = QVBoxLayout(self.cleanup_group)
 
         # Aspect Ratio Filter
         self.enable_aspect_ratio_filter = QCheckBox("Enable Aspect Ratio Filtering")
@@ -181,8 +189,8 @@ class RenderingTab(TranslationMixin, QWidget):
         cleanup_layout.addLayout(ratio_layout)
 
         # Detection Clustering
-        clustering_group = QGroupBox("Detection Clustering")
-        clustering_layout = QVBoxLayout(clustering_group)
+        self.clustering_group = QGroupBox("Detection Clustering")
+        clustering_layout = QVBoxLayout(self.clustering_group)
 
         self.enable_detection_clustering = QCheckBox("Enable Detection Clustering")
         self.enable_detection_clustering.setChecked(False)  # Default OFF
@@ -204,10 +212,44 @@ class RenderingTab(TranslationMixin, QWidget):
         cluster_dist_layout.addWidget(self.clustering_distance, 0, 1)
 
         clustering_layout.addLayout(cluster_dist_layout)
-        cleanup_layout.addWidget(clustering_group)
+        cleanup_layout.addWidget(self.clustering_group)
 
-        layout.addWidget(cleanup_group)
+        layout.addWidget(self.cleanup_group)
         layout.addStretch()
+
+    def apply_capabilities(self, capabilities: StreamAlgorithmCapabilities):
+        """Apply shared-control capability gating."""
+        self.capabilities = capabilities
+
+        supports_contours = bool(capabilities.supports_render_contours)
+        self.render_contours.setVisible(supports_contours)
+        if not supports_contours:
+            self.render_contours.setChecked(False)
+
+        supports_detection_color = bool(capabilities.supports_use_detection_color)
+        if hasattr(self, "use_detection_color"):
+            self.use_detection_color.setVisible(supports_detection_color and self.show_detection_color_option)
+            if not supports_detection_color:
+                self.use_detection_color.setChecked(False)
+
+        supports_temporal = bool(capabilities.supports_temporal_voting)
+        self.temporal_group.setVisible(supports_temporal)
+        if not supports_temporal:
+            self.enable_temporal_voting.setChecked(False)
+
+        supports_aspect_ratio = bool(capabilities.supports_aspect_ratio_filter)
+        self.enable_aspect_ratio_filter.setVisible(supports_aspect_ratio)
+        self.min_aspect_ratio.setVisible(supports_aspect_ratio)
+        self.max_aspect_ratio.setVisible(supports_aspect_ratio)
+        if not supports_aspect_ratio:
+            self.enable_aspect_ratio_filter.setChecked(False)
+
+        supports_clustering = bool(capabilities.supports_detection_clustering)
+        self.clustering_group.setVisible(supports_clustering)
+        if not supports_clustering:
+            self.enable_detection_clustering.setChecked(False)
+
+        self.cleanup_group.setVisible(supports_aspect_ratio or supports_clustering)
 
     def get_config(self) -> dict:
         """

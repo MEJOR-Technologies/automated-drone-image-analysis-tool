@@ -25,7 +25,7 @@ class TestAIPersonDetectorController:
         assert controller.theme == "dark"
         assert controller.control_widget is not None
         assert controller.person_detector is not None
-        assert controller.provides_custom_rendering is True
+        assert controller.provides_custom_rendering is False
 
     def test_process_frame_emits_detection_dicts(self, qapp, algorithm_config, sample_frame, mock_logger):
         """Controller should convert service detections into stream viewer format."""
@@ -82,3 +82,19 @@ class TestAIPersonDetectorController:
         assert widget_cfg["max_detections"] == 5
         assert widget_cfg["target_fps"] == 15
         assert controller.person_detector.update_config.call_count >= 1
+
+    def test_capabilities_hide_unsupported_shared_controls(self, qapp, algorithm_config, mock_logger):
+        """AIPerson should explicitly disable unsupported shared rendering controls."""
+        with patch(
+            "algorithms.streaming.AIPersonDetector.controllers.AIPersonDetectorController.LoggerService",
+            return_value=mock_logger,
+        ):
+            controller = AIPersonDetectorController(algorithm_config, "dark")
+
+        capabilities = controller.get_stream_capabilities()
+
+        assert capabilities.supports_mask_controls is True
+        assert capabilities.supports_render_at_processing_resolution is False
+        assert capabilities.supports_render_contours is False
+        assert capabilities.supports_use_detection_color is False
+        assert capabilities.supports_detection_clustering is False

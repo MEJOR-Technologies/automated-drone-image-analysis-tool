@@ -41,8 +41,8 @@ class StreamConfig:
     stream_type: StreamType = StreamType.RTMP
     reconnect_attempts: int = 5
     buffer_size: int = 1  # Minimize buffering for real-time
-    fps_limit: int = DEFAULT_SAFETY_FPS_LIMIT
-    resolution_limit: Tuple[int, int] = (1920, 1080)
+    fps_limit: Optional[int] = None
+    resolution_limit: Optional[Tuple[int, int]] = None
     hdmi_backend: Optional[int] = None  # OpenCV backend for HDMI capture
 
 
@@ -77,6 +77,8 @@ class RTMPStreamService(QThread):
     def __init__(self, config: StreamConfig):
         super().__init__()
         self.config = config
+        self.config.fps_limit = self._normalize_fps_limit(config.fps_limit)
+        self.config.resolution_limit = self._normalize_resolution_limit(config.resolution_limit)
         self.logger = LoggerService()
 
         # Stream state
@@ -91,6 +93,7 @@ class RTMPStreamService(QThread):
         self._fps_start_time = time.time()
         self._current_fps = 0
         self._capture_dropped_frames = 0
+        self._source_fps_hint = 0.0
 
         # Video file playback control
         self._is_file = (config.stream_type == StreamType.FILE)
@@ -114,11 +117,49 @@ class RTMPStreamService(QThread):
         self._max_reconnect_delay = 30.0
 
     @staticmethod
-    def _normalize_fps_limit(fps_limit: Optional[int]) -> int:
-        """Normalize FPS limits to a safe supported range."""
-        if fps_limit is None or fps_limit <= 0:
-            return DEFAULT_SAFETY_FPS_LIMIT
+    def _normalize_fps_limit(fps_limit: Optional[int]) -> Optional[int]:
+        """Normalize FPS limits to a supported range or None for source cadence."""
+        if fps_limit is None:
+            return None
+        if int(fps_limit) <= 0:
+            return None
         return max(1, min(int(fps_limit), MAX_REASONABLE_FPS_LIMIT))
+
+    @staticmethod
+    def _normalize_resolution_limit(
+        resolution_limit: Optional[Tuple[Optional[int], Optional[int]]]
+    ) -> Optional[Tuple[int, int]]:
+        """Normalize legacy native-resolution sentinels to None."""
+        if resolution_limit is None:
+            return None
+
+        try:
+            width, height = resolution_limit
+        except (TypeError, ValueError):
+            return None
+
+        if width is None or height is None:
+            return None
+
+        try:
+            width = int(width)
+            height = int(height)
+        except (TypeError, ValueError):
+            return None
+
+        if width <= 0 or height <= 0:
+            return None
+        if width >= 99999 or height >= 99999:
+            return None
+
+        return width, height
+
+    def _get_live_source_fps_limit(self) -> int:
+        """Return the live-source cadence capped to a reasonable processing rate."""
+        source_fps = float(self._source_fps_hint or 0.0)
+        if source_fps <= 0.0:
+            source_fps = float(MAX_REASONABLE_FPS_LIMIT)
+        return max(1, min(int(round(source_fps)), MAX_REASONABLE_FPS_LIMIT))
 
     def run(self):
         """Main thread loop for stream processing."""
@@ -211,7 +252,7 @@ class RTMPStreamService(QThread):
 
             # Optimize for real-time processing
             self._cap.set(cv2.CAP_PROP_BUFFERSIZE, self.config.buffer_size)
-            if self.config.fps_limit and self.config.fps_limit > 0:
+            if self.config.fps_limit is not None and self.config.fps_limit > 0:
                 self._cap.set(cv2.CAP_PROP_FPS, self.config.fps_limit)
 
             # Additional settings for HDMI/USB capture devices
@@ -243,6 +284,7 @@ class RTMPStreamService(QThread):
             fps = self._cap.get(cv2.CAP_PROP_FPS)
             width = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self._source_fps_hint = float(fps) if fps and fps > 0 else 0.0
 
             # Get file-specific properties if this is a video file
             if self._is_file:
@@ -295,7 +337,8 @@ class RTMPStreamService(QThread):
                 current_time = time.time()
                 # Re-read current FPS limit each iteration so runtime updates apply immediately.
                 fps_limit = self._normalize_fps_limit(self.config.fps_limit)
-                frame_interval = 1.0 / fps_limit
+                live_fps_limit = fps_limit if fps_limit is not None else self._get_live_source_fps_limit()
+                frame_interval = (1.0 / live_fps_limit) if live_fps_limit > 0 else 0.0
 
                 # Handle pause state and seek requests for video files
                 if self._is_file:
@@ -322,11 +365,11 @@ class RTMPStreamService(QThread):
                 if self.config.stream_type not in (StreamType.HDMI_CAPTURE, StreamType.RTMP):
                     target_interval = 0.0
                     if self._is_file and self._video_fps > 0:
-                        # "Original" mode (fps_limit <= 0) follows the source file rate.
+                        # Source-FPS mode follows the source file rate.
                         # Explicit limits cap that source rate.
-                        effective_fps = self._video_fps if fps_limit <= 0 else min(self._video_fps, fps_limit)
+                        effective_fps = self._video_fps if fps_limit is None else min(self._video_fps, fps_limit)
                         target_interval = (1.0 / effective_fps) if effective_fps > 0 else 0.0
-                    elif fps_limit > 0:
+                    elif fps_limit is not None and fps_limit > 0:
                         target_interval = frame_interval
 
                     if target_interval > 0 and current_time - last_process_time < target_interval:
@@ -390,7 +433,10 @@ class RTMPStreamService(QThread):
                     # Skip invalid frames (0 dimensions from capture devices without signal)
                     if width <= 0 or height <= 0:
                         continue
-                    if width > self.config.resolution_limit[0] or height > self.config.resolution_limit[1]:
+                    if (
+                        self.config.resolution_limit is not None and
+                        (width > self.config.resolution_limit[0] or height > self.config.resolution_limit[1])
+                    ):
                         scale_factor = min(
                             self.config.resolution_limit[0] / width,
                             self.config.resolution_limit[1] / height
@@ -442,7 +488,7 @@ class RTMPStreamService(QThread):
                     break
                 time.sleep(0.1)  # Small delay before retry
 
-    def set_fps_limit(self, fps_limit: Optional[int]) -> int:
+    def set_fps_limit(self, fps_limit: Optional[int]) -> Optional[int]:
         """
         Update FPS limit while stream is running.
 
@@ -453,7 +499,7 @@ class RTMPStreamService(QThread):
         self.config.fps_limit = normalized
 
         # Best effort: apply to capture backend immediately where supported.
-        if self._cap and self._cap.isOpened():
+        if self._cap and self._cap.isOpened() and normalized is not None:
             try:
                 self._cap.set(cv2.CAP_PROP_FPS, normalized)
             except Exception:
@@ -626,6 +672,7 @@ class RTMPStreamService(QThread):
             'url': self.config.url,
             'type': self.config.stream_type.value,
             'fps': self._current_fps,
+            'source_fps': self._video_fps if self._is_file else self._source_fps_hint,
             'resolution': (
                 int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                 int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -654,10 +701,12 @@ class StreamManager(QObject):
         self._current_config = None
 
     @staticmethod
-    def _normalize_fps_limit(fps_limit: Optional[int]) -> int:
-        """Normalize FPS limits to safe defaults/range."""
-        if fps_limit is None or fps_limit <= 0:
-            return DEFAULT_SAFETY_FPS_LIMIT
+    def _normalize_fps_limit(fps_limit: Optional[int]) -> Optional[int]:
+        """Normalize FPS limits to a supported range or None for source cadence."""
+        if fps_limit is None:
+            return None
+        if int(fps_limit) <= 0:
+            return None
         return max(1, min(int(fps_limit), MAX_REASONABLE_FPS_LIMIT))
 
     def connect_to_stream(self, url: str, stream_type: StreamType = StreamType.RTMP,
@@ -671,8 +720,8 @@ class StreamManager(QObject):
             stream_type: Type of stream
             hdmi_backend: Optional OpenCV backend ID for HDMI capture
             fps_limit: Optional target FPS limit.
-                - `None`: use default safe cap
-                - `0` or less: use default safe cap
+                - `None`: follow source cadence
+                - `0` or less: follow source cadence
                 - `> 0`: explicit cap
 
         Returns:
@@ -691,7 +740,7 @@ class StreamManager(QObject):
                 reconnect_attempts=5,
                 buffer_size=1,  # Minimal buffering
                 fps_limit=effective_fps_limit,  # This is the TARGET processing FPS, not video FPS
-                resolution_limit=(1920, 1080),
+                resolution_limit=None,
                 hdmi_backend=hdmi_backend
             )
 

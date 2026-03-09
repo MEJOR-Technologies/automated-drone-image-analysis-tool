@@ -12,14 +12,27 @@ from algorithms.streaming.AIPersonDetector.services.AIPersonStreamingService imp
 class TestAIPersonStreamingService:
     """Test suite for AIPersonStreamingService."""
 
+    def test_default_config_uses_source_fps_mode(self):
+        """Default service config should not impose an algorithm FPS cap."""
+        cfg = AIPersonStreamingConfig()
+
+        assert cfg.confidence_threshold == 0.50
+        assert cfg.render_text is True
+        assert cfg.max_detections_to_render == 25
+        assert cfg.target_fps is None
+        assert cfg.enable_temporal_voting is False
+        assert cfg.enable_aspect_ratio_filter is False
+        assert cfg.max_aspect_ratio == 5.0
+
     def test_process_frame_converts_raw_boxes_to_detections(self):
         """Service should convert model boxes into streaming detection objects."""
         service = AIPersonStreamingService()
         service.update_config(
             AIPersonStreamingConfig(
                 confidence_threshold=0.5,
-                max_detections=10,
-                show_labels=False,
+                max_detections_to_render=10,
+                render_text=False,
+                enable_temporal_voting=False,
             )
         )
 
@@ -40,6 +53,99 @@ class TestAIPersonStreamingService:
         assert detections[0].detection_type == "person"
         assert detections[0].confidence == 0.9
         assert timings.total_ms >= 0.0
+
+    def test_apply_nms_removes_overlapping_boxes(self):
+        """Overlapping tiled/full-frame detections should merge via NMS."""
+        service = AIPersonStreamingService()
+
+        filtered = service._apply_nms(
+            [
+                (10, 10, 110, 210, 0.95),
+                (12, 12, 108, 208, 0.90),
+                (200, 50, 260, 180, 0.80),
+            ],
+            0.45,
+        )
+
+        assert len(filtered) == 2
+        assert filtered[0][:4] == (10, 10, 110, 210)
+
+    def test_apply_mask_filter_rejects_outside_mask(self):
+        """Mask filtering should keep only detections inside the allowed region."""
+        service = AIPersonStreamingService()
+        detections = [
+            service._to_detection_objects([(10, 10, 40, 60, 0.9)], 1.0, 1.0, 1.0, 0.5, 0)[0],
+            service._to_detection_objects([(70, 70, 90, 95, 0.9)], 1.0, 1.0, 1.0, 0.5, 0)[0],
+        ]
+        cfg = AIPersonStreamingConfig(
+            mask_enabled=True,
+            frame_mask_enabled=True,
+            frame_buffer_pixels=20,
+            enable_temporal_voting=False,
+        )
+
+        filtered = service._apply_mask_filter(detections, (100, 100, 3), cfg)
+
+        assert len(filtered) == 1
+        assert filtered[0].centroid == detections[0].centroid
+
+    def test_temporal_voting_requires_confirmation(self):
+        """Detections should only emit once they persist across the configured window."""
+        service = AIPersonStreamingService()
+        cfg = AIPersonStreamingConfig(
+            enable_temporal_voting=True,
+            temporal_window_frames=5,
+            temporal_threshold_frames=3,
+        )
+        detection = service._to_detection_objects([(10, 10, 50, 110, 0.9)], 1.0, 1.0, 1.0, 0.5, 0)[0]
+
+        assert service._apply_temporal_voting([detection], cfg) == []
+        assert service._apply_temporal_voting([detection], cfg) == []
+
+        stabilized = service._apply_temporal_voting([detection], cfg)
+
+        assert len(stabilized) == 1
+        assert stabilized[0].bbox == detection.bbox
+
+    def test_prepare_model_input_restores_letterboxed_coordinates(self):
+        """Letterbox preprocessing should preserve geometry when mapping back."""
+        service = AIPersonStreamingService()
+        cfg = AIPersonStreamingConfig(high_resolution_model=False, use_letterbox_preprocessing=True)
+        frame = np.zeros((200, 400, 3), dtype=np.uint8)
+
+        input_tensor, scale_x, scale_y, pad_x, pad_y = service._prepare_model_input(frame, 640, cfg)
+
+        assert input_tensor.shape == (1, 3, 640, 640)
+        assert scale_x == 1.6
+        assert scale_y == 1.6
+        assert pad_x == 0.0
+        assert pad_y == 160.0
+
+    def test_prepare_model_input_uses_axis_specific_scaling_without_letterbox(self):
+        """Stretch-to-square preprocessing must restore X/Y with separate scales."""
+        service = AIPersonStreamingService()
+        cfg = AIPersonStreamingConfig(high_resolution_model=False, use_letterbox_preprocessing=False)
+        frame = np.zeros((200, 400, 3), dtype=np.uint8)
+
+        input_tensor, scale_x, scale_y, pad_x, pad_y = service._prepare_model_input(frame, 640, cfg)
+
+        assert input_tensor.shape == (1, 3, 640, 640)
+        assert scale_x == 1.6
+        assert scale_y == 3.2
+        assert pad_x == 0.0
+        assert pad_y == 0.0
+
+    def test_tiled_inference_fallback_disables_tiles_after_slow_window(self):
+        """Sustained slow tiled inference should auto-disable tiles until reset."""
+        service = AIPersonStreamingService()
+        service._last_inference_used_tiles = True
+
+        for _ in range(30):
+            service._update_tiled_inference_fallback(200.0)
+
+        assert service._tiled_inference_fallback_active is True
+        service.reset()
+        assert service._tiled_inference_fallback_active is False
 
     def test_process_frame_returns_empty_when_runtime_unavailable(self):
         """Service should fail gracefully when ONNX runtime is unavailable."""

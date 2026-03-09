@@ -6,6 +6,8 @@ for comprehensive anomaly detection. Integrated into StreamViewerWindow followin
 the StreamAlgorithmController pattern.
 """
 
+from typing import Dict, List, Any, Optional
+
 # Set environment variables
 from algorithms.streaming.ColorAnomalyAndMotionDetection.views.ColorAnomalyAndMotionDetectionControlWidget import ColorAnomalyAndMotionDetectionControlWidget
 from algorithms.streaming.ColorAnomalyAndMotionDetection.services import (
@@ -18,13 +20,14 @@ from algorithms.streaming.ColorAnomalyAndMotionDetection.services import (
     Detection
 )
 from core.services.LoggerService import LoggerService
+from core.services.streaming import StreamAlgorithmCapabilities
+from core.services.streaming.adapters import ColorAnomalyMotionStreamAdapter
 from core.controllers.streaming.base import StreamAlgorithmController
 from helpers.TranslationMixin import TranslationMixin
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget,
                                QLabel, QSpinBox, QDoubleSpinBox, QCheckBox,
                                QComboBox, QHBoxLayout, QGridLayout)
 from PySide6.QtCore import Qt, Slot, Signal
-from typing import Dict, List, Any
 import numpy as np
 import os
 os.environ.setdefault('NUMPY_EXPERIMENTAL_DTYPE_API', '0')
@@ -44,15 +47,18 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
     - False positive reduction
     """
 
+    _CAPABILITIES = StreamAlgorithmCapabilities()
+
     def __init__(self, algorithm_config: Dict[str, Any], theme: str, parent=None):
         """Initialize color anomaly and motion detection controller."""
         super().__init__(algorithm_config, theme, parent)
 
         self.logger = LoggerService()
-        self.provides_custom_rendering = True
+        self.provides_custom_rendering = False
 
         # Initialize color anomaly and motion detector orchestrator
         self.integrated_detector = ColorAnomalyAndMotionDetectionOrchestrator()
+        self.stream_service = ColorAnomalyMotionStreamAdapter(self.integrated_detector)
 
         # State
         self.detection_count = 0
@@ -75,7 +81,9 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
         layout.setSpacing(10)
 
         # Color Anomaly and Motion Detection Control Widget (algorithm-specific)
-        self.integrated_controls = ColorAnomalyAndMotionDetectionControlWidget()
+        self.integrated_controls = ColorAnomalyAndMotionDetectionControlWidget(
+            capabilities=self.get_stream_capabilities()
+        )
         self.integrated_controls.configChanged.connect(self._on_config_changed)
         layout.addWidget(self.integrated_controls)
 
@@ -83,6 +91,10 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
         if hasattr(self, 'integrated_detector'):
             initial_config = self.integrated_controls.get_config()
             self._on_config_changed(initial_config)
+
+    def get_stream_capabilities(self) -> StreamAlgorithmCapabilities:
+        """Declare shared streaming controls supported by this algorithm."""
+        return self._CAPABILITIES
 
     def process_frame(self, frame: np.ndarray, timestamp: float) -> List[Dict]:
         """
@@ -96,30 +108,15 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
             List of detection dictionaries
         """
         try:
-            # Perform integrated detection - returns (annotated_frame, detections, timings)
-            annotated_frame, detections, timings = self.integrated_detector.process_frame(frame, timestamp)
-
-            # Convert to standard format
-            detection_dicts = []
-            for detection in detections:
-                detection_dicts.append({
-                    'bbox': detection.bbox,
-                    'centroid': detection.centroid,
-                    'area': detection.area,
-                    'confidence': detection.confidence,
-                    'class_name': detection.detection_type,
-                    'detection_type': detection.detection_type,
-                    'timestamp': detection.timestamp,
-                    'metadata': detection.metadata
-                })
-
-            self.detection_count += len(detections)
+            result = self.stream_service.process_frame(frame, timestamp)
+            detection_dicts = result.detection_dicts()
+            self.detection_count += len(detection_dicts)
 
             # Emit detections
             self.detectionsReady.emit(detection_dicts)
 
-            # Emit annotated frame (already annotated by process_frame)
-            self.frameProcessed.emit(annotated_frame)
+            # Emit overlay frame; shared renderer draws detections in the viewer.
+            self.frameProcessed.emit(result.rendered_frame if result.rendered_frame is not None else frame.copy())
 
             return detection_dicts
 
@@ -156,22 +153,15 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
         # Get existing config as base
         base_config = self.integrated_detector.config
 
-        # Handle processing resolution - widget now returns processing_width/height directly
-        processing_width = ui_config.get('processing_width', base_config.processing_width)
-        processing_height = ui_config.get('processing_height', base_config.processing_height)
-
-        # Handle "Original" resolution (99999 means no downsampling)
-        try:
-            processing_width = int(processing_width)
-            processing_height = int(processing_height)
-        except (TypeError, ValueError):
-            processing_width = base_config.processing_width
-            processing_height = base_config.processing_height
-
-        if processing_width >= 99999 or processing_height >= 99999:
-            # Keep sentinel values so the orchestrator can skip downsampling.
-            processing_width = 99999
-            processing_height = 99999
+        processing_width = self._normalize_optional_positive_int(
+            ui_config.get('processing_width', base_config.processing_width)
+        )
+        processing_height = self._normalize_optional_positive_int(
+            ui_config.get('processing_height', base_config.processing_height)
+        )
+        target_fps = self._normalize_optional_positive_int(
+            ui_config.get('target_fps', base_config.target_fps)
+        )
 
         # Map motion algorithm (widget returns enum)
         motion_algorithm = ui_config.get('motion_algorithm', base_config.motion_algorithm)
@@ -217,7 +207,7 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
         return ColorAnomalyAndMotionDetectionConfig(
             processing_width=processing_width,
             processing_height=processing_height,
-            target_fps=ui_config.get('target_fps', base_config.target_fps),
+            target_fps=target_fps,
             enable_motion=ui_config.get('enable_motion', base_config.enable_motion),
             enable_color_quantization=ui_config.get('enable_color_quantization', base_config.enable_color_quantization),
             motion_algorithm=motion_algorithm,
@@ -272,6 +262,19 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
             show_mask_overlay=ui_config.get('show_mask_overlay', base_config.show_mask_overlay)
         )
 
+    @staticmethod
+    def _normalize_optional_positive_int(value: Any) -> Optional[int]:
+        """Normalize legacy sentinel and source/native values to Optional[int]."""
+        if value is None:
+            return None
+        try:
+            normalized = int(value)
+        except (TypeError, ValueError):
+            return None
+        if normalized <= 0 or normalized >= 99999:
+            return None
+        return normalized
+
     # Required interface methods
 
     def get_config(self) -> Dict[str, Any]:
@@ -293,12 +296,21 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
                 config['processing_width'],
                 config['processing_height']
             )
+        elif (
+            isinstance(config.get('processing_resolution'), tuple) and
+            len(config['processing_resolution']) == 2 and
+            hasattr(controls, 'input_processing_tab')
+        ):
+            controls.input_processing_tab.set_processing_resolution(
+                config['processing_resolution'][0],
+                config['processing_resolution'][1]
+            )
         elif config.get('processing_resolution') is None and hasattr(controls, 'input_processing_tab'):
             # Backward compatibility for older configs that used None to mean "Original".
-            controls.input_processing_tab.set_processing_resolution(99999, 99999)
+            controls.input_processing_tab.set_processing_resolution(None, None)
         if hasattr(controls, 'input_processing_tab'):
             if 'target_fps' in config:
-                controls.input_processing_tab.set_target_fps(int(config['target_fps']))
+                controls.input_processing_tab.set_target_fps(config['target_fps'])
             if 'render_at_processing_res' in config:
                 controls.input_processing_tab.render_at_processing_res.setChecked(
                     bool(config['render_at_processing_res'])
@@ -484,9 +496,8 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
 
     def reset(self):
         """Reset algorithm state."""
-        # Reset orchestrator metrics
-        if hasattr(self.integrated_detector, 'reset_metrics'):
-            self.integrated_detector.reset_metrics()
+        if hasattr(self.integrated_detector, 'reset'):
+            self.integrated_detector.reset()
         self.detection_count = 0
 
     def cleanup(self):
@@ -498,5 +509,9 @@ class ColorAnomalyAndMotionDetectionController(TranslationMixin, StreamAlgorithm
         - Performance metrics
         """
         if hasattr(self, 'integrated_detector') and self.integrated_detector:
-            self.integrated_detector.reset_for_new_video()
+            self.integrated_detector.cleanup()
         self.detection_count = 0
+
+    def get_stream_service(self):
+        """Return normalized streaming service used by worker processing."""
+        return self.stream_service

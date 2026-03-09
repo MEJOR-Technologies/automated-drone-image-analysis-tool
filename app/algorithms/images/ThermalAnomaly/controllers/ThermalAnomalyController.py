@@ -46,6 +46,16 @@ class ThermalAnomalyController(QWidget, Ui_ThermalAnomaly, AlgorithmController):
             return 'Cold'
         return 'Both'
 
+    @staticmethod
+    def _serialize_type(value):
+        """Persist canonical type keys as the legacy labels expected by the service."""
+        type_key = ThermalAnomalyController._normalize_type(value)
+        return {
+            'Hot': 'Above Mean',
+            'Cold': 'Below Mean',
+            'Both': 'Above or Below Mean',
+        }.get(type_key, 'Above or Below Mean')
+
     def get_options(self):
         """
         Populates options based on user-selected values.
@@ -57,7 +67,7 @@ class ThermalAnomalyController(QWidget, Ui_ThermalAnomaly, AlgorithmController):
         options = dict()
         options['threshold'] = int(self.anomalySpinBox.value())
         options['segments'] = int(self.segmentsComboBox.currentData())
-        options['type'] = self._normalize_type(self.anomalyTypeComboBox.currentData())
+        options['type'] = self._serialize_type(self.anomalyTypeComboBox.currentData())
         return options
 
     def validate(self):

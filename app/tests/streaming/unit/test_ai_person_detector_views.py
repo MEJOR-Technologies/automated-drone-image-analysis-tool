@@ -31,6 +31,15 @@ class TestAIPersonDetectorControlWidget:
         assert "render_text" in config
         assert "mask_enabled" in config
         assert "max_detections" in config
+        assert config["person_detector_confidence"] == 50
+        assert config["target_fps"] is None
+        assert config["processing_width"] == 1280
+        assert config["processing_height"] == 720
+        assert config["show_labels"] is True
+        assert config["max_detections"] == 25
+        assert config["enable_temporal_voting"] is False
+        assert config["enable_aspect_ratio_filter"] is False
+        assert widget.input_processing_tab.frame_rate_preset.currentText() == "Source FPS"
 
     def test_set_config_maps_legacy_fields(self, qapp):
         """Legacy fields should map into shared rendering/input controls."""
@@ -55,3 +64,10 @@ class TestAIPersonDetectorControlWidget:
         assert config["show_labels"] is False
         assert config["max_detections"] == 5
         assert config["target_fps"] == 15
+
+    def test_unsupported_shared_controls_are_hidden(self, qapp):
+        """AIPerson widget should hide shared controls the service does not support."""
+        widget = AIPersonDetectorControlWidget()
+
+        assert widget.input_processing_tab.render_at_processing_res.isVisible() is False
+        assert widget.rendering_tab.render_contours.isVisible() is False

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 from PySide6.QtCore import Qt, Signal
 from typing import Optional, Dict, Any
 import os
+from core.services.streaming.contracts import StreamAlgorithmCapabilities
 from helpers.TranslationMixin import TranslationMixin
 
 
@@ -32,13 +33,15 @@ class FrameTab(TranslationMixin, QWidget):
 
     configChanged = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, capabilities: StreamAlgorithmCapabilities | None = None):
         """Initialize the Frame tab."""
         super().__init__(parent)
+        self.capabilities = capabilities or StreamAlgorithmCapabilities()
         self._mask_image_path: Optional[str] = None
         self._video_aspect_ratio: Optional[float] = None
         self.setup_ui()
         self.connect_signals()
+        self.apply_capabilities(self.capabilities)
         self._apply_translations()
 
     def setup_ui(self):
@@ -169,6 +172,15 @@ class FrameTab(TranslationMixin, QWidget):
         """Update enabled state of settings based on enable checkbox."""
         enabled = self.enable_mask.isChecked()
         self.settings_container.setEnabled(enabled)
+
+    def apply_capabilities(self, capabilities: StreamAlgorithmCapabilities):
+        """Apply shared-control capability gating."""
+        self.capabilities = capabilities
+        supports_mask_controls = bool(capabilities.supports_mask_controls)
+        self.setVisible(supports_mask_controls)
+        self.setEnabled(supports_mask_controls)
+        if not supports_mask_controls:
+            self.enable_mask.setChecked(False)
 
     def _on_frame_buffer_toggled(self, checked: bool):
         """Handle frame buffer checkbox toggle."""

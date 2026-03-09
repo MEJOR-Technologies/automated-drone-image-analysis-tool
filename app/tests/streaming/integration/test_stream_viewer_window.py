@@ -189,6 +189,8 @@ class TestStreamViewerWindow:
         """Test switching between algorithms."""
         window = StreamViewerWindow(theme='dark')
         try:
+            cleanup_calls = []
+
             # Mock algorithm config and controller import methods
             def get_config_side_effect(name):
                 return {'name': name, 'category': 'streaming'}
@@ -222,7 +224,7 @@ class TestStreamViewerWindow:
 
                 def cleanup(self):
                     """Cleanup method required by StreamViewerWindow."""
-                    pass
+                    cleanup_calls.append(self.algorithm_config['name'])
 
             with patch.object(window, '_get_algorithm_config', side_effect=get_config_side_effect):
                 with patch.object(window, '_import_algorithm_controller', return_value=MockAlgorithmController):
@@ -237,6 +239,7 @@ class TestStreamViewerWindow:
                     # Should have switched
                     assert first_algorithm == 'ColorAnomalyAndMotionDetection'
                     assert second_algorithm == 'ColorDetection'
+                    assert cleanup_calls == ['ColorAnomalyAndMotionDetection']
         finally:
             window.close()
             QApplication.processEvents()  # Process events to ensure cleanup completes
@@ -354,7 +357,7 @@ class TestStreamViewerWindow:
             window.on_connect_requested("0", StreamType.HDMI_CAPTURE, hdmi_backend=700)
 
             window.stream_coordinator.connect_stream.assert_called_once_with(
-                "0", StreamType.HDMI_CAPTURE, hdmi_backend=700, fps_limit=0
+                "0", StreamType.HDMI_CAPTURE, hdmi_backend=700, fps_limit=None
             )
         finally:
             window.close()

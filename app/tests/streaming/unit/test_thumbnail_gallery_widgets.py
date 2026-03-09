@@ -66,3 +66,40 @@ def test_thumbnail_updates_tracks_only_for_visible_slots(qapp):
         assert calls == [10]
     finally:
         widget.close()
+
+
+def test_live_thumbnail_crop_is_square_for_wide_detection(qapp):
+    """Live thumbnail strip should use a square crop for consistent slot fill."""
+    widget = DetectionThumbnailWidget()
+    try:
+        x1, y1, x2, y2 = widget._compute_live_thumbnail_crop(
+            frame_shape=(480, 640, 3),
+            centroid=(200, 150),
+            bbox=(150, 130, 160, 40),
+            zoom=3.0,
+        )
+
+        assert (x2 - x1) == (y2 - y1)
+        assert (x2 - x1) >= 60
+    finally:
+        widget.close()
+
+
+def test_live_thumbnail_crop_stays_in_bounds_near_edges(qapp):
+    """Square live thumbnail crops should clamp to the frame without going negative."""
+    widget = DetectionThumbnailWidget()
+    try:
+        x1, y1, x2, y2 = widget._compute_live_thumbnail_crop(
+            frame_shape=(120, 160, 3),
+            centroid=(8, 10),
+            bbox=(0, 0, 80, 20),
+            zoom=3.0,
+        )
+
+        assert x1 >= 0
+        assert y1 >= 0
+        assert x2 <= 160
+        assert y2 <= 120
+        assert (x2 - x1) == (y2 - y1)
+    finally:
+        widget.close()

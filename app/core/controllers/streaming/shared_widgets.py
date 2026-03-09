@@ -626,6 +626,39 @@ class DetectionThumbnailWidget(QWidget):
         # Update tracker max slots
         self.tracker.max_slots = max_thumbnails
 
+    @staticmethod
+    def _compute_live_thumbnail_crop(
+            frame_shape: Tuple[int, int, int],
+            centroid: Tuple[int, int],
+            bbox: Tuple[int, int, int, int],
+            zoom: float = 3.0) -> Tuple[int, int, int, int]:
+        """Compute a square crop for the live thumbnail strip."""
+        frame_h, frame_w = frame_shape[:2]
+        cx, cy = int(centroid[0]), int(centroid[1])
+        _x, _y, w_raw, h_raw = bbox
+        w = max(1, int(w_raw))
+        h = max(1, int(h_raw))
+
+        # Keep the same context model as before, but normalize to a square crop
+        # so thumbnails use the slot area more consistently.
+        base_context_multiplier = 4.5
+        context_multiplier = base_context_multiplier / zoom
+        crop_side = int(max(w, h) * context_multiplier)
+        crop_side = max(60, crop_side)
+
+        x1 = max(0, cx - crop_side // 2)
+        y1 = max(0, cy - crop_side // 2)
+        x2 = min(frame_w, x1 + crop_side)
+        y2 = min(frame_h, y1 + crop_side)
+
+        # Re-anchor when clamping at the frame edges so the crop stays square when possible.
+        if x2 - x1 < crop_side:
+            x1 = max(0, x2 - crop_side)
+        if y2 - y1 < crop_side:
+            y1 = max(0, y2 - crop_side)
+
+        return x1, y1, x2, y2
+
     def update_thumbnails(self, frame: np.ndarray, detections: List, zoom: float = 3.0,
                           processing_resolution: tuple = None, original_resolution: tuple = None,
                           frame_index: int = 0, timestamp: float = 0.0):
@@ -681,26 +714,12 @@ class DetectionThumbnailWidget(QWidget):
                 w = int(w_raw * scale_x)
                 h = int(h_raw * scale_y)
 
-                # Calculate zoom window - zoom controls magnification level
-                # Higher zoom = tighter crop = detection appears larger in thumbnail
-                # zoom=1.0: show wide context (4.5x detection size)
-                # zoom=3.0: show tight crop (1.5x detection size) - detection fills most of thumbnail
-                # zoom=5.0: show very tight crop (0.9x detection size, just the detection)
-                BASE_CONTEXT_MULTIPLIER = 4.5  # Context multiplier at zoom=1.0
-                context_multiplier = BASE_CONTEXT_MULTIPLIER / zoom
-
-                zoom_w = int(w * context_multiplier)
-                zoom_h = int(h * context_multiplier)
-
-                # Minimum size for very small detections (ensure at least 60px)
-                zoom_w = max(60, zoom_w)
-                zoom_h = max(60, zoom_h)
-
-                # Calculate extraction bounds centered on detection centroid
-                x1 = max(0, cx - zoom_w // 2)
-                y1 = max(0, cy - zoom_h // 2)
-                x2 = min(frame.shape[1], cx + zoom_w // 2)
-                y2 = min(frame.shape[0], cy + zoom_h // 2)
+                x1, y1, x2, y2 = self._compute_live_thumbnail_crop(
+                    frame.shape,
+                    (cx, cy),
+                    (x_raw, y_raw, w, h),
+                    zoom=zoom,
+                )
 
                 # Extract region
                 thumbnail = frame[y1:y2, x1:x2].copy()
@@ -896,8 +915,8 @@ class StreamControlWidget(TranslationMixin, QWidget):
         )
 
         # FPS labels
-        self.video_fps_label = QLabel(self.tr("Video FPS: --"))
-        self.video_fps_label.setToolTip(self.tr("Native frame rate of the video source"))
+        self.video_fps_label = QLabel(self.tr("Source FPS: --"))
+        self.video_fps_label.setToolTip(self.tr("Source frame rate and the applied processing cadence"))
         self.processing_fps_label = QLabel(self.tr("Proc FPS: --"))
         self.processing_fps_label.setToolTip(
             self.tr("Actual frames per second being processed")
@@ -1268,14 +1287,23 @@ class StreamControlWidget(TranslationMixin, QWidget):
 
         # FPS info
         video_fps = stats.get('video_fps', 0)
+        applied_source_fps = stats.get('applied_source_fps', 0)
         # Use processing_fps (actual processed frames/sec, accounts for frame rate limiting)
         # Fall back to avg_fps or fps for backwards compatibility
         processing_fps = stats.get('processing_fps', stats.get('avg_fps', stats.get('fps', 0)))
 
         if video_fps > 0:
-            self.video_fps_label.setText(
-                self.tr("Video FPS: {fps:.1f}").format(fps=video_fps)
-            )
+            if applied_source_fps and abs(float(applied_source_fps) - float(video_fps)) > 0.05:
+                self.video_fps_label.setText(
+                    self.tr("Source FPS: {source:.1f} (Applied {applied:.1f})").format(
+                        source=video_fps,
+                        applied=applied_source_fps,
+                    )
+                )
+            else:
+                self.video_fps_label.setText(
+                    self.tr("Source FPS: {fps:.1f}").format(fps=video_fps)
+                )
         self.processing_fps_label.setText(
             self.tr("Proc FPS: {fps:.1f}").format(fps=processing_fps)
         )

@@ -41,6 +41,8 @@ from core.controllers.streaming.shared_widgets import VideoDisplayWidget, Detect
 from core.views.streaming.components import PlaybackControlBar
 from core.views.streaming.components.TrackGalleryWidget import TrackGalleryWidget
 from core.controllers.streaming.base import StreamAlgorithmController
+from core.services.streaming.StreamAlgorithmService import StreamAlgorithmService
+from core.services.streaming.StreamAnalyzeService import StreamAnalyzeService
 from core.services.streaming.RTMPStreamService import StreamType
 from helpers.TranslationMixin import TranslationMixin
 
@@ -787,6 +789,10 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                     self.algorithm_widget.configChanged.disconnect(self.on_algorithm_config_changed)
                 except Exception:
                     pass
+                try:
+                    self.algorithm_widget.cleanup()
+                except Exception as e:
+                    self.logger.warning(f"Algorithm cleanup failed for {self.current_algorithm_name}: {e}")
                 self.ui.algorithmControlLayout.removeWidget(self.algorithm_widget)
                 self.algorithm_widget.deleteLater()
                 self.algorithm_widget = None
@@ -892,8 +898,16 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         if not self.algorithm_widget:
             return None
 
-        # Different algorithms expose their services under different attributes.
-        for attr_name in ('color_detector', 'integrated_detector', 'person_detector'):
+        if hasattr(self.algorithm_widget, "get_stream_service"):
+            try:
+                service = self.algorithm_widget.get_stream_service()
+                if service is not None:
+                    return service
+            except Exception as exc:
+                self.logger.warning(f"Failed to get stream service from controller: {exc}")
+
+        # Backward-compatible fallback for legacy controllers.
+        for attr_name in ("color_detector", "integrated_detector", "person_detector"):
             if hasattr(self.algorithm_widget, attr_name):
                 return getattr(self.algorithm_widget, attr_name)
 
@@ -912,75 +926,27 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         Returns:
             A function that processes a frame and returns detections
         """
-        # ColorDetectionService
-        if hasattr(service, 'detect_colors'):
-            def process_color(frame: np.ndarray, timestamp: float) -> List[Dict]:
-                detections = service.detect_colors(frame, timestamp)
+        if not isinstance(service, StreamAlgorithmService):
+            self.logger.warning(
+                f"Stream service does not implement StreamAlgorithmService: {type(service)}"
+            )
+            return None
 
-                # Create annotated frame directly on the worker thread so the emitted
-                # frame already contains algorithm-rendered overlays.
-                try:
-                    annotated_frame = service.create_annotated_frame(frame, detections)
-                    if annotated_frame is not None and annotated_frame is not frame:
-                        # Copy annotated frame back into the original buffer that will be emitted
-                        np.copyto(frame, annotated_frame)
-                except Exception:
-                    # Fall back silently if annotation fails – raw frame will be shown
-                    pass
+        analyzer = StreamAnalyzeService(service, self.logger)
 
-                # Convert to standard format
-                detection_dicts = []
-                for detection in detections:
-                    color_id = detection.color_id if detection.color_id is not None else 0
-                    detection_dicts.append({
-                        'bbox': detection.bbox,
-                        'area': detection.area,
-                        'confidence': detection.confidence,
-                        'class_name': f"Color_{color_id}",
-                        'color_id': color_id,
-                        'mean_color': detection.mean_color
-                    })
-                return detection_dicts
-            return process_color
+        def process_normalized(frame: np.ndarray, timestamp: float):
+            result = analyzer.process_frame(frame, timestamp)
 
-        # ColorAnomalyAndMotionDetectionOrchestrator
-        if hasattr(service, 'process_frame'):
-            # Check if it returns (annotated_frame, detections, timings)
-            from typing import Tuple
+            try:
+                annotated_frame = result.rendered_frame
+                if annotated_frame is not None and annotated_frame is not frame:
+                    np.copyto(frame, annotated_frame)
+            except Exception:
+                pass
 
-            def process_integrated(frame: np.ndarray, timestamp: float) -> Tuple[List[Dict], bool]:
-                annotated_frame, detections, timings = service.process_frame(frame, timestamp)
+            return analyzer.to_worker_output(result)
 
-                # Ensure the annotated frame is what gets displayed when the algorithm
-                # provides its own rendering (copy onto the outgoing buffer).
-                try:
-                    if annotated_frame is not None and annotated_frame is not frame:
-                        np.copyto(frame, annotated_frame)
-                except Exception:
-                    pass
-
-                # Convert to standard format
-                detection_dicts = []
-                for detection in detections:
-                    detection_dicts.append({
-                        'bbox': detection.bbox,
-                        'centroid': detection.centroid,
-                        'area': detection.area,
-                        'confidence': detection.confidence,
-                        'class_name': detection.detection_type,
-                        'detection_type': detection.detection_type,
-                        'timestamp': detection.timestamp,
-                        'metadata': detection.metadata
-                    })
-                # Return detections and whether frame was skipped due to frame rate limiting
-                was_skipped = timings.was_skipped if hasattr(timings, 'was_skipped') else False
-                return (detection_dicts, was_skipped)
-
-            return process_integrated
-
-        # Fallback: use controller's process_frame (but this won't work from worker thread)
-        # So we return None to indicate we can't use worker thread
-        return None
+        return process_normalized
 
     def _setup_processing_worker(self):
         """Set up the frame processing worker thread."""
@@ -1265,7 +1231,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             rendered_frame = frame
             if not self.algorithm_renders_frame:
                 # Render detections using the shared renderer (on main thread)
-                rendered_frame = self.detection_renderer.render(frame, detections)
+                rendered_frame = self.detection_renderer.render(frame, detections, copy_frame=False)
             # else: Frame already carries algorithm-rendered overlays.
 
             # Draw highlight box if a gallery track is selected
@@ -1442,7 +1408,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             raw_fps_limit = config.get('target_fps')
             if raw_fps_limit is None:
                 return None
-            return int(raw_fps_limit)
+            fps_limit = int(raw_fps_limit)
+            return fps_limit if fps_limit > 0 else None
         except (TypeError, ValueError, AttributeError):
             return None
 
@@ -1552,11 +1519,14 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             return
         raw_fps_limit = config.get('target_fps')
         if raw_fps_limit is None:
-            return
-        try:
-            fps_limit = int(raw_fps_limit)
-        except (TypeError, ValueError):
-            return
+            fps_limit = None
+        else:
+            try:
+                fps_limit = int(raw_fps_limit)
+            except (TypeError, ValueError):
+                return
+            if fps_limit <= 0:
+                fps_limit = None
 
         if fps_limit == self._active_stream_fps_limit:
             return
@@ -1583,7 +1553,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         if self.algorithm_widget and not is_paused:
             # Store original frame for thumbnails (before detection rendering)
             # This ensures thumbnails are crisp without detection overlays.
-            self._original_frame_for_thumbnails = frame.copy()
+            self._original_frame_for_thumbnails = frame
 
             # Add to queue for synchronization with worker thread.
             self._original_frames_queue[timestamp] = self._original_frame_for_thumbnails
@@ -1601,26 +1571,27 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             native_height, native_width = frame.shape[:2]
             desired_width, desired_height = self._pending_processing_resolution
 
-            # Cap to native resolution (never upscale)
-            capped_width = min(desired_width, native_width)
-            capped_height = min(desired_height, native_height)
+            if desired_width is not None and desired_height is not None and desired_width > 0 and desired_height > 0:
+                # Cap to native resolution (never upscale)
+                capped_width = min(desired_width, native_width)
+                capped_height = min(desired_height, native_height)
 
-            # Only update if capping actually changed the resolution
-            if capped_width < desired_width or capped_height < desired_height:
-                # self.logger.info(
-                #     f"Capping processing resolution from {desired_width}x{desired_height} "
-                #     f"to {capped_width}x{capped_height} (native: {native_width}x{native_height})"
-                # )
-                pass
+                # Only update if capping actually changed the resolution
+                if capped_width < desired_width or capped_height < desired_height:
+                    # self.logger.info(
+                    #     f"Capping processing resolution from {desired_width}x{desired_height} "
+                    #     f"to {capped_width}x{capped_height} (native: {native_width}x{native_height})"
+                    # )
+                    pass
 
-                # Update algorithm with capped resolution
-                if self.algorithm_widget:
-                    capped_config = {
-                        'processing_width': capped_width,
-                        'processing_height': capped_height,
-                        'processing_resolution': (capped_width, capped_height)
-                    }
-                    self._apply_algorithm_options(capped_config)
+                    # Update algorithm with capped resolution
+                    if self.algorithm_widget:
+                        capped_config = {
+                            'processing_width': capped_width,
+                            'processing_height': capped_height,
+                            'processing_resolution': (capped_width, capped_height)
+                        }
+                        self._apply_algorithm_options(capped_config)
 
             # Clear pending resolution (only apply once)
             self._pending_processing_resolution = None
@@ -1652,7 +1623,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                     rendered_frame = None
                     if not self.algorithm_renders_frame:
                         # Render detections using the shared renderer
-                        rendered_frame = self.detection_renderer.render(frame, detections)
+                        display_frame = frame.copy()
+                        rendered_frame = self.detection_renderer.render(display_frame, detections, copy_frame=False)
 
                         # Draw highlight box if a gallery track is selected
                         if self._highlight_track is not None:
@@ -2002,20 +1974,41 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         # Get video info from stream coordinator
         stream_info = self.stream_coordinator.stream_info if self.stream_coordinator else {}
         video_resolution = stream_info.get('resolution')
-        video_fps = stream_info.get('fps', 0)
+        source_fps = stream_info.get('source_fps', stream_info.get('fps', 0))
+        applied_source_fps = self._get_applied_source_fps(source_fps)
 
         # Get processing resolution from algorithm config
         processing_resolution = None
         if self.algorithm_widget:
             config = self.algorithm_widget.get_config()
-            proc_width = config.get('processing_width', 0)
-            proc_height = config.get('processing_height', 0)
-            # Check for "Original" setting (marker value 99999)
-            if (isinstance(proc_width, (int, float)) and isinstance(proc_height, (int, float)) and
-                    proc_width < 99999 and proc_height < 99999 and proc_width > 0 and proc_height > 0):
-                processing_resolution = (proc_width, proc_height)
-            elif video_resolution:
-                processing_resolution = video_resolution  # Using original resolution
+            resolution_value = config.get('processing_resolution')
+            if isinstance(resolution_value, tuple) and len(resolution_value) == 2:
+                raw_width, raw_height = resolution_value
+                if raw_width is not None and raw_height is not None:
+                    try:
+                        proc_width = int(raw_width)
+                        proc_height = int(raw_height)
+                    except (TypeError, ValueError):
+                        proc_width = proc_height = 0
+                    if proc_width > 0 and proc_height > 0:
+                        processing_resolution = (proc_width, proc_height)
+
+            if processing_resolution is None:
+                proc_width = config.get('processing_width')
+                proc_height = config.get('processing_height')
+                if proc_width is None or proc_height is None:
+                    processing_resolution = video_resolution
+                else:
+                    try:
+                        proc_width = int(proc_width)
+                        proc_height = int(proc_height)
+                    except (TypeError, ValueError):
+                        proc_width = proc_height = 0
+
+                    if proc_width > 0 and proc_height > 0 and proc_width < 99999 and proc_height < 99999:
+                        processing_resolution = (proc_width, proc_height)
+                    elif video_resolution:
+                        processing_resolution = video_resolution
 
         perf_payload = {
             "fps": stats_obj.fps,
@@ -2029,9 +2022,27 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             "dropped_frames": stats_obj.dropped_frames,
             "video_resolution": video_resolution,
             "processing_resolution": processing_resolution,
-            "video_fps": video_fps,
+            "video_fps": source_fps,
+            "applied_source_fps": applied_source_fps,
         }
         self.stream_controls.update_performance(perf_payload)
+
+    def _get_applied_source_fps(self, source_fps: float) -> float:
+        """Estimate the runtime cadence applied to the current source."""
+        explicit_limit = self._active_stream_fps_limit
+        if explicit_limit is not None:
+            if source_fps and source_fps > 0:
+                return min(float(source_fps), float(explicit_limit))
+            return float(explicit_limit)
+
+        stream_type = self.stream_coordinator.current_stream_type if self.stream_coordinator else None
+        if stream_type == StreamType.FILE:
+            return float(source_fps or 0.0)
+        if stream_type in (StreamType.HDMI_CAPTURE, StreamType.RTMP):
+            if source_fps and source_fps > 0:
+                return min(float(source_fps), 60.0)
+            return 60.0
+        return float(source_fps or 0.0)
 
     def update_theme(self, theme: str):
         """

@@ -1,6 +1,6 @@
 """Control widget for streaming AI person detector configuration."""
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
+from core.services.streaming import StreamAlgorithmCapabilities
 from core.views.streaming.components import InputProcessingTab, RenderingTab, FrameTab
 from helpers.TranslationMixin import TranslationMixin
 
@@ -24,10 +25,16 @@ class AIPersonDetectorControlWidget(TranslationMixin, QWidget):
 
     configChanged = Signal(dict)
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        parent=None,
+        capabilities: Optional[StreamAlgorithmCapabilities] = None,
+    ):
         super().__init__(parent)
+        self.capabilities = capabilities or StreamAlgorithmCapabilities()
         self._build_ui()
         self._connect_signals()
+        self._on_confidence_changed(self.confidence_slider.value())
         self._apply_translations()
         self._emit_config()
 
@@ -38,18 +45,30 @@ class AIPersonDetectorControlWidget(TranslationMixin, QWidget):
         self.tabs = QTabWidget(self)
         root.addWidget(self.tabs)
 
-        self.input_processing_tab = InputProcessingTab()
-        self.frame_tab = FrameTab()
-        self.rendering_tab = RenderingTab(show_detection_color_option=False)
+        self.input_processing_tab = InputProcessingTab(capabilities=self.capabilities)
+        self.frame_tab = FrameTab(capabilities=self.capabilities)
+        self.rendering_tab = RenderingTab(
+            show_detection_color_option=False,
+            capabilities=self.capabilities,
+        )
         self.tabs.addTab(self._create_detection_tab(), self.tr("Person Detection"))
         self.tabs.addTab(self.input_processing_tab, self.tr("Input && Processing"))
         self.tabs.addTab(self.frame_tab, self.tr("Frame"))
         self.tabs.addTab(self.rendering_tab, self.tr("Rendering && Cleanup"))
 
-        # Better defaults for person detection overlays.
+        # Keep the detector on the lighter legacy-style baseline by default.
+        self.confidence_slider.setValue(50)
+        self.input_processing_tab.set_processing_resolution(1280, 720)
+        self.input_processing_tab.set_target_fps(None)
         self.rendering_tab.render_shape.setCurrentIndex(0)
         self.rendering_tab.render_text.setChecked(True)
         self.rendering_tab.max_detections_to_render.setValue(25)
+        self.rendering_tab.enable_temporal_voting.setChecked(False)
+        self.rendering_tab.temporal_window_frames.setValue(5)
+        self.rendering_tab.temporal_threshold_frames.setValue(3)
+        self.rendering_tab.enable_aspect_ratio_filter.setChecked(False)
+        self.rendering_tab.min_aspect_ratio.setValue(0.2)
+        self.rendering_tab.max_aspect_ratio.setValue(5.0)
 
     def _create_detection_tab(self) -> QWidget:
         """Create algorithm-specific controls tab."""
@@ -124,22 +143,40 @@ class AIPersonDetectorControlWidget(TranslationMixin, QWidget):
         """Return current widget configuration."""
         processing_width, processing_height = self.input_processing_tab.get_processing_resolution()
         target_fps = self.input_processing_tab.get_target_fps()
-        rendering_cfg = self.rendering_tab.get_config()
+        rendering_cfg = dict(self.rendering_tab.get_config())
+
+        if not self.capabilities.supports_render_contours:
+            rendering_cfg.pop("render_contours", None)
+        if not self.capabilities.supports_use_detection_color:
+            rendering_cfg.pop("use_detection_color_for_rendering", None)
+        if not self.capabilities.supports_detection_clustering:
+            rendering_cfg.pop("enable_detection_clustering", None)
+            rendering_cfg.pop("clustering_distance", None)
+
+        processing_resolution = None
+        if processing_width is not None and processing_height is not None:
+            processing_resolution = (processing_width, processing_height)
 
         config = {
             "person_detector_confidence": int(self.confidence_slider.value()),
             "confidence_threshold": float(self.confidence_slider.value()) / 100.0,
             "cpu_only": bool(self.cpu_only_checkbox.isChecked()),
             "high_resolution_model": bool(self.high_res_checkbox.isChecked()),
-            "processing_width": int(processing_width),
-            "processing_height": int(processing_height),
-            "target_fps": int(target_fps),
+            "processing_width": processing_width,
+            "processing_height": processing_height,
+            "processing_resolution": processing_resolution,
+            "target_fps": target_fps,
             "max_detections": int(rendering_cfg.get("max_detections_to_render", 25)),
+            "max_detections_to_render": int(rendering_cfg.get("max_detections_to_render", 25)),
             "show_labels": bool(rendering_cfg.get("render_text", True)),
-            "render_at_processing_res": self.input_processing_tab.render_at_processing_res.isChecked(),
+            "render_text": bool(rendering_cfg.get("render_text", True)),
             **rendering_cfg,
             **self.frame_tab.get_config(),
         }
+
+        if self.capabilities.supports_render_at_processing_resolution:
+            config["render_at_processing_res"] = self.input_processing_tab.render_at_processing_res.isChecked()
+
         return config
 
     def set_config(self, config: Dict[str, Any]):
@@ -160,13 +197,21 @@ class AIPersonDetectorControlWidget(TranslationMixin, QWidget):
                 config["processing_width"],
                 config["processing_height"],
             )
+        elif (
+            isinstance(config.get("processing_resolution"), tuple) and
+            len(config["processing_resolution"]) == 2
+        ):
+            self.input_processing_tab.set_processing_resolution(
+                config["processing_resolution"][0],
+                config["processing_resolution"][1],
+            )
         elif config.get("processing_resolution") is None:
             # Backward compatibility for older configs that used None as "Original".
-            self.input_processing_tab.set_processing_resolution(99999, 99999)
+            self.input_processing_tab.set_processing_resolution(None, None)
 
         if "target_fps" in config:
-            self.input_processing_tab.set_target_fps(int(config["target_fps"]))
-        if "render_at_processing_res" in config:
+            self.input_processing_tab.set_target_fps(config["target_fps"])
+        if self.capabilities.supports_render_at_processing_resolution and "render_at_processing_res" in config:
             self.input_processing_tab.render_at_processing_res.setChecked(
                 bool(config["render_at_processing_res"])
             )

@@ -5,16 +5,18 @@ This widget provides a tabbed interface for configuring all ColorAnomalyAndMotio
 parameters. It matches the original implementation exactly.
 """
 
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                QLabel, QSpinBox, QDoubleSpinBox, QCheckBox,
                                QComboBox, QGroupBox, QSlider, QTabWidget)
 
 from core.services.LoggerService import LoggerService
+from core.services.streaming import StreamAlgorithmCapabilities
 from core.views.streaming.components import InputProcessingTab, RenderingTab, ColorWheelWidget, FrameTab
 from algorithms.streaming.ColorAnomalyAndMotionDetection.services.shared_types import (
-    MotionAlgorithm, FusionMode, ContourMethod, ColorSpace
+    ColorAnomalyAndMotionDetectionConfig,
+    MotionAlgorithm, FusionMode, ContourMethod, ColorSpace,
 )
 from helpers.TranslationMixin import TranslationMixin
 
@@ -24,9 +26,14 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
 
     configChanged = Signal(dict)
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        parent=None,
+        capabilities: Optional[StreamAlgorithmCapabilities] = None,
+    ):
         super().__init__(parent)
         self.logger = LoggerService()
+        self.capabilities = capabilities or StreamAlgorithmCapabilities()
 
         # Setup UI structure
         self.setObjectName("ColorAnomalyAndMotionDetectionControlWidget")
@@ -41,9 +48,17 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
 
         # Populate tabs with actual controls
         self._populate_tabs()
+        self._apply_default_config()
 
         # Connect signals
         self.connect_signals()
+        self.update_camera_movement_label()
+        self.update_color_bits_label()
+        self.update_color_percentile_label()
+        self.update_hue_range_label()
+        self.update_hsv_sat_label()
+        self.update_lab_chroma_label()
+        self._update_color_space_controls_visibility()
         self._apply_translations()
 
     def _populate_tabs(self):
@@ -53,12 +68,74 @@ class ColorAnomalyAndMotionDetectionControlWidget(TranslationMixin, QWidget):
         self.tabs.addTab(self._create_motion_tab(), self.tr("Motion Detection"))
         self.tabs.addTab(self._create_fusion_tab(), self.tr("Fusion"))
         # Use shared tabs for Input & Processing, Frame, and Rendering
-        self.input_processing_tab = InputProcessingTab()
-        self.frame_tab = FrameTab()
-        self.rendering_tab = RenderingTab(show_detection_color_option=True)
+        self.input_processing_tab = InputProcessingTab(capabilities=self.capabilities)
+        self.frame_tab = FrameTab(capabilities=self.capabilities)
+        self.rendering_tab = RenderingTab(
+            show_detection_color_option=True,
+            capabilities=self.capabilities,
+        )
         self.tabs.addTab(self.input_processing_tab, self.tr("Input && Processing"))
         self.tabs.addTab(self.frame_tab, self.tr("Frame"))
         self.tabs.addTab(self.rendering_tab, self.tr("Rendering && Cleanup"))
+
+    def _apply_default_config(self):
+        """Align widget defaults with the shared SAR-oriented config dataclass."""
+        defaults = ColorAnomalyAndMotionDetectionConfig()
+
+        self.input_processing_tab.set_processing_resolution(
+            defaults.processing_width,
+            defaults.processing_height,
+        )
+        self.input_processing_tab.set_target_fps(defaults.target_fps)
+        self.input_processing_tab.render_at_processing_res.setChecked(defaults.render_at_processing_res)
+
+        self.enable_motion.setChecked(defaults.enable_motion)
+        self.motion_algorithm.setCurrentIndex(self.motion_algorithm.findData(defaults.motion_algorithm))
+        self.motion_threshold.setValue(defaults.motion_threshold)
+        self.bg_history.setValue(defaults.bg_history)
+        self.bg_var_threshold.setValue(defaults.bg_var_threshold)
+        self.bg_detect_shadows.setChecked(defaults.bg_detect_shadows)
+        self.pause_on_camera_movement.setChecked(defaults.pause_on_camera_movement)
+        self.camera_movement_threshold.setValue(int(defaults.camera_movement_threshold * 100))
+        self.min_detection_area.setValue(defaults.min_detection_area)
+        self.max_detection_area.setValue(defaults.max_detection_area)
+        self.persistence_frames.setValue(defaults.persistence_frames)
+        self.persistence_threshold.setValue(defaults.persistence_threshold)
+
+        self.enable_color_quantization.setChecked(defaults.enable_color_quantization)
+        self.color_quantization_bits.setValue(defaults.color_quantization_bits)
+        self.color_rarity_percentile.setValue(defaults.color_rarity_percentile)
+        self.color_min_detection_area.setValue(defaults.color_min_detection_area)
+        self.color_max_detection_area.setValue(defaults.color_max_detection_area)
+        self.contour_method.setCurrentIndex(self.contour_method.findData(defaults.contour_method))
+        self.color_space.setCurrentIndex(self.color_space.findData(defaults.color_space))
+        self.hsv_min_saturation.setValue(defaults.hsv_min_saturation)
+        self.lab_min_chroma.setValue(defaults.lab_min_chroma)
+        self.enable_hue_expansion.setChecked(defaults.enable_hue_expansion)
+        self.hue_expansion_range.setValue(defaults.hue_expansion_range)
+
+        self.enable_fusion.setChecked(defaults.enable_fusion)
+        self.fusion_mode.setCurrentIndex(self.fusion_mode.findData(defaults.fusion_mode))
+        self.enable_color_exclusion.setChecked(defaults.enable_color_exclusion)
+
+        self.rendering_tab.set_config(
+            {
+                "render_shape": defaults.render_shape,
+                "render_text": defaults.render_text,
+                "render_contours": defaults.render_contours,
+                "render_at_processing_res": defaults.render_at_processing_res,
+                "use_detection_color_for_rendering": defaults.use_detection_color_for_rendering,
+                "max_detections_to_render": defaults.max_detections_to_render,
+                "enable_temporal_voting": defaults.enable_temporal_voting,
+                "temporal_window_frames": defaults.temporal_window_frames,
+                "temporal_threshold_frames": defaults.temporal_threshold_frames,
+                "enable_aspect_ratio_filter": defaults.enable_aspect_ratio_filter,
+                "min_aspect_ratio": defaults.min_aspect_ratio,
+                "max_aspect_ratio": defaults.max_aspect_ratio,
+                "enable_detection_clustering": defaults.enable_detection_clustering,
+                "clustering_distance": defaults.clustering_distance,
+            }
+        )
 
     def _create_motion_tab(self) -> QWidget:
         """Create Motion Detection tab with simplified default controls and advanced options."""

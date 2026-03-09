@@ -24,23 +24,23 @@ def _build_mock_service():
 class TestStreamManagerFpsLimit:
     """Test FPS-limit mapping from UI/controller into stream config."""
 
-    def test_connect_with_none_uses_default_safe_cap(self):
+    def test_connect_with_none_preserves_source_fps_mode(self):
         manager = StreamManager()
         mock_service = _build_mock_service()
 
         with patch("core.services.streaming.RTMPStreamService.RTMPStreamService", return_value=mock_service) as ctor:
             assert manager.connect_to_stream("video.mp4", StreamType.FILE, fps_limit=None) is True
             stream_config = ctor.call_args.args[0]
-            assert stream_config.fps_limit == 30
+            assert stream_config.fps_limit is None
 
-    def test_connect_with_zero_uses_default_safe_cap(self):
+    def test_connect_with_zero_normalizes_to_source_fps_mode(self):
         manager = StreamManager()
         mock_service = _build_mock_service()
 
         with patch("core.services.streaming.RTMPStreamService.RTMPStreamService", return_value=mock_service) as ctor:
             assert manager.connect_to_stream("video.mp4", StreamType.FILE, fps_limit=0) is True
             stream_config = ctor.call_args.args[0]
-            assert stream_config.fps_limit == 30
+            assert stream_config.fps_limit is None
 
     def test_connect_with_positive_value_uses_explicit_cap(self):
         manager = StreamManager()

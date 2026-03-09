@@ -8,16 +8,19 @@ that are used across all streaming detection algorithms.
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                QLabel, QSpinBox, QCheckBox, QComboBox, QGroupBox)
 from PySide6.QtCore import Qt
+from core.services.streaming.contracts import StreamAlgorithmCapabilities
 from helpers.TranslationMixin import TranslationMixin
 
 
 class InputProcessingTab(TranslationMixin, QWidget):
     """Shared Input & Processing tab widget for streaming algorithms."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, capabilities: StreamAlgorithmCapabilities | None = None):
         """Initialize the Input & Processing tab."""
         super().__init__(parent)
+        self.capabilities = capabilities or StreamAlgorithmCapabilities()
         self.setup_ui()
+        self.apply_capabilities(self.capabilities)
         self._apply_translations()
 
     def setup_ui(self):
@@ -99,12 +102,13 @@ class InputProcessingTab(TranslationMixin, QWidget):
 
         # Frame Rate selection
         fps_layout = QHBoxLayout()
-        fps_layout.addWidget(QLabel("Frame Rate:"))
+        self.frame_rate_label = QLabel("Frame Rate:")
+        fps_layout.addWidget(self.frame_rate_label)
         self.frame_rate_preset = QComboBox()
 
-        # Frame rate options: Original uses video's native FPS, others limit processing
+        # Frame rate options: Source FPS follows the source cadence, others limit processing.
         self.frame_rate_presets = {
-            "Original": 0,   # 0 = use video's native FPS (no limiting)
+            "Source FPS": None,
             "30 FPS": 30,
             "25 FPS": 25,
             "20 FPS": 20,
@@ -116,9 +120,9 @@ class InputProcessingTab(TranslationMixin, QWidget):
         for preset in self.frame_rate_presets.keys():
             self.frame_rate_preset.addItem(preset)
 
-        self.frame_rate_preset.setCurrentText("Original")
+        self.frame_rate_preset.setCurrentText("Source FPS")
         self.frame_rate_preset.setToolTip("Limit the frame rate for processing.\n\n"
-                                          "• Original - Use source/default stream rate (stream manager may apply safety cap)\n"
+                                          "• Source FPS - Follow the source cadence (live sources may apply a safety cap)\n"
                                           "• 30 FPS - Good balance of smoothness and performance\n"
                                           "• 25 FPS - Standard for PAL video\n"
                                           "• 20 FPS - Reduced CPU usage\n"
@@ -141,6 +145,14 @@ class InputProcessingTab(TranslationMixin, QWidget):
 
         layout.addWidget(perf_group)
         layout.addStretch()
+
+    def apply_capabilities(self, capabilities: StreamAlgorithmCapabilities):
+        """Apply shared-control capability gating."""
+        self.capabilities = capabilities
+        supports_render_at_processing = bool(capabilities.supports_render_at_processing_resolution)
+        self.render_at_processing_res.setVisible(supports_render_at_processing)
+        if not supports_render_at_processing:
+            self.render_at_processing_res.setChecked(False)
 
     def on_resolution_preset_changed(self, preset_name: str):
         """Handle resolution preset change."""
@@ -172,13 +184,13 @@ class InputProcessingTab(TranslationMixin, QWidget):
         if preset_name == "Custom":
             return (self.processing_width.value(), self.processing_height.value())
         elif preset_name == "Original":
-            return (99999, 99999)  # Special marker for "no downsampling"
+            return (None, None)
         elif preset_name in self.resolution_presets:
             return self.resolution_presets[preset_name]
         else:
             return (1280, 720)  # Default
 
-    def set_processing_resolution(self, width: int, height: int):
+    def set_processing_resolution(self, width: int | None, height: int | None):
         """
         Set processing resolution from width and height values.
 
@@ -232,22 +244,23 @@ class InputProcessingTab(TranslationMixin, QWidget):
             self.processing_width.setValue(width)
             self.processing_height.setValue(height)
 
-    def get_target_fps(self) -> int:
+    def get_target_fps(self) -> int | None:
         """Get the target frame rate for processing.
 
         Returns:
-            Target FPS value, or 0 for 'Original' (no limiting)
+            Target FPS value, or None for 'Source FPS'
         """
         preset_name = self.frame_rate_preset.currentText()
-        return self.frame_rate_presets.get(preset_name, 0)
+        return self.frame_rate_presets.get(preset_name)
 
-    def set_target_fps(self, fps: int):
+    def set_target_fps(self, fps: int | None):
         """Set the target frame rate.
 
         Args:
-            fps: Target FPS value (0 = Original/no limiting)
+            fps: Target FPS value (None or 0 = Source FPS)
         """
         # Create reverse mapping from FPS to preset name
         fps_map = {v: k for k, v in self.frame_rate_presets.items()}
-        preset_name = fps_map.get(fps, "Original")
+        normalized_fps = None if fps is None or int(fps) <= 0 else int(fps)
+        preset_name = fps_map.get(normalized_fps, "Source FPS")
         self.frame_rate_preset.setCurrentText(preset_name)

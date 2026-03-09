@@ -165,11 +165,12 @@ class TestColorDetectionService:
         """Test getting current configuration."""
         service = ColorDetectionService()
 
-        # Service has _config attribute, not get_config method
-        config = service._config
+        config = service.get_config()
 
         assert isinstance(config, HSVConfig)
         assert config is not None
+        config.min_area = 999
+        assert service.get_config().min_area != 999
 
     def test_performance_tracking(self):
         """Test performance metrics tracking."""

@@ -114,13 +114,36 @@ class TestStreamingGuide:
         wizard = StreamingGuide()
         page = wizard.pages[4]  # StreamAlgorithmPage
 
-        page._on_algorithm_answer(False)  # Not specific colors
-        assert page.selected_algorithm is None
-        assert "detect people" in wizard.labelCurrentQuestion.text().lower()
+        page._on_algorithm_answer(True)
 
-        page._on_algorithm_answer(True)  # Yes, detect people
         assert page.selected_algorithm == "AIPersonDetector"
         assert wizard.wizard_data["algorithm"] == "AIPersonDetector"
+        assert wizard.wizard_data["secondary_recommendation"] == "ColorDetection"
+
+    def test_algorithm_decision_tree_routes_known_color_targets(self, qapp):
+        """Known non-person color targets should route to ColorDetection."""
+        wizard = StreamingGuide()
+        page = wizard.pages[4]
+
+        page._on_algorithm_answer(False)
+        assert page.selected_algorithm is None
+        assert "target color" in wizard.labelCurrentQuestion.text().lower()
+
+        page._on_algorithm_answer(True)
+
+        assert page.selected_algorithm == "ColorDetection"
+        assert wizard.wizard_data["algorithm_reason"] == "known_color_target"
+
+    def test_algorithm_decision_tree_routes_unknown_targets_to_anomaly_motion(self, qapp):
+        """Unknown or anomaly-led searches should route to anomaly and motion detection."""
+        wizard = StreamingGuide()
+        page = wizard.pages[4]
+
+        page._on_algorithm_answer(False)
+        page._on_algorithm_answer(False)
+
+        assert page.selected_algorithm == "ColorAnomalyAndMotionDetection"
+        assert wizard.wizard_data["algorithm_reason"] == "unknown_target_or_anomaly_scan"
 
     def test_algorithm_parameters_page_loads_ai_person_detector_widget(self, qapp):
         """Parameters page should load the AI Person Detector wizard controller."""

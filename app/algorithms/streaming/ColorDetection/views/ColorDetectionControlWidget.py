@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 from PySide6.QtGui import QColor
 
 from core.services.LoggerService import LoggerService
+from core.services.streaming import StreamAlgorithmCapabilities
 from core.views.streaming.components import InputProcessingTab, RenderingTab, CleanupTab, FrameTab
 from algorithms.streaming.ColorDetection.views.HSVControlWidget_ui import Ui_HSVControlWidget
 from algorithms.Shared.views import HSVColorRowWidget
@@ -28,9 +29,14 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
 
     configChanged = Signal(dict)
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        parent=None,
+        capabilities: Optional[StreamAlgorithmCapabilities] = None,
+    ):
         super().__init__(parent)
         self.logger = LoggerService()
+        self.capabilities = capabilities or StreamAlgorithmCapabilities()
 
         # Multiple color range support
         self.color_ranges = []
@@ -51,6 +57,7 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
 
         # Connect signals
         self.connect_signals()
+        self._update_confidence_label()
         self._apply_translations()
 
     def _populate_tabs(self):
@@ -59,15 +66,37 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
         self.tabs.clear()
 
         # Use shared tabs for Input & Processing, Cleanup, Frame, and Rendering
-        self.input_processing_tab = InputProcessingTab()
+        self.input_processing_tab = InputProcessingTab(capabilities=self.capabilities)
         self.cleanup_tab = CleanupTab()
-        self.frame_tab = FrameTab()
-        self.rendering_tab = RenderingTab(show_detection_color_option=True)
+        self.frame_tab = FrameTab(capabilities=self.capabilities)
+        self.rendering_tab = RenderingTab(
+            show_detection_color_option=True,
+            capabilities=self.capabilities,
+        )
         self.tabs.addTab(self._create_color_selection_tab(), self.tr("Color Selection"))
         self.tabs.addTab(self._create_detection_tab(), self.tr("Detection"))
         self.tabs.addTab(self.input_processing_tab, self.tr("Input && Processing"))
         self.tabs.addTab(self.frame_tab, self.tr("Frame"))
         self.tabs.addTab(self.rendering_tab, self.tr("Rendering && Cleanup"))
+
+        # Live SAR defaults.
+        self.input_processing_tab.set_processing_resolution(1280, 720)
+        self.input_processing_tab.set_target_fps(None)
+        self.input_processing_tab.render_at_processing_res.setChecked(True)
+        self.min_area_spinbox.setValue(25)
+        self.max_area_spinbox.setValue(150000)
+        self.confidence_slider.setValue(35)
+        self.rendering_tab.render_shape.setCurrentIndex(1)
+        self.rendering_tab.render_text.setChecked(False)
+        self.rendering_tab.render_contours.setChecked(False)
+        if hasattr(self.rendering_tab, "use_detection_color"):
+            self.rendering_tab.use_detection_color.setChecked(True)
+        self.rendering_tab.max_detections_to_render.setValue(15)
+        self.rendering_tab.enable_temporal_voting.setChecked(True)
+        self.rendering_tab.temporal_window_frames.setValue(5)
+        self.rendering_tab.temporal_threshold_frames.setValue(3)
+        self.rendering_tab.enable_aspect_ratio_filter.setChecked(False)
+        self.rendering_tab.enable_detection_clustering.setChecked(False)
 
     def _create_color_selection_tab(self) -> QWidget:
         """Create color selection tab matching screenshot - inline editing with HSV ranges."""
@@ -124,6 +153,10 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
 
         scroll.setWidget(self.color_ranges_container)
         layout.addWidget(scroll)
+
+        self.empty_state_label = QLabel(self.tr("No colors configured. Add at least one color to start detection."))
+        self.empty_state_label.setAlignment(Qt.AlignCenter)
+        self.empty_state_label.setWordWrap(True)
 
         # Store row widgets
         self.color_range_widgets = []
@@ -540,6 +573,14 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
             widget.setParent(None)
         self.color_range_widgets.clear()
 
+        if hasattr(self, "empty_state_label"):
+            self.empty_state_label.setParent(None)
+
+        if not self.color_ranges:
+            self.color_ranges_layout.insertWidget(0, self.empty_state_label)
+            self.empty_state_label.show()
+            return
+
         # Create row widget for each color range using shared HSVColorRowWidget
         for i, color_range in enumerate(self.color_ranges):
             # Convert color_range dict to format expected by HSVColorRowWidget
@@ -590,7 +631,7 @@ class ColorDetectionControlWidget(TranslationMixin, QWidget, Ui_HSVControlWidget
         """Get current configuration matching ColorAnomalyAndMotionDetection format."""
         # Get processing resolution from shared InputProcessingTab
         processing_width, processing_height = self.input_processing_tab.get_processing_resolution()
-        if processing_width == 99999:  # "Original" resolution
+        if processing_width is None or processing_height is None:
             processing_resolution = None
         else:
             processing_resolution = (processing_width, processing_height)
