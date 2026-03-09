@@ -67,6 +67,7 @@ class ThermalHistogramService:
             'bin_centers': centers.astype(np.float32),
             'counts': counts.astype(np.int32),
             'anomaly_counts': anomaly_counts.astype(np.int32),
+            'anomaly_overlay_mode': 'full_bin',
             'min_temperature': float(edges[0]),
             'max_temperature': float(edges[-1]),
             'total_pixels': int(finite_values.size),

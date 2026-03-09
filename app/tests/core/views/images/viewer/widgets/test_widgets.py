@@ -14,6 +14,7 @@ from core.views.images.viewer.widgets.QtImageViewer import QtImageViewer
 from core.views.images.viewer.widgets.OverlayWidget import OverlayWidget
 from core.views.images.viewer.widgets.ScaleBarWidget import ScaleBarWidget
 from core.views.images.viewer.widgets.GPSMapView import GPSMapView
+from core.views.images.viewer.widgets.HueWheelRangeSelector import HueWheelRangeSelector
 from core.views.images.viewer.widgets.MapTileLoader import MapTileLoader
 from core.views.images.viewer.widgets.ThermalHistogramChart import ThermalHistogramChart
 from core.views.images.viewer.widgets.ThermalRangeSlider import ThermalRangeSlider
@@ -127,7 +128,54 @@ def test_thermal_histogram_chart_zoom_around_temperature(app):
     assert reset_max >= zoomed_max
 
 
+def test_thermal_histogram_chart_overlay_count_modes(app):
+    """Overlay height should be configurable between full-bin and anomaly-count modes."""
+    counts = np.array([10, 20, 30], dtype=np.int32)
+    anomaly_counts = np.array([1, 4, 2], dtype=np.int32)
+
+    assert ThermalHistogramChart._overlay_count_for_index(1, counts, anomaly_counts, 'full_bin') == 20.0
+    assert ThermalHistogramChart._overlay_count_for_index(1, counts, anomaly_counts, 'anomaly_count') == 4.0
+
+
+def test_thermal_histogram_chart_can_show_aoi_only(app):
+    """Chart should track AOI-only display state."""
+    chart = ThermalHistogramChart()
+    assert not chart.show_aoi_only()
+
+    chart.set_show_aoi_only(True)
+    assert chart.show_aoi_only()
+
+
 def test_thermal_range_slider_initialization(app):
     """Test ThermalRangeSlider initialization."""
     slider = ThermalRangeSlider()
     assert slider is not None
+
+
+def test_thermal_range_slider_track_visual_updates(app):
+    """Slider should support alternate track visuals for hue ranges."""
+    slider = ThermalRangeSlider()
+    assert slider.track_visual() == 'neutral'
+
+    slider.set_track_visual('hue_wheel')
+    assert slider.track_visual() == 'hue_wheel'
+
+
+def test_thermal_range_slider_wrap_updates(app):
+    """Slider should track wrap-mode state for hue selections."""
+    slider = ThermalRangeSlider()
+    assert not slider.selection_wrap()
+
+    slider.set_selection_wrap(True)
+    assert slider.selection_wrap()
+
+
+def test_hue_wheel_range_selector_updates(app):
+    """Hue wheel selector should store value and wrap state changes."""
+    selector = HueWheelRangeSelector()
+    selector.set_range(0.0, 360.0)
+    selector.set_values(25.4, 140.2)
+    selector.set_selection_wrap(True)
+
+    assert selector.values() == (25, 140)
+    assert selector.selection_wrap()

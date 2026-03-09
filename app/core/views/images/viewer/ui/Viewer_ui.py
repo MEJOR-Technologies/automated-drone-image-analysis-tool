@@ -585,7 +585,7 @@ class Ui_Viewer(object):
 #endif // QT_CONFIG(tooltip)
         self.showAOIsButton.setText("")
 #if QT_CONFIG(tooltip)
-        self.thermalHistogramButton.setToolTip(QCoreApplication.translate("Viewer", u"Open Temperature Histogram", None))
+        self.thermalHistogramButton.setToolTip(QCoreApplication.translate("Viewer", u"Open Histogram", None))
 #endif // QT_CONFIG(tooltip)
         self.thermalHistogramButton.setText("")
 #if QT_CONFIG(tooltip)

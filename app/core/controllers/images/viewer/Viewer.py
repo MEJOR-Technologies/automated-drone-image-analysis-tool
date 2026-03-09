@@ -30,6 +30,7 @@ from core.controllers.images.viewer.image.ImageLoadController import ImageLoadCo
 from core.controllers.images.viewer.PixelInfoController import PixelInfoController
 from core.controllers.images.viewer.ThermalDataController import ThermalDataController
 from core.controllers.images.viewer.ThermalHistogramController import ThermalHistogramController
+from core.controllers.images.viewer.ColorHistogramController import ColorHistogramController
 from core.controllers.images.viewer.UIStyleController import UIStyleController
 from core.views.images.viewer.dialogs.BearingRecoveryDialog import BearingRecoveryDialog
 from core.views.images.viewer.dialogs.ReviewerNameDialog import ReviewerNameDialog
@@ -168,6 +169,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.ui_style_controller = UIStyleController(self, theme)
         self.thermal_controller = ThermalDataController(self)
         self.thermal_histogram_controller = ThermalHistogramController(self)
+        self.color_histogram_controller = ColorHistogramController(self)
         self.pixel_info_controller = PixelInfoController(self)
         self.image_load_controller = ImageLoadController(self)
         self.altitude_controller = AltitudeController(self)
@@ -304,6 +306,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
 
         if hasattr(self, 'thermal_histogram_controller'):
             self.thermal_histogram_controller.cleanup()
+
+        if hasattr(self, 'color_histogram_controller'):
+            self.color_histogram_controller.cleanup()
 
         # Clean up gallery controller
         if hasattr(self, 'gallery_controller'):
@@ -860,10 +865,10 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
                 self._update_show_pois_button_style()
 
             if hasattr(self, 'thermalHistogramButton'):
-                self.thermalHistogramButton.setVisible(self.is_thermal)
-                self.thermalHistogramButton.clicked.connect(self._open_thermal_histogram_dialog)
+                self.thermalHistogramButton.setVisible(True)
+                self.thermalHistogramButton.clicked.connect(self._open_histogram_dialog)
                 self.thermalHistogramButton.setToolTip(
-                    self.tr("Open Temperature Histogram")
+                    self.tr("Open Histogram")
                 )
 
             # Connect the AOIs button
@@ -1228,10 +1233,14 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
                 ).format(error=str(e))
             )
 
-    def _open_thermal_histogram_dialog(self):
-        """Open the popup thermal histogram for the current image."""
-        if hasattr(self, 'thermal_histogram_controller'):
-            self.thermal_histogram_controller.open_dialog()
+    def _open_histogram_dialog(self):
+        """Open the histogram popup for the current image type."""
+        if self.is_thermal:
+            if hasattr(self, 'thermal_histogram_controller'):
+                self.thermal_histogram_controller.open_dialog()
+        else:
+            if hasattr(self, 'color_histogram_controller'):
+                self.color_histogram_controller.open_dialog()
 
     def _skip_hidden_clicked(self, state):
         """Updates visibility setting for hidden images based on skipHidden checkbox.

@@ -296,7 +296,7 @@ Shows all AOIs from all images in a grid view</string>
               <item>
                <widget class="QToolButton" name="thermalHistogramButton">
                 <property name="toolTip">
-                 <string>Open Temperature Histogram</string>
+                 <string>Open Histogram</string>
                 </property>
                 <property name="text">
                  <string/>

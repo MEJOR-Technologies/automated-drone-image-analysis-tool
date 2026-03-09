@@ -274,15 +274,21 @@ class ImageLoadController(TranslationMixin):
                     image['areas_of_interest']
                 )
 
-        if hasattr(self.parent, 'thermal_histogram_controller'):
-            visibility_mask = self.parent.thermal_histogram_controller.get_visibility_mask()
+        histogram_controller = None
+        if getattr(self.parent, 'is_thermal', False):
+            histogram_controller = getattr(self.parent, 'thermal_histogram_controller', None)
+        else:
+            histogram_controller = getattr(self.parent, 'color_histogram_controller', None)
+
+        if histogram_controller is not None:
+            visibility_mask = histogram_controller.get_visibility_mask()
             if visibility_mask is not None:
                 augmented_image = ImageHighlightService.apply_visibility_mask(
                     augmented_image,
                     visibility_mask
                 )
 
-            hover_mask = self.parent.thermal_histogram_controller.get_hover_mask()
+            hover_mask = histogram_controller.get_hover_mask()
             if hover_mask is not None:
                 augmented_image = ImageHighlightService.apply_boolean_mask_highlight(
                     augmented_image,
@@ -367,6 +373,12 @@ class ImageLoadController(TranslationMixin):
         if hasattr(self.parent, 'thermal_histogram_controller'):
             self.parent.thermal_histogram_controller.on_temperature_data_updated(
                 temperature_data,
+                image.get('areas_of_interest', [])
+            )
+
+        if hasattr(self.parent, 'color_histogram_controller'):
+            self.parent.color_histogram_controller.on_image_data_updated(
+                image_service.img_array if not self.parent.is_thermal else None,
                 image.get('areas_of_interest', [])
             )
 

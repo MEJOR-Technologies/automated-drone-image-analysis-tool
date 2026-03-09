@@ -26,6 +26,9 @@ class ThermalHistogramDialog(TranslationMixin, QDialog, Ui_ThermalHistogramDialo
         self.histogram_data = None
 
         self.chartWidget = ThermalHistogramChart(self.chartContainer)
+        self.chartWidget.set_empty_state_text(
+            self.tr("No thermal histogram data available")
+        )
         chart_layout = QVBoxLayout(self.chartContainer)
         chart_layout.setContentsMargins(0, 0, 0, 0)
         chart_layout.addWidget(self.chartWidget)

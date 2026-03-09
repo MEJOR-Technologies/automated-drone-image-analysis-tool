@@ -25,11 +25,14 @@ class ThermalHistogramChart(QWidget):
         self._histogram_data = None
         self._selection_min = None
         self._selection_max = None
+        self._selection_wrap = False
         self._hovered_index = None
         self._view_min = None
         self._view_max = None
         self._zoom_drag_start_x = None
         self._zoom_drag_current_x = None
+        self._show_aoi_only = False
+        self._empty_state_text = None
 
     def set_histogram_data(self, histogram_data):
         """Load histogram data and reset transient state."""
@@ -69,6 +72,29 @@ class ThermalHistogramChart(QWidget):
     def selection_range(self):
         """Return the currently selected range."""
         return self._selection_min, self._selection_max
+
+    def set_selection_wrap(self, wrap_enabled):
+        """Set whether the selected range wraps around the axis origin."""
+        self._selection_wrap = bool(wrap_enabled)
+        self.update()
+
+    def set_show_aoi_only(self, show_aoi_only):
+        """Set whether only AOI/anomaly bars should be displayed."""
+        self._show_aoi_only = bool(show_aoi_only)
+        self.update()
+
+    def show_aoi_only(self):
+        """Return True when only AOI/anomaly bars are shown."""
+        return self._show_aoi_only
+
+    def set_empty_state_text(self, text):
+        """Set the message displayed when no histogram data is loaded."""
+        self._empty_state_text = str(text or "")
+        self.update()
+
+    def empty_state_text(self):
+        """Return the message displayed when no histogram data is loaded."""
+        return self._empty_state_text or self.tr("No histogram data available")
 
     def set_view_range(self, minimum, maximum):
         """Zoom the histogram to a specific x-axis temperature range."""
@@ -153,24 +179,37 @@ class ThermalHistogramChart(QWidget):
 
         if not self._histogram_data:
             painter.setPen(self.palette().text().color())
-            painter.drawText(self.rect(), Qt.AlignCenter, self.tr("No thermal histogram data available"))
+            painter.drawText(
+                self.rect(),
+                Qt.AlignCenter,
+                self.empty_state_text()
+            )
             return
 
         plot_rect = self._plot_rect()
         self._draw_selection_shading(painter, plot_rect)
         self._draw_grid(painter, plot_rect)
-        self._draw_bar_series(
-            painter,
-            plot_rect,
-            self._histogram_data['counts'],
-            QColor(135, 150, 178, 190),
-        )
-        self._draw_anomaly_overlay(
-            painter,
-            plot_rect,
-            self._histogram_data['counts'],
-            self._histogram_data['anomaly_counts'],
-        )
+        if self._show_aoi_only:
+            self._draw_bar_series(
+                painter,
+                plot_rect,
+                self._histogram_data['anomaly_counts'],
+                QColor(255, 120, 80, 235),
+            )
+        else:
+            self._draw_bar_series(
+                painter,
+                plot_rect,
+                self._histogram_data['counts'],
+                QColor(135, 150, 178, 190),
+            )
+            if not self._is_hue_histogram():
+                self._draw_anomaly_overlay(
+                    painter,
+                    plot_rect,
+                    self._histogram_data['counts'],
+                    self._histogram_data['anomaly_counts'],
+                )
         self._draw_hover_marker(painter, plot_rect)
         self._draw_legend(painter, plot_rect)
         self._draw_axis_labels(painter, plot_rect)
@@ -274,12 +313,19 @@ class ThermalHistogramChart(QWidget):
             return
 
         max_count = self._max_visible_count()
+        use_hue_colors = self._is_hue_histogram()
         painter.save()
         painter.setPen(Qt.NoPen)
-        painter.setBrush(color)
 
         for index, count in self._visible_counts(counts):
             bar_rect = self._bar_rect_for_index(index, float(count), max_count, plot_rect)
+            if bar_rect.isEmpty():
+                continue
+            if use_hue_colors:
+                hue_deg = float(self._histogram_data['bin_centers'][index])
+                painter.setBrush(self._hue_bar_color(hue_deg))
+            else:
+                painter.setBrush(color)
             painter.drawRect(bar_rect)
 
         painter.restore()
@@ -290,6 +336,7 @@ class ThermalHistogramChart(QWidget):
             return
 
         max_count = self._max_visible_count()
+        overlay_mode = self._histogram_data.get('anomaly_overlay_mode', 'full_bin')
         active_indices = [
             idx for idx, value in self._visible_counts(anomaly_counts)
             if value > 0
@@ -297,19 +344,38 @@ class ThermalHistogramChart(QWidget):
         if not active_indices:
             return
 
+        min_visible_count = max(1.0, max_count * 0.01)
+
         painter.save()
-        painter.setPen(QPen(QColor(255, 180, 150), 1))
+        painter.setPen(Qt.NoPen)
         painter.setBrush(QColor(255, 120, 80, 235))
         for histogram_index in active_indices:
+            overlay_count = self._overlay_count_for_index(
+                histogram_index,
+                counts,
+                anomaly_counts,
+                overlay_mode
+            )
+            if overlay_count < min_visible_count:
+                continue
             bar_rect = self._bar_rect_for_index(
                 histogram_index,
-                float(counts[histogram_index]),
+                overlay_count,
                 max_count,
                 plot_rect,
                 width_ratio=0.55
             )
+            if bar_rect.height() < 3.0:
+                continue
             painter.drawRect(bar_rect)
         painter.restore()
+
+    @staticmethod
+    def _overlay_count_for_index(index, counts, anomaly_counts, overlay_mode):
+        """Return the effective overlay count for a histogram bin."""
+        if overlay_mode == 'anomaly_count':
+            return float(anomaly_counts[index])
+        return float(counts[index])
 
     def _draw_selection_shading(self, painter, plot_rect):
         painter.save()
@@ -318,16 +384,31 @@ class ThermalHistogramChart(QWidget):
         min_x = self._temperature_to_x(self._selection_min, plot_rect)
         max_x = self._temperature_to_x(self._selection_max, plot_rect)
 
-        painter.fillRect(QRectF(plot_rect.left(), plot_rect.top(), max(0.0, min_x - plot_rect.left()), plot_rect.height()), shade)
-        painter.fillRect(QRectF(max_x, plot_rect.top(), max(0.0, plot_rect.right() - max_x), plot_rect.height()), shade)
+        if self._selection_wrap:
+            painter.fillRect(
+                QRectF(min_x, plot_rect.top(), max(0.0, max_x - min_x), plot_rect.height()),
+                shade
+            )
+        else:
+            left_w = max(0.0, min_x - plot_rect.left())
+            painter.fillRect(
+                QRectF(plot_rect.left(), plot_rect.top(), left_w, plot_rect.height()),
+                shade
+            )
+            right_w = max(0.0, plot_rect.right() - max_x)
+            painter.fillRect(
+                QRectF(max_x, plot_rect.top(), right_w, plot_rect.height()),
+                shade
+            )
         painter.restore()
 
     def _draw_hover_marker(self, painter, plot_rect):
         if self._hovered_index is None:
             return
 
+        display_counts = self._display_counts()
         max_count = self._max_visible_count()
-        hover_count = float(self._histogram_data['counts'][self._hovered_index])
+        hover_count = float(display_counts[self._hovered_index])
         hover_rect = self._bar_rect_for_index(self._hovered_index, hover_count, max_count, plot_rect, width_ratio=0.92)
 
         painter.save()
@@ -340,18 +421,42 @@ class ThermalHistogramChart(QWidget):
         """Draw a compact legend for the chart series."""
         painter.save()
         legend_y = max(0.0, plot_rect.top() - 14.0)
+        is_hue = self._is_hue_histogram()
 
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(135, 150, 178, 190))
-        painter.drawRect(QRectF(plot_rect.right() - 180, legend_y, 12, 12))
-        painter.setPen(self.palette().text().color())
-        painter.drawText(QRectF(plot_rect.right() - 162, legend_y - 2, 70, 18), self.tr("All Pixels"))
+        if not self._show_aoi_only and not is_hue:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(135, 150, 178, 190))
+            painter.drawRect(
+                QRectF(plot_rect.right() - 180, legend_y, 12, 12)
+            )
+            painter.setPen(self.palette().text().color())
+            painter.drawText(
+                QRectF(plot_rect.right() - 162, legend_y - 2, 70, 18),
+                self.tr("All Pixels")
+            )
 
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(255, 120, 80, 235))
-        painter.drawRect(QRectF(plot_rect.right() - 90, legend_y, 12, 12))
-        painter.setPen(self.palette().text().color())
-        painter.drawText(QRectF(plot_rect.right() - 72, legend_y - 2, 70, 18), self.tr("AOI Pixels"))
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(255, 120, 80, 235))
+            painter.drawRect(
+                QRectF(plot_rect.right() - 90, legend_y, 12, 12)
+            )
+            painter.setPen(self.palette().text().color())
+            painter.drawText(
+                QRectF(plot_rect.right() - 72, legend_y - 2, 80, 18),
+                self.tr("AOI Pixels")
+            )
+        elif self._show_aoi_only and not is_hue:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(255, 120, 80, 235))
+            painter.drawRect(
+                QRectF(plot_rect.right() - 180, legend_y, 12, 12)
+            )
+            painter.setPen(self.palette().text().color())
+            painter.drawText(
+                QRectF(plot_rect.right() - 162, legend_y - 2, 80, 18),
+                self.tr("AOI Pixels")
+            )
+
         painter.restore()
 
     def _draw_axis_labels(self, painter, plot_rect):
@@ -361,9 +466,21 @@ class ThermalHistogramChart(QWidget):
         maximum = self._view_max
         midpoint = (minimum + maximum) / 2.0
 
-        painter.drawText(QRectF(plot_rect.left() - 8, plot_rect.bottom() + 4, 70, 18), f"{minimum:.1f}")
-        painter.drawText(QRectF(plot_rect.center().x() - 25, plot_rect.bottom() + 4, 50, 18), Qt.AlignCenter, f"{midpoint:.1f}")
-        painter.drawText(QRectF(plot_rect.right() - 62, plot_rect.bottom() + 4, 70, 18), Qt.AlignRight, f"{maximum:.1f}")
+        y = plot_rect.bottom() + 4
+        painter.drawText(
+            QRectF(plot_rect.left() - 8, y, 70, 18),
+            self._format_axis_value(minimum)
+        )
+        painter.drawText(
+            QRectF(plot_rect.center().x() - 25, y, 50, 18),
+            Qt.AlignCenter,
+            self._format_axis_value(midpoint)
+        )
+        painter.drawText(
+            QRectF(plot_rect.right() - 62, y, 70, 18),
+            Qt.AlignRight,
+            self._format_axis_value(maximum)
+        )
 
     def _draw_zoom_drag_overlay(self, painter, plot_rect):
         """Draw the current drag-to-zoom selection."""
@@ -417,7 +534,10 @@ class ThermalHistogramChart(QWidget):
         bar_width = max(2.0, available_width * width_ratio)
         x = left_x + ((available_width - bar_width) / 2.0)
         top = self._count_to_y(count, max_count, plot_rect)
-        return QRectF(x, top, bar_width, max(1.0, plot_rect.bottom() - top))
+        height = plot_rect.bottom() - top
+        if height < 0.5:
+            return QRectF()
+        return QRectF(x, top, bar_width, height)
 
     def _bin_index_at_position(self, x_position, plot_rect):
         if not plot_rect.left() <= x_position <= plot_rect.right():
@@ -427,9 +547,13 @@ class ThermalHistogramChart(QWidget):
         if not visible:
             return None
 
+        centers = self._histogram_data['bin_centers']
         nearest_index = min(
             visible,
-            key=lambda idx: abs(self._temperature_to_x(float(self._histogram_data['bin_centers'][idx]), plot_rect) - x_position)
+            key=lambda idx: abs(
+                self._temperature_to_x(float(centers[idx]), plot_rect)
+                - x_position
+            )
         )
         return int(nearest_index)
 
@@ -455,5 +579,34 @@ class ThermalHistogramChart(QWidget):
 
     def _max_visible_count(self):
         """Return the maximum count within the current zoom range."""
-        visible_counts = [int(self._histogram_data['counts'][index]) for index in self._visible_indices()]
-        return max(1, max(visible_counts) if visible_counts else 1)
+        display_counts = self._display_counts()
+        visible = [int(display_counts[idx]) for idx in self._visible_indices()]
+        return max(1, max(visible) if visible else 1)
+
+    def _display_counts(self):
+        """Return the count series currently displayed in the chart."""
+        if self._show_aoi_only:
+            return self._histogram_data['anomaly_counts']
+        return self._histogram_data['counts']
+
+    def _is_hue_histogram(self):
+        """Return True when the histogram represents HSV Hue."""
+        if not self._histogram_data:
+            return False
+        return (
+            self._histogram_data.get('color_space') == 'HSV'
+            and self._histogram_data.get('component') == 'H'
+        )
+
+    @staticmethod
+    def _hue_bar_color(hue_degrees):
+        """Return a saturated QColor for a given hue in degrees."""
+        qt_hue = int(round(hue_degrees)) % 360
+        return QColor.fromHsv(qt_hue, 220, 200, 210)
+
+    def _format_axis_value(self, value):
+        """Format an axis value using the histogram's preferred precision."""
+        precision = int(self._histogram_data.get('value_precision', 1))
+        if precision == 0:
+            return str(int(round(float(value))))
+        return f"{float(value):.{precision}f}"

@@ -3,7 +3,7 @@ ThermalRangeSlider - Two-handled range slider for temperature selection.
 """
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 
@@ -26,6 +26,8 @@ class ThermalRangeSlider(QWidget):
         self._lower_value = 0.0
         self._upper_value = 1.0
         self._drag_target = None
+        self._track_visual = 'neutral'
+        self._selection_wrap = False
 
     def set_range(self, minimum, maximum):
         """Set the full numeric range available on the slider."""
@@ -56,6 +58,24 @@ class ThermalRangeSlider(QWidget):
         """Return the selected lower and upper values."""
         return self._lower_value, self._upper_value
 
+    def set_track_visual(self, track_visual):
+        """Set the visual style used for the slider track."""
+        self._track_visual = str(track_visual or 'neutral')
+        self.update()
+
+    def track_visual(self):
+        """Return the active track visual style."""
+        return self._track_visual
+
+    def set_selection_wrap(self, selection_wrap):
+        """Set whether the selected range wraps around the start/end of the track."""
+        self._selection_wrap = bool(selection_wrap)
+        self.update()
+
+    def selection_wrap(self):
+        """Return whether the selected range wraps around the track edges."""
+        return self._selection_wrap
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
@@ -63,15 +83,9 @@ class ThermalRangeSlider(QWidget):
 
         track_rect = self._track_rect()
 
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(80, 86, 95))
-        painter.drawRoundedRect(track_rect, 3, 3)
-
         lower_x = self._value_to_x(self._lower_value)
         upper_x = self._value_to_x(self._upper_value)
-        selected_rect = QRectF(lower_x, track_rect.top(), max(2.0, upper_x - lower_x), track_rect.height())
-        painter.setBrush(QColor(90, 190, 255))
-        painter.drawRoundedRect(selected_rect, 3, 3)
+        self._draw_track(painter, track_rect, lower_x, upper_x)
 
         self._draw_handle(painter, lower_x, active=self._drag_target == 'lower')
         self._draw_handle(painter, upper_x, active=self._drag_target == 'upper')
@@ -124,6 +138,51 @@ class ThermalRangeSlider(QWidget):
             max(20.0, self.width() - (margin * 2)),
             self.TRACK_HEIGHT
         )
+
+    def _draw_track(self, painter, track_rect, lower_x, upper_x):
+        """Draw the slider track and highlight the selected range."""
+        painter.save()
+        painter.setPen(Qt.NoPen)
+
+        if self._track_visual == 'hue_wheel':
+            gradient = QLinearGradient(track_rect.left(), track_rect.center().y(), track_rect.right(), track_rect.center().y())
+            gradient.setColorAt(0.00, QColor.fromHsv(0, 255, 255))
+            gradient.setColorAt(1.0 / 6.0, QColor.fromHsv(60, 255, 255))
+            gradient.setColorAt(2.0 / 6.0, QColor.fromHsv(120, 255, 255))
+            gradient.setColorAt(3.0 / 6.0, QColor.fromHsv(180, 255, 255))
+            gradient.setColorAt(4.0 / 6.0, QColor.fromHsv(240, 255, 255))
+            gradient.setColorAt(5.0 / 6.0, QColor.fromHsv(300, 255, 255))
+            gradient.setColorAt(1.0, QColor.fromHsv(359, 255, 255))
+            painter.setBrush(gradient)
+            painter.drawRoundedRect(track_rect, 3, 3)
+
+            dim_color = QColor(20, 24, 32, 160)
+            painter.setBrush(dim_color)
+            if self._selection_wrap:
+                painter.drawRoundedRect(
+                    QRectF(lower_x, track_rect.top(), max(0.0, upper_x - lower_x), track_rect.height()),
+                    3,
+                    3
+                )
+            else:
+                painter.drawRoundedRect(
+                    QRectF(track_rect.left(), track_rect.top(), max(0.0, lower_x - track_rect.left()), track_rect.height()),
+                    3,
+                    3
+                )
+                painter.drawRoundedRect(
+                    QRectF(upper_x, track_rect.top(), max(0.0, track_rect.right() - upper_x), track_rect.height()),
+                    3,
+                    3
+                )
+        else:
+            painter.setBrush(QColor(80, 86, 95))
+            painter.drawRoundedRect(track_rect, 3, 3)
+            selected_rect = QRectF(lower_x, track_rect.top(), max(2.0, upper_x - lower_x), track_rect.height())
+            painter.setBrush(QColor(90, 190, 255))
+            painter.drawRoundedRect(selected_rect, 3, 3)
+
+        painter.restore()
 
     def _value_to_x(self, value):
         track_rect = self._track_rect()

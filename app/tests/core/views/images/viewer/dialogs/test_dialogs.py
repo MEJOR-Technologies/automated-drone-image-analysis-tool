@@ -16,6 +16,7 @@ from core.views.images.viewer.dialogs.BearingRecoveryDialog import BearingRecove
 from core.views.images.viewer.dialogs.CacheLocationDialog import CacheLocationDialog
 from core.views.images.viewer.dialogs.CalTopoAuthDialog import CalTopoAuthDialog
 from core.views.images.viewer.dialogs.CalTopoMapDialog import CalTopoMapDialog
+from core.views.images.viewer.dialogs.ColorHistogramDialog import ColorHistogramDialog
 from core.views.images.viewer.dialogs.ExportProgressDialog import ExportProgressDialog
 from core.views.images.viewer.dialogs.GPSMapDialog import GPSMapDialog
 from core.views.images.viewer.dialogs.HelpDialog import HelpDialog
@@ -80,6 +81,113 @@ def test_caltopo_map_dialog_initialization(app):
     """Test CalTopoMapDialog initialization."""
     dialog = CalTopoMapDialog(None)
     assert dialog is not None
+
+
+def test_color_histogram_dialog_initialization(app):
+    """Test ColorHistogramDialog initialization."""
+    dialog = ColorHistogramDialog(None)
+    assert dialog is not None
+    assert dialog.chartWidget.empty_state_text() == "No hue histogram data available"
+
+
+def test_color_histogram_dialog_updates_range_from_hue_wheel(app, qtbot):
+    """Hue wheel edits should update the chart selection and emit range changes."""
+    dialog = ColorHistogramDialog(None)
+    qtbot.addWidget(dialog)
+    dialog.set_histogram_context(
+        {
+            'color_space': 'HSV',
+            'component': 'H',
+            'display_suffix': '°',
+            'component_matrix': np.array([[0.0, 180.0]], dtype=np.float32),
+            'histogram_data': {
+                'color_space': 'HSV',
+                'component': 'H',
+                'bin_edges': np.array([0.0, 120.0, 240.0, 360.0], dtype=np.float32),
+                'bin_centers': np.array([60.0, 180.0, 300.0], dtype=np.float32),
+                'counts': np.array([1, 1, 0], dtype=np.int32),
+                'anomaly_counts': np.array([0, 1, 0], dtype=np.int32),
+                'value_precision': 0,
+                'min_temperature': 0.0,
+                'max_temperature': 360.0,
+                'total_pixels': 2,
+                'anomaly_pixels': 1,
+            }
+        }
+    )
+
+    with qtbot.waitSignal(dialog.rangeChanged):
+        dialog.hueWheelSelector.set_values(30.0, 200.0, emit_signal=True)
+
+    minimum, maximum = dialog.chartWidget.selection_range()
+    assert minimum == 30.0
+    assert maximum == 200.0
+
+
+def test_color_histogram_dialog_toggles_aoi_only_mode(app, qtbot):
+    """AOI-only toggle should switch the chart into anomaly-only display mode."""
+    dialog = ColorHistogramDialog(None)
+    qtbot.addWidget(dialog)
+    dialog.set_histogram_context(
+        {
+            'color_space': 'HSV',
+            'component': 'H',
+            'display_suffix': '°',
+            'component_matrix': np.array([[0.0, 180.0]], dtype=np.float32),
+            'histogram_data': {
+                'color_space': 'HSV',
+                'component': 'H',
+                'bin_edges': np.array([0.0, 120.0, 240.0, 360.0], dtype=np.float32),
+                'bin_centers': np.array([60.0, 180.0, 300.0], dtype=np.float32),
+                'counts': np.array([10, 2, 0], dtype=np.int32),
+                'anomaly_counts': np.array([1, 2, 0], dtype=np.int32),
+                'anomaly_overlay_mode': 'anomaly_count',
+                'value_precision': 0,
+                'min_temperature': 0.0,
+                'max_temperature': 360.0,
+                'total_pixels': 12,
+                'anomaly_pixels': 3,
+            }
+        }
+    )
+
+    assert not dialog.chartWidget.show_aoi_only()
+
+    with qtbot.waitSignal(dialog.aoiOnlyModeChanged):
+        dialog.showAoiOnlyCheckBox.setChecked(True)
+
+    assert dialog.chartWidget.show_aoi_only()
+
+
+def test_color_histogram_dialog_range_labels(app, qtbot):
+    """Hue range labels should display integer degree values."""
+    dialog = ColorHistogramDialog(None)
+    qtbot.addWidget(dialog)
+    dialog.set_histogram_context(
+        {
+            'color_space': 'HSV',
+            'component': 'H',
+            'display_suffix': '°',
+            'component_matrix': np.array([[5.0, 25.0, 355.0]], dtype=np.float32),
+            'histogram_data': {
+                'color_space': 'HSV',
+                'component': 'H',
+                'bin_edges': np.array([0.0, 120.0, 240.0, 360.0], dtype=np.float32),
+                'bin_centers': np.array([60.0, 180.0, 300.0], dtype=np.float32),
+                'counts': np.array([1, 1, 1], dtype=np.int32),
+                'anomaly_counts': np.array([0, 0, 1], dtype=np.int32),
+                'value_precision': 0,
+                'min_temperature': 0.0,
+                'max_temperature': 360.0,
+                'total_pixels': 3,
+                'anomaly_pixels': 1,
+            }
+        }
+    )
+    dialog.set_selected_range(20.0, 350.0)
+
+    assert "Minimum: 20°" in dialog.minValueLabel.text()
+    assert "Maximum: 350°" in dialog.maxValueLabel.text()
 
 
 def test_export_progress_dialog_initialization(app):

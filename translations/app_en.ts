@@ -2324,6 +2324,96 @@ Recommended: 50% for balanced filtering, 30% for more detections, 70% for strict
     </message>
 </context>
 <context>
+    <name>ColorHistogramController</name>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/ColorHistogramController.py" line="41"/>
+        <source>Hue Histogram Unavailable</source>
+        <translation>Hue Histogram Unavailable</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/ColorHistogramController.py" line="43"/>
+        <source>No color image data is available for the current image.</source>
+        <translation>No color image data is available for the current image.</translation>
+    </message>
+</context>
+<context>
+    <name>ColorHistogramDialog</name>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="14"/>
+        <source>Hue Histogram</source>
+        <translation>Hue Histogram</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="23"/>
+        <source>Hue distribution of all pixels vs. AOI pixels. Hovering the chart highlights matching pixels in the image.</source>
+        <translation>Hue distribution of all pixels vs. AOI pixels. Hovering the chart highlights matching pixels in the image.</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="32"/>
+        <source>AOIs Only</source>
+        <translation>AOIs Only</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="52"/>
+        <source>Reset Zoom</source>
+        <translation>Reset Zoom</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="61"/>
+        <source>Drag on the histogram or use the mouse wheel to zoom. Double-click or use Reset Zoom to return to the full range.</source>
+        <translation>Drag on the histogram or use the mouse wheel to zoom. Double-click or use Reset Zoom to return to the full range.</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="74"/>
+        <source>Visible Hue Range</source>
+        <translation>Visible Hue Range</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="127"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="62"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="146"/>
+        <source>Hover over the histogram to inspect a hue band.</source>
+        <translation>Hover over the histogram to inspect a hue band.</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="85"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="59"/>
+        <source>Minimum: --</source>
+        <translation>Minimum: --</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="92"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="60"/>
+        <source>Maximum: --</source>
+        <translation>Maximum: --</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="115"/>
+        <source>Reset Range</source>
+        <translation>Reset Range</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="30"/>
+        <source>No hue histogram data available</source>
+        <translation>No hue histogram data available</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="152"/>
+        <source>Hover hue: {value}°</source>
+        <translation>Hover hue: {value}°</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="160"/>
+        <source>Minimum: {minimum}°</source>
+        <translation>Minimum: {minimum}°</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="165"/>
+        <source>Maximum: {maximum}°</source>
+        <translation>Maximum: {maximum}°</translation>
+    </message>
+</context>
+<context>
     <name>ColorListDialog</name>
     <message>
         <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="30"/>
@@ -4141,7 +4231,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <translation>(Image {current} of {total})</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="410"/>
+        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="422"/>
         <source>Error Loading Image</source>
         <translation>Error Loading Image</translation>
     </message>
@@ -9002,17 +9092,18 @@ Aggressive</source>
 <context>
     <name>ThermalHistogramChart</name>
     <message>
-        <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="116"/>
-        <source>No thermal histogram data available</source>
+        <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="97"/>
+        <source>No histogram data available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="295"/>
+        <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="435"/>
         <source>All Pixels</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="301"/>
+        <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="446"/>
+        <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="457"/>
         <source>AOI Pixels</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9059,13 +9150,13 @@ Aggressive</source>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="75"/>
-        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="56"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="59"/>
         <source>Minimum: --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="82"/>
-        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="57"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="60"/>
         <source>Maximum: --</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9076,23 +9167,28 @@ Aggressive</source>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="117"/>
-        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="58"/>
-        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="123"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="61"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="126"/>
         <source>Hover over the histogram to inspect a temperature band.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="128"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="30"/>
+        <source>No thermal histogram data available</source>
+        <translation>No thermal histogram data available</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="131"/>
         <source>Hover band: {lower:.1f} to {upper:.1f} °{unit}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="138"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="141"/>
         <source>Minimum: {minimum:.1f} °{unit}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="144"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="147"/>
         <source>Maximum: {maximum:.1f} °{unit}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9877,13 +9973,13 @@ Use to compare original image with detection results.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="205"/>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="355"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="360"/>
         <source>Show Overlay</source>
         <translation>Show Overlay</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="225"/>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="846"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="851"/>
         <source>Toggle Gallery Mode (G)
 Shows all AOIs from all images in a grid view</source>
         <translation>Toggle Gallery Mode (G)
@@ -9901,8 +9997,8 @@ Shows all AOIs from all images in a grid view</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="299"/>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="866"/>
-        <source>Open Temperature Histogram</source>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="871"/>
+        <source>Open Histogram</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10105,17 +10201,17 @@ Sorting helps prioritize review of larger or closer objects.</translation>
         <translation>Open</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="114"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="115"/>
         <source>Automated Drone Image Analysis Tool v{version} - Sponsored by TEXSAR</source>
         <translation>Automated Drone Image Analysis Tool v{version} - Sponsored by TEXSAR</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="134"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="135"/>
         <source>Load Results Failed</source>
         <translation>Load Results Failed</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="136"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="137"/>
         <source>Cannot load results without valid image and mask locations.
 
 The viewer will now close.</source>
@@ -10124,35 +10220,35 @@ The viewer will now close.</source>
 The viewer will now close.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="152"/>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1042"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="153"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1047"/>
         <source>Skip Hidden ({count}) </source>
         <translation>Skip Hidden ({count}) </translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="215"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="217"/>
         <source>Image metadata and information.
 Click on GPS Coordinates to copy, share, or open in mapping applications.</source>
         <translation>Image metadata and information.
 Click on GPS Coordinates to copy, share, or open in mapping applications.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="461"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="466"/>
         <source>No Dataset</source>
         <translation>No Dataset</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="462"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="467"/>
         <source>No dataset is currently loaded.</source>
         <translation>No dataset is currently loaded.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="469"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="474"/>
         <source>Generate Cache</source>
         <translation>Generate Cache</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="471"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="476"/>
         <source>This will regenerate thumbnail and color caches for all AOIs in this dataset.
 
 This may take a few minutes depending on the dataset size.
@@ -10165,39 +10261,39 @@ This may take a few minutes depending on the dataset size.
 Continue?</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="484"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="489"/>
         <source>Initializing cache generation...</source>
         <translation>Initializing cache generation...</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="485"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="490"/>
         <source>Cancel</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="490"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="495"/>
         <source>Generating Cache</source>
         <translation>Generating Cache</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="527"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="532"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="528"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="533"/>
         <source>Failed to start cache generation:
 {error}</source>
         <translation>Failed to start cache generation:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="546"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="551"/>
         <source>Cache Generated</source>
         <translation>Cache Generated</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="548"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="553"/>
         <source>Cache generation complete!
 
 Processed {images} images with {aois} AOIs.
@@ -10210,12 +10306,12 @@ Processed {images} images with {aois} AOIs.
 The viewer will now load thumbnails and colors much faster.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="579"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="584"/>
         <source>Cache Generation Error</source>
         <translation>Cache Generation Error</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="581"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="586"/>
         <source>An error occurred during cache generation:
 
 {error}</source>
@@ -10224,12 +10320,12 @@ The viewer will now load thumbnails and colors much faster.</translation>
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="749"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="754"/>
         <source>AOI Not Visible</source>
         <translation>AOI Not Visible</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="751"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="756"/>
         <source>The AOI at the cursor position cannot be selected because it is currently hidden due to active filters.
 
 To select this AOI, please clear or adjust your filters.</source>
@@ -10238,46 +10334,46 @@ To select this AOI, please clear or adjust your filters.</source>
 To select this AOI, please clear or adjust your filters.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="857"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="862"/>
         <source>Show Pixels of Interest (H or Ctrl+I)</source>
         <translation>Show Pixels of Interest (H or Ctrl+I)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="872"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="877"/>
         <source>Toggle AOI Circles</source>
         <translation>Toggle AOI Circles</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1214"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1219"/>
         <source>Missing Dependency</source>
         <translation>Missing Dependency</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1216"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1221"/>
         <source>The qimage2ndarray module is required for the upscale feature.
 Please install it using: pip install qimage2ndarray</source>
         <translation>The qimage2ndarray module is required for the upscale feature.
 Please install it using: pip install qimage2ndarray</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1225"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1230"/>
         <source>Upscale Error</source>
         <translation>Upscale Error</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1227"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1232"/>
         <source>An error occurred while opening the upscale dialog:
 {error}</source>
         <translation>An error occurred while opening the upscale dialog:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1470"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1479"/>
         <source>Unknown Reviewer</source>
         <translation>Unknown Reviewer</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1533"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1542"/>
         <source>Loading gallery...</source>
         <translation>Loading gallery...</translation>
     </message>
