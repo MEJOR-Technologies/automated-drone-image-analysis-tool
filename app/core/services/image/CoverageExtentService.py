@@ -175,7 +175,7 @@ class CoverageExtentService:
             image_lon = gps_coords['longitude']
 
             # Load image service
-            image_service = ImageService(image_path, image.get('mask_path', ''))
+            image_service = ImageService(image_path, image.get('mask_path', ''), calculated_bearing=image.get('bearing'))
 
             # Check gimbal angle - must be nadir
             gimbal_pitch = image_service.get_camera_pitch()

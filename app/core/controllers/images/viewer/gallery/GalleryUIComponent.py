@@ -239,6 +239,35 @@ class GalleryUIComponent(TranslationMixin, QObject):
             original_keyPressEvent(event)
         self.gallery_view.keyPressEvent = keyPressEvent
 
+        # Override wheelEvent for page-at-a-time scrolling
+        gridRowHeight = 200  # Must match setGridSize() below
+
+        def wheelEvent(event):
+            viewportHeight = self.gallery_view.viewport().height()
+            if viewportHeight <= 0 or gridRowHeight <= 0:
+                QListView.wheelEvent(self.gallery_view, event)
+                return
+
+            # Calculate full rows visible, scroll by that many rows
+            rowsPerPage = max(1, viewportHeight // gridRowHeight)
+            scrollAmount = rowsPerPage * gridRowHeight
+
+            scrollBar = self.gallery_view.verticalScrollBar()
+            currentValue = scrollBar.value()
+
+            if event.angleDelta().y() > 0:
+                newValue = max(scrollBar.minimum(), currentValue - scrollAmount)
+            else:
+                newValue = min(scrollBar.maximum(), currentValue + scrollAmount)
+
+            # Snap to row boundary for clean alignment
+            newValue = (newValue // gridRowHeight) * gridRowHeight
+
+            scrollBar.setValue(newValue)
+            event.accept()
+
+        self.gallery_view.wheelEvent = wheelEvent
+
         # Set fixed grid size for consistent columns
         self.gallery_view.setGridSize(QSize(200, 200))  # Width, Height (thumbnail + spacing)
 

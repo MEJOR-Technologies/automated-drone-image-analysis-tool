@@ -134,7 +134,7 @@ class KMLGeneratorService:
             # Get image GPS coordinates and metadata
             try:
                 # Create ImageService to extract EXIF data
-                image_service = ImageService(image_path, image.get('mask_path', ''))
+                image_service = ImageService(image_path, image.get('mask_path', ''), calculated_bearing=image.get('bearing'))
 
                 # Get GPS from EXIF data as a dict (not formatted string)
                 image_gps = LocationInfo.get_gps(exif_data=image_service.exif_data)
@@ -266,7 +266,7 @@ class KMLGeneratorService:
             # Get image GPS coordinates
             try:
                 # Create ImageService to extract EXIF data
-                image_service = ImageService(image_path, image.get('mask_path', ''))
+                image_service = ImageService(image_path, image.get('mask_path', ''), calculated_bearing=image.get('bearing'))
 
                 # Get GPS from EXIF data
                 image_gps = LocationInfo.get_gps(exif_data=image_service.exif_data)

@@ -122,6 +122,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.xml_service = XmlService(xml_path)
         self.images = self.xml_service.get_images()
 
+        # Check for missing image dimensions and offer to backfill
+        self._backfill_image_dimensions_if_needed()
+
         # Initialize controllers needed during early setup
         # (must exist before validation/recovery calls below)
         self.path_validation_controller = PathValidationController(self)
@@ -787,6 +790,61 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             # Track AOI in neighboring images with 'Z' key
             if hasattr(self, 'neighbor_tracking_controller'):
                 self.neighbor_tracking_controller.track_selected_aoi()
+
+    def _backfill_image_dimensions_if_needed(self):
+        """Check if image dimensions are missing and offer to backfill from image files."""
+        if not self.images:
+            return
+
+        missingCount = sum(1 for img in self.images
+            if img.get('width') is None or img.get('height') is None)
+
+        if missingCount == 0:
+            return
+
+        reply = QMessageBox.question(
+            self,
+            self.tr("Update Image Dimensions"),
+            self.tr(
+                "This dataset is missing image dimensions needed for heatmap filtering "
+                "({count} images).\n\n"
+                "Would you like to read dimensions from the image files and update "
+                "the results file?"
+            ).format(count=missingCount),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        from PIL import Image
+        updatedCount = 0
+        for image in self.images:
+            if image.get('width') is not None and image.get('height') is not None:
+                continue
+
+            imagePath = image.get('path')
+            if not imagePath or not os.path.isfile(imagePath):
+                continue
+
+            try:
+                with Image.open(imagePath) as img:
+                    width, height = img.size
+                    image['width'] = width
+                    image['height'] = height
+
+                    # Also update the XML element
+                    xmlElement = image.get('xml')
+                    if xmlElement is not None:
+                        xmlElement.set('width', str(width))
+                        xmlElement.set('height', str(height))
+                    updatedCount += 1
+            except Exception:
+                continue
+
+        if updatedCount > 0:
+            self.xml_service.save_xml_file(self.xml_path)
 
     def _load_images(self):
         """Loads and validates images from the XML file."""

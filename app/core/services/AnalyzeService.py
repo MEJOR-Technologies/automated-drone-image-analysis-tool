@@ -329,6 +329,11 @@ class AnalyzeService(QObject):
             instance.set_scale_factor(scale_factor)  # Pass scale factor to algorithm for coordinate transformation
             result = instance.process_image(img, full_path, input_dir, output_dir)
 
+            # Store original image dimensions on the result
+            if result:
+                result.image_width = original_width
+                result.image_height = original_height
+
             # Transform AOI coordinates from processing resolution back to original resolution
             if result and result.areas_of_interest and scale_factor < 1.0:
                 result.areas_of_interest = instance.transform_aois_to_original_resolution(result.areas_of_interest)
@@ -395,7 +400,9 @@ class AnalyzeService(QObject):
             image_data = {
                 "path": result.output_path,  # This will be the mask path
                 "original_path": result.input_path,  # Original image path
-                "aois": result.areas_of_interest
+                "aois": result.areas_of_interest,
+                "width": result.image_width,
+                "height": result.image_height
             }
             self.images_with_aois.append(image_data)
 
@@ -449,7 +456,7 @@ class AnalyzeService(QObject):
             input_root: Optional input root directory for generating relative paths.
         """
         try:
-            # Create thumbnail directory (unified with AOI thumbnails)
+            # Create thumbnail directory
             thumb_dir = Path(output_dir) / '.thumbnails'
             thumb_dir.mkdir(parents=True, exist_ok=True)
 
@@ -457,21 +464,17 @@ class AnalyzeService(QObject):
             rel_key_source = None
             try:
                 if input_root:
-                    # Prefer relative to provided input root
                     rel = Path(image_path)
                     rel_key_source = str(rel.relative_to(Path(input_root)))
             except Exception:
-                # Fall back to os.relpath, may cross drives on Windows
                 try:
                     rel_key_source = os.path.relpath(image_path, input_root) if input_root else None
                 except Exception:
                     rel_key_source = None
 
             if not rel_key_source:
-                # Last resort: use filename only (legacy behavior)
                 rel_key_source = os.path.basename(image_path)
 
-            # Normalize for cross-platform stability
             norm_key = rel_key_source.replace('\\', '/').lower()
             path_hash = hashlib.md5(norm_key.encode()).hexdigest()
             thumb_filename = f"{path_hash}.jpg"
@@ -479,17 +482,13 @@ class AnalyzeService(QObject):
 
             # Convert to RGB if needed
             if len(img.shape) == 2:
-                # Grayscale
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
             elif img.shape[2] == 4:
-                # RGBA to RGB
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
             else:
-                # BGR to RGB
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             # Calculate thumbnail dimensions maintaining aspect ratio (max 100x56)
-            # This matches PIL's thumbnail() behavior
             max_width, max_height = 100, 56
             height, width = img_rgb.shape[:2]
             aspect_ratio = width / height
@@ -510,7 +509,6 @@ class AnalyzeService(QObject):
             thumb_img_bgr = cv2.cvtColor(thumb_img, cv2.COLOR_RGB2BGR)
 
             # Save as JPEG with balanced quality (80 = good balance of quality and speed)
-            # Reduced from 85 for faster writes with minimal visual difference for thumbnails
             cv2.imwrite(str(thumb_path), thumb_img_bgr, [cv2.IMWRITE_JPEG_QUALITY, 80])
 
         except Exception:
