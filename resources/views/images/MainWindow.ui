@@ -1096,6 +1096,8 @@ Use to review, verify, and export analysis results.</string>
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionCheckForUpdates"/>
+    <addaction name="separator"/>
     <addaction name="actionHelp"/>
     <addaction name="actionCommunityHelp"/>
     <addaction name="actionYouTube_Channel"/>
@@ -1265,6 +1267,20 @@ Ideal for large-scale searches with multiple reviewers and image batches.</strin
     <string>Open the online help documentation in your web browser.
 Access comprehensive documentation, tutorials, and user guides.
 Provides detailed information on all features and algorithms.</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+  </action>
+  <action name="actionCheckForUpdates">
+   <property name="text">
+    <string>Check for Updates</string>
+   </property>
+   <property name="toolTip">
+    <string>Check the update feed for a newer ADIAT installer.
+If an update is available, you can download and launch the installer from here.</string>
    </property>
    <property name="font">
     <font>

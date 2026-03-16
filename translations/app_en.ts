@@ -10462,4 +10462,136 @@ When checked, all images will be exported regardless of flagged AOI status.</tra
         <translation>Cancel</translation>
     </message>
 </context>
+<context>
+    <name>UpdateController</name>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="45"/>
+        <source>Disabled while Offline Only mode is enabled.</source>
+        <translation>Disabled while Offline Only mode is enabled.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="49"/>
+        <source>Check the update feed for a newer ADIAT installer.</source>
+        <translation>Check the update feed for a newer ADIAT installer.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="78"/>
+        <source>Updates Disabled</source>
+        <translation>Updates Disabled</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="79"/>
+        <source>Update checks are disabled while Offline Only mode is enabled.</source>
+        <translation>Update checks are disabled while Offline Only mode is enabled.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="94"/>
+        <source>Update Check Failed</source>
+        <translation>Update Check Failed</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="95"/>
+        <source>Unable to check for updates:
+{error}</source>
+        <translation>Unable to check for updates:
+{error}</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="103"/>
+        <source>No Updates Available</source>
+        <translation>No Updates Available</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="104"/>
+        <source>You are already running the latest available version of ADIAT.</source>
+        <translation>You are already running the latest available version of ADIAT.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="123"/>
+        <source>Installer Launch Failed</source>
+        <translation>Installer Launch Failed</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="124"/>
+        <source>The installer was downloaded but could not be launched:
+{error}</source>
+        <translation>The installer was downloaded but could not be launched:
+{error}</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="130"/>
+        <source>Installer Started</source>
+        <translation>Installer Started</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="131"/>
+        <source>The installer has been launched. Close ADIAT when you are ready to continue the update.</source>
+        <translation>The installer has been launched. Close ADIAT when you are ready to continue the update.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="141"/>
+        <source>Update Available</source>
+        <translation>Update Available</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="143"/>
+        <source>ADIAT {new_version} is available. You are running {current_version}.</source>
+        <translation>ADIAT {new_version} is available. You are running {current_version}.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="149"/>
+        <source>Do you want to download and launch the installer now?</source>
+        <translation>Do you want to download and launch the installer now?</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="152"/>
+        <source>Download and Install</source>
+        <translation>Download and Install</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="161"/>
+        <source>Downloading ADIAT {version}...</source>
+        <translation>Downloading ADIAT {version}...</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="162"/>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="167"/>
+        <source>Downloading Update</source>
+        <translation>Downloading Update</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="184"/>
+        <source>Downloading ADIAT {version}...
+{downloaded} of {total} bytes</source>
+        <translation>Downloading ADIAT {version}...
+{downloaded} of {total} bytes</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="187"/>
+        <source>unknown</source>
+        <translation>unknown</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="192"/>
+        <location filename="../app/core/controllers/UpdateController.py" line="198"/>
+        <source>Update download canceled.</source>
+        <translation>Update download canceled.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="203"/>
+        <source>Download Failed</source>
+        <translation>Download Failed</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/UpdateController.py" line="204"/>
+        <source>Unable to download the update installer:
+{error}</source>
+        <translation>Unable to download the update installer:
+{error}</translation>
+    </message>
+</context>
 </TS>

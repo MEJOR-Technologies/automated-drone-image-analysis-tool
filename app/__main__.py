@@ -130,6 +130,11 @@ def initialize_default_settings():
         if theme is None:
             settings_service.set_setting('Theme', 'Dark')
 
+        # Update checks
+        auto_check_updates = settings_service.get_setting('AutoCheckForUpdates')
+        if not isinstance(auto_check_updates, bool):
+            settings_service.set_setting('AutoCheckForUpdates', True)
+
     except Exception as e:
         logger.error(f"Error initializing default settings: {e}")
         logger.error(traceback.format_exc())

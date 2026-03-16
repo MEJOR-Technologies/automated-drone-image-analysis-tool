@@ -14,6 +14,7 @@ from core.services.SettingsService import SettingsService
 from core.services.AnalyzeService import AnalyzeService
 from core.services.LoggerService import LoggerService
 from core.services.ResultsScannerService import ResultsScannerService
+from core.controllers.UpdateController import UpdateController
 from core.controllers.coordinator.CoordinatorWindow import CoordinatorWindow
 # StreamViewerWindow imported lazily in _open_streaming_detector() to avoid circular dependency
 from core.controllers.images.VideoParser import VideoParser
@@ -62,6 +63,7 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         self.setStylesheets()
         self.settings_service = SettingsService()
         self.app_version = self.settings_service.get_setting('app_version', '2.0.0') or '2.0.0'
+        self.update_controller = UpdateController(self, settings_service=self.settings_service)
         self.__threads = []
         self.images = None
         self.algorithmWidget = None
@@ -127,6 +129,9 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         if hasattr(self, 'actionHelp'):
             self.actionHelp.triggered.connect(self._open_help)
 
+        if hasattr(self, 'actionCheckForUpdates'):
+            self.update_controller.bind_action(self.actionCheckForUpdates)
+
         if hasattr(self, 'actionCommunityHelp'):
             self.actionCommunityHelp.triggered.connect(self._open_community_help)
         if hasattr(self, 'actionYouTube_Channel'):
@@ -163,6 +168,8 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         # Store previous valid values
         self._previous_min_area = self.minAreaSpinBox.value()
         self._previous_max_area = self.maxAreaSpinBox.value()
+
+        self.update_controller.schedule_startup_check()
 
     def setStylesheets(self):
         """
@@ -1050,6 +1057,7 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         """
         pref = Preferences(self)
         pref.exec()
+        self.update_controller.refresh_action_state()
 
     def _open_video_parser(self):
         """
@@ -1167,6 +1175,7 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         Handle window show event. Auto-start processing if requested from wizard.
         """
         super().showEvent(event)
+        self.update_controller.refresh_action_state()
 
         # self.logger.info(f"showEvent called, _auto_start_requested={self._auto_start_requested}")
 

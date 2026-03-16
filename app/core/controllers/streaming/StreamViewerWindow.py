@@ -31,6 +31,7 @@ import qdarktheme
 from core.controllers.Preferences import Preferences
 from core.controllers.streaming.StreamingGuide import StreamingGuide
 # MainWindow imported lazily in _open_image_analysis() to avoid circular dependency
+from core.controllers.UpdateController import UpdateController
 from core.services.SettingsService import SettingsService
 from core.services.ConfigService import ConfigService
 from core.views.streaming.StreamViewerWindow_ui import Ui_StreamViewerWindow
@@ -77,6 +78,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         self.settings = QSettings("ADIAT", "StreamViewer")
         self.settings_service = SettingsService()
         self.app_version = self.settings_service.get_setting('app_version', '2.0.0') or '2.0.0'
+        self.update_controller = UpdateController(self, settings_service=self.settings_service)
         self.theme = theme
         self._maximized_applied = False
         # Store algorithm name - if None, will load default, if empty string, won't load
@@ -240,9 +242,12 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
 
         # Help menu
         help_menu = menu_bar.addMenu(self.tr("Help"))
+        self.action_check_for_updates = QAction(self.tr("Check for Updates"), self)
         self.action_manual = QAction(self.tr("Manual"), self)
         self.action_community = QAction(self.tr("Community Forum"), self)
         self.action_youtube = QAction(self.tr("YouTube Channel"), self)
+        help_menu.addAction(self.action_check_for_updates)
+        help_menu.addSeparator()
         help_menu.addAction(self.action_manual)
         help_menu.addAction(self.action_community)
         help_menu.addAction(self.action_youtube)
@@ -251,6 +256,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         self.action_streaming_guide.triggered.connect(self._open_streaming_guide)
         self.action_image_analysis.triggered.connect(self._open_image_analysis)
         self.action_preferences.triggered.connect(self._open_preferences)
+        self.update_controller.bind_action(self.action_check_for_updates)
         self.action_manual.triggered.connect(self._open_manual)
         self.action_community.triggered.connect(self._open_community_forum)
         self.action_youtube.triggered.connect(self._open_youtube_channel)
@@ -706,6 +712,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         try:
             pref = Preferences(self)
             pref.exec()
+            self.update_controller.refresh_action_state()
         except Exception as e:
             self.logger.error(f"Error opening Preferences: {e}")
             QMessageBox.critical(
@@ -2064,9 +2071,11 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
     def showEvent(self, event):
         """Ensure the viewer launches maximized on first show."""
         super().showEvent(event)
+        self.update_controller.refresh_action_state()
         if not self._maximized_applied:
             self._maximized_applied = True
             self.showMaximized()
+        self.update_controller.schedule_startup_check()
 
     def closeEvent(self, event):
         """Handle window close event."""
