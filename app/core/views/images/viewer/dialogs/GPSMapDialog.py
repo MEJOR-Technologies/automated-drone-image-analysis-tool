@@ -22,6 +22,9 @@ class GPSMapDialog(TranslationMixin, QDialog):
     # Signal emitted when an image is selected from the map
     image_selected = Signal(int)
 
+    # Signal emitted when user right-clicks on the map (lat, lon)
+    gps_right_clicked = Signal(float, float)
+
     def __init__(self, parent, gps_data, current_image_index, offline_only=False):
         """
         Initialize the GPS map dialog.
@@ -67,6 +70,7 @@ class GPSMapDialog(TranslationMixin, QDialog):
         # Create and add map view
         self.map_view = GPSMapView(self, offline_only=self.offline_only)
         self.map_view.point_clicked.connect(self.on_point_clicked)
+        self.map_view.gps_right_clicked.connect(self.gps_right_clicked.emit)
 
         # Connect to tile error signals
         self.map_view.tile_loader.tile_error.connect(self.on_tile_error)
@@ -262,3 +266,12 @@ class GPSMapDialog(TranslationMixin, QDialog):
             self.map_view.set_aoi_marker(aoi_gps_data, identifier_color)
         else:
             self.map_view.clear_aoi_marker()
+
+    def update_zoom_fov(self, visible_rect):
+        """
+        Update the zoom FOV box on the map.
+
+        Args:
+            visible_rect: QRectF in image pixel coordinates, or None to clear.
+        """
+        self.map_view.update_zoom_fov_box(visible_rect)

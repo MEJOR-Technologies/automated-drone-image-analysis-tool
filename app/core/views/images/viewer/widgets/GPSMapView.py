@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt, Signal, QPointF, QRectF, QTimer, QEvent
 from PySide6.QtGui import QPen, QBrush, QColor, QPainterPath, QWheelEvent, QMouseEvent, QPainter, QPixmap, QFont, QPalette, QPolygonF
 from core.views.images.viewer.widgets.MapTileLoader import MapTileLoader
 from core.services.image.ImageService import ImageService
+from core.services.image.AOIService import AOIService, _get_terrain_service
 from helpers.TranslationMixin import TranslationMixin
 
 
@@ -27,6 +28,9 @@ class GPSMapView(TranslationMixin, QGraphicsView):
 
     # Signal emitted when a GPS point is clicked
     point_clicked = Signal(int)
+
+    # Signal emitted when user right-clicks on the map (lat, lon)
+    gps_right_clicked = Signal(float, float)
 
     def __init__(self, parent=None, offline_only=False):
         """Initialize the GPS map view."""
@@ -68,6 +72,11 @@ class GPSMapView(TranslationMixin, QGraphicsView):
 
         # FOV (Field of View) box for current image
         self.fov_box = None
+
+        # Zoom FOV box for current visible viewport
+        self.zoom_fov_box = None
+        self._fov_cache = None  # Cached FOV params: gsd_m, width, height, bearing, lat, lon
+        self._last_visible_rect = None  # Last visible rect for map zoom redraws
 
         # Map bounds
         self.min_lat = None
@@ -663,6 +672,10 @@ class GPSMapView(TranslationMixin, QGraphicsView):
         # Update FOV box
         self.update_fov_box(self.current_image_index)
 
+        # Clear zoom FOV box when switching images
+        self._last_visible_rect = None
+        self.clear_zoom_fov_box()
+
         # Ensure compass stays in correct position
         self._ensure_compass_created()
         if self.compass_container:
@@ -997,6 +1010,10 @@ class GPSMapView(TranslationMixin, QGraphicsView):
         if 0 <= self.current_image_index < len(self.gps_data):
             self.update_fov_box(self.current_image_index)
 
+        # Redraw zoom FOV box with updated scene coordinates
+        if self._last_visible_rect is not None:
+            self.update_zoom_fov_box(self._last_visible_rect)
+
         # Load new tiles
         self.load_visible_tiles()
 
@@ -1030,6 +1047,13 @@ class GPSMapView(TranslationMixin, QGraphicsView):
 
     def mousePressEvent(self, event: QMouseEvent):
         """Handle mouse press events."""
+        if event.button() == Qt.MouseButton.RightButton:
+            scene_pos = self.mapToScene(event.pos())
+            lat, lon = self.scene_to_lat_lon(scene_pos.x(), scene_pos.y())
+            self.gps_right_clicked.emit(lat, lon)
+            event.accept()
+            return
+
         if event.button() == Qt.MouseButton.LeftButton:
             # Check AOI marker click
             if self.aoi_marker:
@@ -1236,6 +1260,47 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             self.aoi_marker = None
         self.aoi_data = None
 
+    def _fov_flat_corners(self, corners_m, bearing, image_lat, image_lon):
+        """Convert corners in meters (relative to image center) to scene points using flat projection."""
+        bearing_rad = math.radians(-bearing)
+        cos_b = math.cos(bearing_rad)
+        sin_b = math.sin(bearing_rad)
+        earth_radius = 6371000
+        corners_scene = []
+        for x, y in corners_m:
+            x_rot = x * cos_b - y * sin_b
+            y_rot = x * sin_b + y * cos_b
+            delta_lat = y_rot / earth_radius * (180 / math.pi)
+            delta_lon = x_rot / (earth_radius * math.cos(math.radians(image_lat))) * (180 / math.pi)
+            corner_lat = image_lat + delta_lat
+            corner_lon = image_lon + delta_lon
+            corners_scene.append(self.lat_lon_to_scene(corner_lat, corner_lon))
+        return corners_scene
+
+    def _generate_edge_pixels(self, corners_px, gsd_m, terrain_res_m=38.0):
+        """Generate pixel coords along rect edges, spaced at terrain resolution.
+
+        Args:
+            corners_px: List of 4 corner tuples [(x,y), ...] in order: TL, TR, BR, BL
+            gsd_m: Ground sampling distance in meters/pixel
+            terrain_res_m: Terrain DEM resolution in meters
+
+        Returns:
+            List of (x, y) pixel coordinate tuples tracing all 4 edges
+        """
+        step_px = max(1.0, terrain_res_m / gsd_m) if gsd_m > 0 else 1.0
+        edge_pixels = []
+        for i in range(4):
+            x0, y0 = corners_px[i]
+            x1, y1 = corners_px[(i + 1) % 4]
+            dx, dy = x1 - x0, y1 - y0
+            edge_len = math.sqrt(dx * dx + dy * dy)
+            num_steps = max(1, int(edge_len / step_px))
+            for s in range(num_steps):
+                t = s / num_steps
+                edge_pixels.append((x0 + t * dx, y0 + t * dy))
+        return edge_pixels
+
     def update_fov_box(self, image_index):
         """
         Update the Field of View box for the current image.
@@ -1294,37 +1359,154 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             if bearing is None:
                 bearing = self.get_image_bearing_lazy(image_path) or 0
 
-            # Calculate corners
-            corners_image = [
-                (-width_m / 2, -height_m / 2),
-                (width_m / 2, -height_m / 2),
-                (width_m / 2, height_m / 2),
-                (-width_m / 2, height_m / 2)
-            ]
+            # Attempt terrain-adjusted raycast for accurate FOV
+            intrinsics = image_service.get_camera_intrinsics()
+            pitch = image_service.get_camera_pitch()
+            if pitch is None:
+                pitch = -90  # Assume nadir
+            yaw = image_service.get_camera_yaw()
+            if yaw is None:
+                yaw = bearing
 
-            # Rotate and convert to GPS
-            bearing_rad = math.radians(-bearing)
-            cos_b = math.cos(bearing_rad)
-            sin_b = math.sin(bearing_rad)
+            # Match AOIService.estimate_aoi_gps altitude determination exactly
+            if custom_alt and custom_alt > 0:
+                reported_agl = custom_alt / 3.28084  # ft to m
+            else:
+                reported_agl = image_service.get_relative_altitude('m') or 0
+            absolute_alt = image_service.get_asl_altitude('m')
 
-            corners_gps = []
-            earth_radius = 6371000
+            effective_agl = reported_agl
+            terrain_elevation = None
+            geoid_undulation = None
+            drone_absolute_elev = None
 
-            for x, y in corners_image:
-                x_rot = x * cos_b - y * sin_b
-                y_rot = x * sin_b + y * cos_b
+            terrain_service = None
+            try:
+                terrain_service = _get_terrain_service()
+            except Exception:
+                pass
 
-                delta_lat = y_rot / earth_radius * (180 / math.pi)
-                delta_lon = x_rot / (earth_radius * math.cos(math.radians(image_lat))) * (180 / math.pi)
+            # AOIService special case: unreliable low RelativeAltitude
+            if (reported_agl < 10 and absolute_alt and absolute_alt > 50
+                    and terrain_service and terrain_service.enabled):
+                geoid_undulation = terrain_service.get_geoid_undulation(image_lat, image_lon)
+                drone_ortho = absolute_alt - (geoid_undulation or 0)
+                drone_terrain = terrain_service.get_elevation(image_lat, image_lon)
+                if drone_terrain.source == 'terrain' and drone_terrain.elevation_m is not None:
+                    terrain_based_agl = drone_ortho - drone_terrain.elevation_m
+                    if terrain_based_agl > 5:
+                        effective_agl = terrain_based_agl
+                        terrain_elevation = drone_terrain.elevation_m
 
-                corner_lat = image_lat + delta_lat
-                corner_lon = image_lon + delta_lon
+            # Compute drone absolute elevation for per-corner terrain refinement
+            if absolute_alt is not None and terrain_service and terrain_service.enabled:
+                if geoid_undulation is None:
+                    geoid_undulation = terrain_service.get_geoid_undulation(image_lat, image_lon)
+                drone_absolute_elev = absolute_alt - (geoid_undulation or 0)
 
-                scene_point = self.lat_lon_to_scene(corner_lat, corner_lon)
-                corners_gps.append(scene_point)
+            if effective_agl <= 0:
+                effective_agl = reported_agl if reported_agl > 0 else 1.0
+
+            # Cache FOV parameters for zoom FOV reuse
+            has_raycast = False
+            cx = width / 2.0
+            cy = height / 2.0
+            self._fov_cache = {
+                'gsd_m': gsd_m,
+                'width': width,
+                'height': height,
+                'bearing': bearing,
+                'image_lat': image_lat,
+                'image_lon': image_lon,
+                'has_raycast': False,
+            }
+
+            # Try raycast approach with camera intrinsics
+            corners_scene = []
+            terrain_res_m = 38.0
+            if intrinsics and effective_agl > 0:
+                focal_mm = intrinsics['focal_length_mm']
+                sensor_w_mm = intrinsics['sensor_width_mm']
+                sensor_h_mm = intrinsics['sensor_height_mm']
+
+                # Sample along all edges at terrain DEM resolution
+                rect_corners = [(0, 0), (width, 0), (width, height), (0, height)]
+                edge_pixels = self._generate_edge_pixels(rect_corners, gsd_m, terrain_res_m)
+
+                # Raycast all edge points with drone-position AGL
+                edge_gps = []
+                raycast_ok = True
+                for u, v in edge_pixels:
+                    result = AOIService._calculate_ground_position(
+                        image_lat, image_lon, u, v, cx, cy,
+                        width, height, focal_mm, sensor_w_mm, sensor_h_mm,
+                        effective_agl, pitch, yaw
+                    )
+                    if result is None:
+                        raycast_ok = False
+                        break
+                    edge_gps.append(result)
+
+                # Iterative per-point terrain refinement (matches AOIService convergence)
+                if raycast_ok and terrain_service and terrain_service.enabled and drone_absolute_elev:
+                    for i, (pt_lat, pt_lon) in enumerate(edge_gps):
+                        try:
+                            cur_lat, cur_lon = pt_lat, pt_lon
+                            for _iteration in range(3):
+                                pt_terrain = terrain_service.get_elevation(cur_lat, cur_lon)
+                                if pt_terrain.source != 'terrain' or pt_terrain.elevation_m is None:
+                                    break
+                                if pt_terrain.resolution_m:
+                                    terrain_res_m = pt_terrain.resolution_m
+                                pt_agl = max(1.0, drone_absolute_elev - pt_terrain.elevation_m)
+                                u, v = edge_pixels[i]
+                                refined = AOIService._calculate_ground_position(
+                                    image_lat, image_lon, u, v, cx, cy,
+                                    width, height, focal_mm, sensor_w_mm, sensor_h_mm,
+                                    pt_agl, pitch, yaw
+                                )
+                                if refined is None:
+                                    break
+                                new_lat, new_lon = refined
+                                dlat_m = (new_lat - cur_lat) * 111320
+                                dlon_m = (new_lon - cur_lon) * 111320 * math.cos(math.radians(cur_lat))
+                                displacement = math.sqrt(dlat_m * dlat_m + dlon_m * dlon_m)
+                                cur_lat, cur_lon = new_lat, new_lon
+                                if displacement < 1.0:
+                                    break
+                            edge_gps[i] = (cur_lat, cur_lon)
+                        except Exception:
+                            pass
+
+                if raycast_ok:
+                    corners_scene = [self.lat_lon_to_scene(lat, lon) for lat, lon in edge_gps]
+                    has_raycast = True
+                    self._fov_cache.update({
+                        'has_raycast': True,
+                        'focal_mm': focal_mm,
+                        'sensor_w_mm': sensor_w_mm,
+                        'sensor_h_mm': sensor_h_mm,
+                        'cx': cx,
+                        'cy': cy,
+                        'pitch': pitch,
+                        'yaw': yaw,
+                        'effective_agl': effective_agl,
+                        'drone_absolute_elev': drone_absolute_elev,
+                        'terrain_res_m': terrain_res_m,
+                    })
+
+            # Fallback to flat GSD approach
+            if not has_raycast:
+                corners_scene = self._fov_flat_corners(
+                    [(- width_m / 2, -height_m / 2),
+                     (width_m / 2, -height_m / 2),
+                     (width_m / 2, height_m / 2),
+                     (-width_m / 2, height_m / 2)],
+                    bearing, image_lat, image_lon
+                )
 
             # Create FOV polygon
-            polygon = QPolygonF(corners_gps)
+            polygon = QPolygonF(corners_scene)
             self.fov_box = QGraphicsPolygonItem(polygon)
 
             pen = QPen(QColor(0, 150, 255), 2)
@@ -1340,6 +1522,11 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             tooltip += f"Ground Coverage: {width_m:.1f}m x {height_m:.1f}m\n"
             tooltip += f"GSD: {gsd_cm:.2f} cm/px\n"
             tooltip += f"Bearing: {bearing:.1f}°"
+            if terrain_elevation is not None:
+                tooltip += f"\nTerrain: {terrain_elevation:.0f}m ASL"
+                tooltip += f"\nEffective AGL: {effective_agl:.1f}m"
+            if has_raycast:
+                tooltip += "\nProjection: Raycast"
             self.fov_box.setToolTip(tooltip)
 
             self.scene.addItem(self.fov_box)
@@ -1356,3 +1543,149 @@ class GPSMapView(TranslationMixin, QGraphicsView):
         if self.fov_box and self.fov_box in self.scene.items():
             self.scene.removeItem(self.fov_box)
             self.fov_box = None
+
+    def update_zoom_fov_box(self, visible_rect):
+        """
+        Update the zoom Field of View box showing the visible portion of the image.
+
+        Args:
+            visible_rect: QRectF in image pixel coordinates of the currently visible area,
+                          or None to clear.
+        """
+        self._last_visible_rect = visible_rect
+
+        # Clear existing zoom FOV box
+        if self.zoom_fov_box and self.zoom_fov_box in self.scene.items():
+            self.scene.removeItem(self.zoom_fov_box)
+            self.zoom_fov_box = None
+
+        if visible_rect is None or self._fov_cache is None:
+            return
+
+        try:
+            cache = self._fov_cache
+            gsd_m = cache['gsd_m']
+            imgWidth = cache['width']
+            imgHeight = cache['height']
+            bearing = cache['bearing']
+            image_lat = cache['image_lat']
+            image_lon = cache['image_lon']
+
+            # Don't draw if visible rect covers the full image
+            if (visible_rect.left() <= 1 and visible_rect.top() <= 1
+                    and visible_rect.right() >= imgWidth - 1
+                    and visible_rect.bottom() >= imgHeight - 1):
+                return
+
+            rect_corners = [
+                (visible_rect.left(), visible_rect.top()),
+                (visible_rect.right(), visible_rect.top()),
+                (visible_rect.right(), visible_rect.bottom()),
+                (visible_rect.left(), visible_rect.bottom()),
+            ]
+
+            # Use raycast if available
+            corners_scene = None
+            if cache.get('has_raycast'):
+                terrain_res = cache.get('terrain_res_m', 38.0)
+                edge_pixels = self._generate_edge_pixels(rect_corners, gsd_m, terrain_res)
+
+                edge_gps = []
+                raycast_ok = True
+                for u, v in edge_pixels:
+                    result = AOIService._calculate_ground_position(
+                        image_lat, image_lon, u, v,
+                        cache['cx'], cache['cy'],
+                        imgWidth, imgHeight,
+                        cache['focal_mm'], cache['sensor_w_mm'], cache['sensor_h_mm'],
+                        cache['effective_agl'], cache['pitch'], cache['yaw']
+                    )
+                    if result is None:
+                        raycast_ok = False
+                        break
+                    edge_gps.append(result)
+
+                # Iterative per-point terrain refinement (matches AOIService convergence)
+                drone_abs = cache.get('drone_absolute_elev')
+                if raycast_ok and drone_abs:
+                    try:
+                        terrain_service = _get_terrain_service()
+                        if terrain_service and terrain_service.enabled:
+                            for i, (pt_lat, pt_lon) in enumerate(edge_gps):
+                                try:
+                                    cur_lat, cur_lon = pt_lat, pt_lon
+                                    for _iteration in range(3):
+                                        pt_terrain = terrain_service.get_elevation(cur_lat, cur_lon)
+                                        if pt_terrain.source != 'terrain' or pt_terrain.elevation_m is None:
+                                            break
+                                        pt_agl = max(1.0, drone_abs - pt_terrain.elevation_m)
+                                        u, v = edge_pixels[i]
+                                        refined = AOIService._calculate_ground_position(
+                                            image_lat, image_lon, u, v,
+                                            cache['cx'], cache['cy'],
+                                            imgWidth, imgHeight,
+                                            cache['focal_mm'], cache['sensor_w_mm'], cache['sensor_h_mm'],
+                                            pt_agl, cache['pitch'], cache['yaw']
+                                        )
+                                        if refined is None:
+                                            break
+                                        new_lat, new_lon = refined
+                                        dlat_m = (new_lat - cur_lat) * 111320
+                                        dlon_m = (new_lon - cur_lon) * 111320 * math.cos(math.radians(cur_lat))
+                                        displacement = math.sqrt(dlat_m * dlat_m + dlon_m * dlon_m)
+                                        cur_lat, cur_lon = new_lat, new_lon
+                                        if displacement < 1.0:
+                                            break
+                                    edge_gps[i] = (cur_lat, cur_lon)
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+
+                if raycast_ok:
+                    corners_scene = [self.lat_lon_to_scene(lat, lon) for lat, lon in edge_gps]
+
+            # Fallback to flat GSD projection
+            if corners_scene is None:
+                halfW = imgWidth / 2.0
+                halfH = imgHeight / 2.0
+                corners_m = []
+                for px, py in rect_corners:
+                    x_m = (px - halfW) * gsd_m
+                    y_m = (halfH - py) * gsd_m  # Negate: image Y-down → ground Y-north
+                    corners_m.append((x_m, y_m))
+                corners_scene = self._fov_flat_corners(corners_m, bearing, image_lat, image_lon)
+
+            # Create zoom FOV polygon
+            polygon = QPolygonF(corners_scene)
+            self.zoom_fov_box = QGraphicsPolygonItem(polygon)
+
+            pen = QPen(QColor(255, 50, 50), 2)
+            pen.setCosmetic(True)
+            self.zoom_fov_box.setPen(pen)
+
+            brush = QBrush(QColor(255, 50, 50, 30))
+            self.zoom_fov_box.setBrush(brush)
+            self.zoom_fov_box.setZValue(6)
+
+            visW_m = visible_rect.width() * gsd_m
+            visH_m = visible_rect.height() * gsd_m
+            tooltip = self.tr("Zoom FOV") + "\n"
+            tooltip += f"{self.tr('Visible')}: {visible_rect.width():.0f}x{visible_rect.height():.0f} px\n"
+            tooltip += f"{self.tr('Ground')}: {visW_m:.1f}m x {visH_m:.1f}m"
+            self.zoom_fov_box.setToolTip(tooltip)
+
+            self.scene.addItem(self.zoom_fov_box)
+
+            # Ensure compass stays on top
+            if self.compass_container:
+                self.compass_container.raise_()
+
+        except Exception:
+            pass
+
+    def clear_zoom_fov_box(self):
+        """Remove the zoom FOV box from the map."""
+        if self.zoom_fov_box and self.zoom_fov_box in self.scene.items():
+            self.scene.removeItem(self.zoom_fov_box)
+            self.zoom_fov_box = None

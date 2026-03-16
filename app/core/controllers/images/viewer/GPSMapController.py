@@ -5,12 +5,13 @@ This controller handles the GPS map window lifecycle, data extraction,
 and coordination between the map and main viewer.
 """
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QTimer, QPointF
 from helpers.LocationInfo import LocationInfo
 from helpers.MetaDataHelper import MetaDataHelper
 from core.services.LoggerService import LoggerService
 from core.services.image.ImageService import ImageService
-from core.services.image.AOIService import AOIService
+from core.services.image.AOIService import AOIService, _get_terrain_service
+from core.services.image.AOINeighborService import AOINeighborService
 from core.views.images.viewer.dialogs.GPSMapDialog import GPSMapDialog
 import piexif
 from datetime import datetime
@@ -67,6 +68,7 @@ class GPSMapController(QObject):
         if self.map_dialog is None:
             self.map_dialog = GPSMapDialog(self.parent, self.gps_data, current_gps_index, offline_only=offline_only)
             self.map_dialog.image_selected.connect(self.on_map_image_selected)
+            self.map_dialog.gps_right_clicked.connect(self.on_map_gps_clicked)
             # Connect to dialog close event to update button state
             self.map_dialog.finished.connect(self.on_map_dialog_closed)
         else:
@@ -86,6 +88,10 @@ class GPSMapController(QObject):
 
         # Show current AOI if one is selected
         self.update_aoi_on_map()
+
+        # Send current zoom FOV state to the map
+        if hasattr(self.parent, '_on_view_changed'):
+            self.parent._on_view_changed()
 
     def _is_offline_only(self) -> bool:
         """Return whether OfflineOnly preference is enabled."""
@@ -249,6 +255,120 @@ class GPSMapController(QObject):
 
             # Clear AOI marker when switching images (will be re-added if AOI is selected)
             self.map_dialog.update_aoi_marker(None, None)
+
+    def update_zoom_fov(self, visible_rect):
+        """
+        Update the zoom FOV box on the GPS map.
+
+        Args:
+            visible_rect: QRectF in image pixel coordinates, or None to clear.
+        """
+        if self.map_dialog and self.map_dialog.isVisible():
+            self.map_dialog.update_zoom_fov(visible_rect)
+
+    def on_map_gps_clicked(self, lat, lon):
+        """
+        Handle right-click on GPS map — find image containing the coordinate
+        and center the viewer on that position.
+
+        Args:
+            lat: Clicked latitude
+            lon: Clicked longitude
+        """
+        try:
+            neighbor_service = AOINeighborService()
+            terrain_service = None
+            try:
+                terrain_service = _get_terrain_service()
+            except Exception:
+                pass
+
+            # Try current image first, then search others sorted by distance
+            candidates = []
+            current_idx = self.parent.current_image
+            if 0 <= current_idx < len(self.parent.images):
+                candidates.append(current_idx)
+
+            # Sort other images by distance from clicked point
+            other_indices = []
+            for data in self.gps_data:
+                idx = data['index']
+                if idx == current_idx:
+                    continue
+                dlat = (data['latitude'] - lat) * 111320
+                dlon = (data['longitude'] - lon) * 111320 * math.cos(math.radians(lat))
+                dist = math.sqrt(dlat * dlat + dlon * dlon)
+                other_indices.append((dist, idx))
+            other_indices.sort()
+            candidates.extend(idx for _, idx in other_indices[:10])
+
+            for idx in candidates:
+                if idx < 0 or idx >= len(self.parent.images):
+                    continue
+                image = self.parent.images[idx]
+                coverage = neighbor_service.get_image_coverage_info(image)
+                if not coverage:
+                    continue
+
+                # Apply terrain adjustment to altitude
+                self._apply_terrain_altitude(coverage, lat, lon, terrain_service)
+
+                pixel = neighbor_service.gps_to_pixel(lat, lon, coverage)
+                if pixel is None:
+                    continue
+                u, v = pixel
+                if not neighbor_service.is_point_in_image(u, v, coverage['width'], coverage['height']):
+                    continue
+
+                # Found a matching image — center the viewer
+                if idx != current_idx:
+                    self.parent.current_image = idx
+                    self.parent._load_image()
+                    # Defer centering until image is loaded
+                    QTimer.singleShot(150, lambda px=(u, v): self._center_viewer_on_pixel(px))
+                else:
+                    self._center_viewer_on_pixel((u, v))
+                return
+
+            # No image contains this coordinate
+            if hasattr(self.parent, 'status_controller'):
+                self.parent.status_controller.show_toast(
+                    self.tr("GPS coordinate not in any images"),
+                    3000, color="#F44336"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Error handling GPS map click: {e}")
+
+    def _apply_terrain_altitude(self, coverage, target_lat, target_lon, terrain_service):
+        """Adjust coverage altitude with terrain elevation at the target location."""
+        if not terrain_service or not terrain_service.enabled:
+            return
+        try:
+            image_service = coverage.get('image_service')
+            if not image_service:
+                return
+            absolute_alt = image_service.get_asl_altitude('m')
+            if not absolute_alt:
+                return
+            geoid = terrain_service.get_geoid_undulation(coverage['center_lat'], coverage['center_lon'])
+            drone_ortho = absolute_alt - (geoid or 0)
+            click_terrain = terrain_service.get_elevation(target_lat, target_lon)
+            if click_terrain.source == 'terrain' and click_terrain.elevation_m is not None:
+                effective_agl = max(1.0, drone_ortho - click_terrain.elevation_m)
+                coverage['altitude'] = effective_agl
+        except Exception:
+            pass
+
+    def _center_viewer_on_pixel(self, pixel_xy):
+        """Center the main image viewer on a pixel coordinate."""
+        try:
+            if self.parent.main_image and self.parent.main_image.hasImage():
+                current_zoom = self.parent.main_image.getZoom()
+                scale = max(current_zoom, 2.0)
+                self.parent.main_image.zoomToArea(pixel_xy, scale)
+        except Exception as e:
+            self.logger.error(f"Error centering viewer: {e}")
 
     def close_map(self):
         """Close the GPS map window if it's open."""

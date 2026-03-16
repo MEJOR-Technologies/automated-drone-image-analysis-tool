@@ -931,6 +931,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
 
             # Connect signals
             self.main_image.zoomChanged.connect(self._update_scale_bar)
+            self.main_image.viewChanged.connect(self._on_view_changed)
             self.main_image.mousePositionOnImageChanged.connect(self._mainImage_mouse_pos)
 
             # Initialize export controllers
@@ -1372,6 +1373,23 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         """
         if hasattr(self, 'overlay'):
             self.overlay.update_scale_bar(zoom, self.messages, self.distance_unit)
+
+    def _on_view_changed(self):
+        """Update the GPS map zoom FOV box when the view pans or zooms."""
+        if not hasattr(self, 'main_image') or self.main_image is None or self.main_image._is_destroyed:
+            return
+        if not hasattr(self, 'gps_map_controller'):
+            return
+        try:
+            visible_rect = self.main_image.mapToScene(
+                self.main_image.viewport().rect()
+            ).boundingRect()
+            scene_rect = self.main_image.sceneRect()
+            if scene_rect.isValid():
+                visible_rect = visible_rect.intersected(scene_rect)
+            self.gps_map_controller.update_zoom_fov(visible_rect)
+        except RuntimeError:
+            pass
 
     def _mainImage_mouse_pos(self, pos):
         """Displays temperature data or color values at the mouse position.
