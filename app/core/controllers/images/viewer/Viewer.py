@@ -797,7 +797,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             return
 
         missingCount = sum(1 for img in self.images
-            if img.get('width') is None or img.get('height') is None)
+                           if img.get('width') is None or img.get('height') is None)
 
         if missingCount == 0:
             return
@@ -864,12 +864,18 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self._show_no_images_message()
         else:
             # Check for caches and prompt user if missing
-            alternative_cache_dir, _ = self.cache_path_service.check_and_prompt_for_caches(
-                self.xml_path, self
-            )
-            if alternative_cache_dir:
-                self.alternative_cache_dir = alternative_cache_dir
-                self.cache_path_service.update_cache_paths(Path(alternative_cache_dir), self)
+            missing_caches = self.cache_path_service.get_missing_caches(self.xml_path)
+            if missing_caches:
+                from core.views.images.viewer.dialogs.CacheLocationDialog import CacheLocationDialog
+                from PySide6.QtWidgets import QDialog
+                dialog = CacheLocationDialog(self, missing_caches)
+                if dialog.exec() == QDialog.Accepted:
+                    selected_path = dialog.get_selected_path()
+                    if selected_path:
+                        self.alternative_cache_dir = str(selected_path)
+                        self.cache_path_service.update_cache_paths(
+                            Path(self.alternative_cache_dir), self
+                        )
 
             self._load_initial_image()
 

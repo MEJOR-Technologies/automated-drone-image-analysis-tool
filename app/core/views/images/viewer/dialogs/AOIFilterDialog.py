@@ -535,7 +535,7 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         if self.heatmap_service is None or not self.heatmap_service.is_valid():
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self, self.tr("Heatmap"),
-                self.tr("No heatmap data available. Ensure image dimensions are present in the dataset."))
+                                    self.tr("No heatmap data available. Ensure image dimensions are present in the dataset."))
             return
 
         from core.views.images.viewer.dialogs.HeatmapViewerDialog import HeatmapViewerDialog

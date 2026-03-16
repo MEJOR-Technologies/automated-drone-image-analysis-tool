@@ -19,22 +19,6 @@ from core.services.LoggerService import LoggerService
 from helpers.TranslationMixin import TranslationMixin
 
 
-# Lazy terrain service singleton for FOV terrain correction
-_terrain_service = None
-
-
-def _get_terrain_service():
-    """Lazy initialization of terrain service singleton."""
-    global _terrain_service
-    if _terrain_service is None:
-        try:
-            from core.services.terrain import TerrainService
-            _terrain_service = TerrainService()
-        except Exception:
-            pass
-    return _terrain_service
-
-
 class GPSMapView(TranslationMixin, QGraphicsView):
     """
     Custom graphics view for displaying and interacting with GPS points on a map.
@@ -1399,37 +1383,6 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             else:
                 reported_agl = image_service.get_relative_altitude('m') or 0
             absolute_alt = image_service.get_asl_altitude('m')
-            # Calculate corners
-            corners_image = [
-                (-width_m / 2, -height_m / 2),
-                (width_m / 2, -height_m / 2),
-                (width_m / 2, height_m / 2),
-                (-width_m / 2, height_m / 2)
-            ]
-
-            # Rotate and convert to GPS
-            bearing_rad = math.radians(-bearing)
-            cos_b = math.cos(bearing_rad)
-            sin_b = math.sin(bearing_rad)
-
-            corners_gps = []
-            earth_radius = 6378137.0
-
-            # Determine terrain correction parameters
-            terrain_service = _get_terrain_service()
-            drone_orthometric = None
-            flat_agl = None
-
-            if terrain_service and terrain_service.enabled:
-                absolute_alt = image_service.get_asl_altitude('m')
-                if absolute_alt and absolute_alt > 50:
-                    geoid = terrain_service.get_geoid_undulation(image_lat, image_lon)
-                    drone_orthometric = absolute_alt - geoid if geoid is not None else absolute_alt
-
-                    # Recover the flat AGL used for GSD calculation
-                    intrinsics = image_service.get_camera_intrinsics()
-                    if intrinsics:
-                        flat_agl = gsd_m * intrinsics['focal_length_mm'] / intrinsics['sensor_width_mm'] * width
 
             effective_agl = reported_agl
             terrain_elevation = None
@@ -1560,18 +1513,6 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                      (-width_m / 2, height_m / 2)],
                     bearing, image_lat, image_lon
                 )
-                # Terrain-correct this corner if available
-                if drone_orthometric is not None and flat_agl and flat_agl > 0:
-                    terrain_result = terrain_service.get_elevation(corner_lat, corner_lon)
-                    if (terrain_result.source == 'terrain' and
-                            terrain_result.elevation_m is not None):
-                        effective_agl = max(1.0, drone_orthometric - terrain_result.elevation_m)
-                        scale = effective_agl / flat_agl
-                        corner_lat = image_lat + delta_lat * scale
-                        corner_lon = image_lon + delta_lon * scale
-
-                scene_point = self.lat_lon_to_scene(corner_lat, corner_lon)
-                corners_gps.append(scene_point)
 
             # Create FOV polygon
             polygon = QPolygonF(corners_scene)

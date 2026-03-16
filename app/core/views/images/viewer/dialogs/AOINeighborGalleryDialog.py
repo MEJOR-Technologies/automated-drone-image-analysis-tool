@@ -160,7 +160,7 @@ class NeighborGalleryView(QGraphicsView):
                 border_color = QColor(0, 200, 0) if is_current else QColor(100, 100, 100)
                 border_width = self.current_highlight_width if is_current else 2
 
-                border_rect = QGraphicsRectItem(x - border_width/2, y - border_width/2,
+                border_rect = QGraphicsRectItem(x - border_width / 2, y - border_width / 2,
                                                 self.thumbnail_size + border_width,
                                                 self.thumbnail_size + border_width)
                 border_rect.setPen(QPen(border_color, border_width))

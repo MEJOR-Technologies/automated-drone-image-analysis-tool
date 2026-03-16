@@ -913,11 +913,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
             except Exception as exc:
                 self.logger.warning(f"Failed to get stream service from controller: {exc}")
 
-        # Backward-compatible fallback for legacy controllers.
-        for attr_name in ("color_detector", "integrated_detector", "person_detector"):
-            if hasattr(self.algorithm_widget, attr_name):
-                return getattr(self.algorithm_widget, attr_name)
-
+        self.logger.warning("Algorithm widget does not provide a stream service")
         return None
 
     def _create_processing_function(self, service: QObject) -> Callable:

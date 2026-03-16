@@ -84,6 +84,10 @@ class GSDService:
     def compute_gsd_for_all_pixels(self):
         """Compute the GSD for all pixels in the image.
 
+        For tilted cameras, pixel resolution differs between horizontal and
+        vertical directions. Returns the geometric mean of both per row for
+        an accurate average ground resolution at each pixel.
+
         Returns:
             2D numpy array of shape (height, width) with GSD values in centimeters.
         """
@@ -99,13 +103,27 @@ class GSDService:
         y = (rows - cy) * self.pel_size
 
         scale = self.altitude / (self.focal_length * cos_t - y * sin_t)
-        gsd_row = self.pel_size * scale * 100  # in centimeters
+
+        # Horizontal GSD: uniform across columns for a given row
+        h_gsd = self.pel_size * scale * 100  # cm
+
+        # Vertical GSD: ground distance between adjacent rows
+        ground_y = (y * cos_t + self.focal_length * sin_t) * scale
+        v_gsd = np.abs(np.diff(ground_y)) * 100  # cm
+        v_gsd = np.append(v_gsd, v_gsd[-1] if len(v_gsd) > 0 else h_gsd[-1])
+
+        # Geometric mean gives the side of a square with the same area as
+        # the actual rectangular ground coverage of one pixel.
+        gsd_row = np.sqrt(np.abs(h_gsd) * v_gsd)
 
         gsd_full = np.tile(gsd_row[:, np.newaxis], (1, width))
         return gsd_full
 
     def compute_average_gsd(self):
         """Compute the average GSD across the entire image.
+
+        For tilted cameras, accounts for both horizontal and vertical GSD
+        variation using the geometric mean per row.
 
         Returns:
             The average GSD in centimeters.
@@ -121,9 +139,16 @@ class GSDService:
         y = (rows - cy) * self.pel_size
 
         scale = self.altitude / (self.focal_length * cos_t - y * sin_t)
-        gsd_row = self.pel_size * scale * 100  # in centimeters
 
-        avg_gsd = np.mean(gsd_row)
+        # Horizontal GSD per row
+        h_gsd = self.pel_size * scale * 100  # cm
+
+        # Vertical GSD: ground distance between adjacent rows
+        ground_y = (y * cos_t + self.focal_length * sin_t) * scale
+        v_gsd = np.abs(np.diff(ground_y)) * 100  # cm
+        v_gsd = np.append(v_gsd, v_gsd[-1] if len(v_gsd) > 0 else h_gsd[-1])
+
+        avg_gsd = np.mean(np.sqrt(np.abs(h_gsd) * v_gsd))
         return avg_gsd
 
     def compute_average_gsd_between_points(self, row1, col1, row2, col2):

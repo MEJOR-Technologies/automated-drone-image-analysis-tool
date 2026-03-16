@@ -13,6 +13,7 @@ from PIL import Image
 
 from core.services.GSDService import GSDService
 
+from core.services.LoggerService import LoggerService
 from helpers.MetaDataHelper import MetaDataHelper
 from helpers.PickleHelper import PickleHelper
 from helpers.LocationInfo import LocationInfo
@@ -391,7 +392,7 @@ class ImageService:
             return thermal_data
 
         except Exception as e:
-            print(f"Warning: Failed to read thermal data from {self.mask_path}: {e}")
+            LoggerService().warning(f"Failed to read thermal data from {self.mask_path}: {e}")
             return None
 
     def _is_autel(self):
@@ -546,3 +547,44 @@ class ImageService:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 2)
 
         return image_copy
+
+    @staticmethod
+    def save_rgb_as_jpeg(img_array, path, quality=95):
+        """Save an RGB numpy array as a JPEG file.
+
+        Args:
+            img_array: numpy array in RGB format (HxWx3).
+            path: Destination file path.
+            quality: JPEG quality (0-100).
+        """
+        bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(str(path), bgr, [int(cv2.IMWRITE_JPEG_QUALITY), quality])
+
+    @staticmethod
+    def rotate_image(img_array, angle_degrees, border_color=(128, 128, 128)):
+        """Rotate an image by a given angle without cropping.
+
+        Args:
+            img_array: numpy array of the image (HxWxC).
+            angle_degrees: Rotation angle in degrees (counter-clockwise positive).
+            border_color: RGB tuple for the fill color of new border areas.
+
+        Returns:
+            numpy array of the rotated image.
+        """
+        h, w = img_array.shape[:2]
+        center = (w // 2, h // 2)
+
+        M = cv2.getRotationMatrix2D(center, angle_degrees, 1.0)
+
+        cos = abs(M[0, 0])
+        sin = abs(M[0, 1])
+        new_w = int((h * sin) + (w * cos))
+        new_h = int((h * cos) + (w * sin))
+
+        M[0, 2] += (new_w / 2) - center[0]
+        M[1, 2] += (new_h / 2) - center[1]
+
+        return cv2.warpAffine(img_array, M, (new_w, new_h),
+                              borderMode=cv2.BORDER_CONSTANT,
+                              borderValue=border_color)

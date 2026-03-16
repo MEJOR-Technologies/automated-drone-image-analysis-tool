@@ -10,9 +10,6 @@ import shutil
 import tempfile
 import platform
 
-import cv2
-import numpy as np
-
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QApplication, QDialog
 from PySide6.QtCore import QThread, Signal
 from core.services.export.ZipBundleService import ZipBundleService
@@ -368,9 +365,8 @@ class ZipExportController(TranslationMixin):
                         img.get('areas_of_interest', [])
                     )
 
-            # Save RGB numpy array as JPEG (convert to BGR for OpenCV)
-            bgr = cv2.cvtColor(augmented, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(dst_path, bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+            # Save RGB numpy array as JPEG
+            ImageService.save_rgb_as_jpeg(augmented, dst_path)
 
             # Transfer metadata
             try:

@@ -1,24 +1,24 @@
 # Set environment variable to avoid numpy._core issues - MUST be first
+import traceback
+from PySide6.QtCore import QTranslator, QLocale
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from multiprocessing import freeze_support
+from helpers.PickleHelper import PickleHelper
+from core.services.LoggerService import LoggerService
+from core.services.SettingsService import SettingsService
+from core.controllers.streaming.StreamingGuide import StreamingGuide
+from core.controllers.streaming.StreamViewerWindow import StreamViewerWindow
+from core.controllers.images.MainWindow import MainWindow
+from core.controllers.SelectionDialog import SelectionDialog
+from core.controllers.images.ImageAnalysisGuide import ImageAnalysisGuide
+import faulthandler
+import qdarktheme
+from os import path
 import sys
 import os
 os.environ['NUMPY_EXPERIMENTAL_DTYPE_API'] = '0'
 
-from os import path
-import qdarktheme
-import faulthandler
-from core.controllers.images.ImageAnalysisGuide import ImageAnalysisGuide
-from core.controllers.SelectionDialog import SelectionDialog
-from core.controllers.images.MainWindow import MainWindow
-from core.controllers.streaming.StreamViewerWindow import StreamViewerWindow
-from core.controllers.streaming.StreamingGuide import StreamingGuide
-from core.services.SettingsService import SettingsService
-from core.services.LoggerService import LoggerService
-from helpers.PickleHelper import PickleHelper
-from multiprocessing import freeze_support
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import QTranslator, QLocale
-import traceback
 
 version = '2.1.0 Alpha'
 

@@ -8,8 +8,6 @@ and north-oriented image viewing.
 import os
 import tempfile
 import math
-import cv2
-import numpy as np
 from urllib.parse import quote_plus
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QDialog, QApplication
@@ -405,27 +403,8 @@ class CoordinateController(TranslationMixin):
             # If drone is facing east (90°), we need to rotate -90° to face north
             rotation_angle = -direction
 
-            # Rotate the image
-            h, w = img_array.shape[:2]
-            center = (w // 2, h // 2)
-
-            # Get rotation matrix
-            M = cv2.getRotationMatrix2D(center, rotation_angle, 1.0)
-
-            # Calculate new image bounds after rotation
-            cos = abs(M[0, 0])
-            sin = abs(M[0, 1])
-            new_w = int((h * sin) + (w * cos))
-            new_h = int((h * cos) + (w * sin))
-
-            # Adjust rotation matrix to prevent cropping
-            M[0, 2] += (new_w / 2) - center[0]
-            M[1, 2] += (new_h / 2) - center[1]
-
-            # Perform rotation
-            rotated_img = cv2.warpAffine(img_array, M, (new_w, new_h),
-                                         borderMode=cv2.BORDER_CONSTANT,
-                                         borderValue=(128, 128, 128))
+            # Rotate the image using ImageService
+            rotated_img = ImageService.rotate_image(img_array, rotation_angle)
 
             # Create popup window
             popup = QDialog(self.parent)
