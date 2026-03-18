@@ -7,6 +7,7 @@ color detection applications. Designed for <250ms latency processing.
 
 # Set environment variable to avoid numpy compatibility issues - MUST be first
 from core.services.LoggerService import LoggerService
+from helpers.VideoFileHelper import detect_thumbnail_track, remux_to_main_track
 from PySide6.QtCore import QObject, QThread, Signal
 from dataclasses import dataclass
 from enum import Enum
@@ -87,6 +88,7 @@ class RTMPStreamService(QThread):
         self._should_stop = False
         self._frame_number = 0
         self._last_frame_time = 0
+        self._remuxed_temp_path = None
 
         # Performance tracking
         self._fps_counter = 0
@@ -279,6 +281,28 @@ class RTMPStreamService(QThread):
             if not ret or frame is None:
                 self.logger.error("Failed to read initial frame")
                 return False
+
+            # Detect and fix MP4s where OpenCV grabbed a thumbnail track
+            # (e.g. Skydio X10 embeds MJPEG cover art as stream 0)
+            if self._is_file and detect_thumbnail_track(self._cap):
+                self.logger.info("Detected thumbnail track in video file, remuxing to select main video track")
+                temp_path = remux_to_main_track(self.config.url, self.logger)
+                if temp_path:
+                    self._cap.release()
+                    self._remuxed_temp_path = temp_path
+                    self._cap = cv2.VideoCapture(temp_path)
+                    if not self._cap.isOpened():
+                        self.logger.error("Failed to open remuxed video")
+                        os.unlink(temp_path)
+                        self._remuxed_temp_path = None
+                        return False
+                    ret, frame = self._cap.read()
+                    if not ret or frame is None:
+                        self.logger.error("Failed to read frame from remuxed video")
+                        return False
+                else:
+                    self.logger.error("Failed to remux video to select main track")
+                    return False
 
             # Log stream properties
             fps = self._cap.get(cv2.CAP_PROP_FPS)
@@ -658,6 +682,15 @@ class RTMPStreamService(QThread):
         finally:
             self._connected = False
             self._cap = None  # Ensure cap is cleared even if release failed
+
+            # Clean up remuxed temp file
+            if self._remuxed_temp_path:
+                try:
+                    os.unlink(self._remuxed_temp_path)
+                    self.logger.info(f"Cleaned up temp file: {self._remuxed_temp_path}")
+                except OSError:
+                    pass
+                self._remuxed_temp_path = None
 
     def is_connected(self) -> bool:
         """Check if stream is currently connected."""

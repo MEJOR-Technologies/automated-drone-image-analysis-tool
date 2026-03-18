@@ -10,6 +10,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from core.services.LoggerService import LoggerService
 from helpers.MetaDataHelper import MetaDataHelper
+from helpers.VideoFileHelper import detect_thumbnail_track, remux_to_main_track
 
 
 class VideoParserService(QObject):
@@ -54,11 +55,26 @@ class VideoParserService(QObject):
         and embedding it into each image where available. Emits sig_msg for status updates
         and sig_done when complete.
         """
+        remuxed_temp_path = None
         try:
             cap = cv2.VideoCapture(self.video_path)
 
             fps = cap.get(cv2.CAP_PROP_FPS)
             frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+            # Detect thumbnail track (e.g. Skydio X10 embeds MJPEG cover art as stream 0)
+            if cap.isOpened() and detect_thumbnail_track(cap):
+                self.sig_msg.emit("Detected thumbnail track in video, remuxing to select main video track...")
+                cap.release()
+                remuxed_temp_path = remux_to_main_track(self.video_path, self.logger)
+                if remuxed_temp_path:
+                    cap = cv2.VideoCapture(remuxed_temp_path)
+                    fps = cap.get(cv2.CAP_PROP_FPS)
+                    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                else:
+                    self.sig_msg.emit("Error: Failed to remux video file.")
+                    self.sig_done.emit(self.__id, 0)
+                    return
 
             if not cap.isOpened() or fps == 0 or frame_count == 0:
                 self.sig_msg.emit("Error: Invalid video file or unreadable format.")
@@ -143,11 +159,21 @@ class VideoParserService(QObject):
                     self.sig_msg.emit(f"{image_count} images captured")
 
             cap.release()  # Ensure proper cleanup
+            if remuxed_temp_path:
+                try:
+                    os.unlink(remuxed_temp_path)
+                except OSError:
+                    pass
             self.sig_done.emit(self.__id, image_count)
 
         except Exception as e:
             self.logger.error(f"Error in process_video: {str(e)}")
             self.sig_msg.emit(f"Processing error: {str(e)}")
+            if remuxed_temp_path:
+                try:
+                    os.unlink(remuxed_temp_path)
+                except OSError:
+                    pass
             self.sig_done.emit(self.__id, 0)
 
     @Slot()
