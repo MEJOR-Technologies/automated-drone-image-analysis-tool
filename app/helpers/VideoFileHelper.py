@@ -83,6 +83,20 @@ _FFMPEG_MISSING_MSG = (
     "or add imageio-ffmpeg to your environment."
 )
 
+_FFMPEG_USER_MSG = (
+    "This video requires ffmpeg to process, but ffmpeg was not found. "
+    "Please install ffmpeg (on macOS: 'brew install ffmpeg') and restart the application."
+)
+
+
+def is_ffmpeg_available():
+    """Check whether both ffmpeg and ffprobe can be found.
+
+    Returns:
+        True if both binaries are available, False otherwise.
+    """
+    return _find_ffprobe() is not None and _find_ffmpeg() is not None
+
 
 def detect_thumbnail_track(cap) -> bool:
     """Check if OpenCV grabbed a thumbnail track instead of the real video.

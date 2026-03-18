@@ -10,7 +10,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from core.services.LoggerService import LoggerService
 from helpers.MetaDataHelper import MetaDataHelper
-from helpers.VideoFileHelper import detect_thumbnail_track, remux_to_main_track
+from helpers.VideoFileHelper import detect_thumbnail_track, remux_to_main_track, is_ffmpeg_available, _FFMPEG_USER_MSG
 
 
 class VideoParserService(QObject):
@@ -72,7 +72,10 @@ class VideoParserService(QObject):
                     fps = cap.get(cv2.CAP_PROP_FPS)
                     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 else:
-                    self.sig_msg.emit("Error: Failed to remux video file.")
+                    if not is_ffmpeg_available():
+                        self.sig_msg.emit(f"Error: {_FFMPEG_USER_MSG}")
+                    else:
+                        self.sig_msg.emit("Error: Failed to remux video file.")
                     self.sig_done.emit(self.__id, 0)
                     return
 

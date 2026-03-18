@@ -7,7 +7,7 @@ color detection applications. Designed for <250ms latency processing.
 
 # Set environment variable to avoid numpy compatibility issues - MUST be first
 from core.services.LoggerService import LoggerService
-from helpers.VideoFileHelper import detect_thumbnail_track, remux_to_main_track
+from helpers.VideoFileHelper import detect_thumbnail_track, remux_to_main_track, is_ffmpeg_available, _FFMPEG_USER_MSG
 from PySide6.QtCore import QObject, QThread, Signal
 from dataclasses import dataclass
 from enum import Enum
@@ -301,7 +301,11 @@ class RTMPStreamService(QThread):
                         self.logger.error("Failed to read frame from remuxed video")
                         return False
                 else:
-                    self.logger.error("Failed to remux video to select main track")
+                    if not is_ffmpeg_available():
+                        self.logger.error(_FFMPEG_USER_MSG)
+                        self.errorOccurred.emit(_FFMPEG_USER_MSG)
+                    else:
+                        self.logger.error("Failed to remux video to select main track")
                     return False
 
             # Log stream properties
