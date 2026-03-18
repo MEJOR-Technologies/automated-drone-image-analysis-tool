@@ -1,0 +1,110 @@
+"""
+VideoFileHelper.py - Utilities for handling video files with non-standard stream layouts.
+
+Detects and works around MP4 files that embed a thumbnail/cover image as the
+first video stream (e.g. Skydio X10), which causes OpenCV to grab the wrong track.
+"""
+
+import os
+import subprocess
+import tempfile
+import json
+import cv2
+
+
+def detect_thumbnail_track(cap) -> bool:
+    """Check if OpenCV grabbed a thumbnail track instead of the real video.
+
+    Some drones (e.g. Skydio X10) embed an MJPEG cover image as stream 0.
+    OpenCV picks it up, reports an absurd FPS (the MP4 timescale), and fails
+    to read a second frame. This function detects that situation.
+
+    After calling, the capture position is reset to frame 0.
+
+    Args:
+        cap: An opened cv2.VideoCapture instance.
+
+    Returns:
+        True if the capture appears to be on a thumbnail track.
+    """
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps > 1000:
+        return True
+    # Also check if second frame fails immediately
+    ret2, _ = cap.read()
+    if not ret2:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        return True
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    return False
+
+
+def remux_to_main_track(source_path, logger=None):
+    """Remux an MP4 to select the main video track, skipping thumbnail/cover tracks.
+
+    Uses ffprobe to identify the real video stream (highest resolution, not
+    marked as attached_pic), then ffmpeg to remux with -c copy (no re-encoding).
+
+    Args:
+        source_path: Path to the source MP4 file.
+        logger: Optional logger instance with .info() and .error() methods.
+
+    Returns:
+        Path to a temporary remuxed MP4 file on success, None on failure.
+        Caller is responsible for deleting the temp file when done.
+    """
+    try:
+        # Use ffprobe to find the real video stream
+        probe = subprocess.run(
+            ['ffprobe', '-v', 'error', '-show_streams', '-of', 'json', source_path],
+            capture_output=True, text=True, timeout=10
+        )
+        if probe.returncode != 0:
+            if logger:
+                logger.error(f"ffprobe failed: {probe.stderr}")
+            return None
+
+        streams = json.loads(probe.stdout).get('streams', [])
+
+        # Find best video stream: not attached_pic, highest resolution
+        best_idx = None
+        best_pixels = 0
+        for s in streams:
+            if s.get('codec_type') != 'video':
+                continue
+            if s.get('disposition', {}).get('attached_pic', 0):
+                continue
+            pixels = int(s.get('width', 0)) * int(s.get('height', 0))
+            if pixels > best_pixels:
+                best_pixels = pixels
+                best_idx = s['index']
+
+        if best_idx is None:
+            if logger:
+                logger.error("No suitable video stream found in file")
+            return None
+
+        # Remux to temp file (copy codec, no re-encoding)
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.mp4')
+        os.close(temp_fd)
+        result = subprocess.run(
+            ['ffmpeg', '-y', '-i', source_path, '-map', f'0:{best_idx}', '-c', 'copy', temp_path],
+            capture_output=True, text=True, timeout=60
+        )
+        if result.returncode != 0:
+            if logger:
+                logger.error(f"ffmpeg remux failed: {result.stderr}")
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
+            return None
+
+        if logger:
+            logger.info(f"Remuxed video to temp file: {temp_path}")
+        return temp_path
+
+    except Exception as e:
+        if logger:
+            logger.error(f"Remux error: {e}")
+        return None
