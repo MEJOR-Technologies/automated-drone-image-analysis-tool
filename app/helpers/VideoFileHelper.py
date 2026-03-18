@@ -3,6 +3,7 @@ VideoFileHelper.py - Utilities for handling video files with non-standard stream
 
 Detects and works around MP4 files that embed a thumbnail/cover image as the
 first video stream (e.g. Skydio X10), which causes OpenCV to grab the wrong track.
+Also provides utilities for extracting metadata from video containers.
 """
 
 import os
@@ -10,6 +11,46 @@ import subprocess
 import tempfile
 import json
 import cv2
+from datetime import datetime, timezone
+
+
+def get_video_creation_time(video_path, logger=None):
+    """Extract creation_time from MP4 container via ffprobe.
+
+    Args:
+        video_path: Path to the video file.
+        logger: Optional logger for error reporting.
+
+    Returns:
+        A timezone-aware UTC datetime, or None if extraction fails.
+    """
+    try:
+        result = subprocess.run(
+            [
+                'ffprobe', '-v', 'error',
+                '-show_entries', 'format_tags=creation_time',
+                '-of', 'json', video_path
+            ],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode != 0:
+            if logger:
+                logger.error(f"ffprobe failed: {result.stderr}")
+            return None
+
+        data = json.loads(result.stdout)
+        creation_time_str = data.get('format', {}).get('tags', {}).get('creation_time')
+        if not creation_time_str:
+            return None
+
+        # Parse ISO 8601 UTC timestamp (e.g. "2024-02-24T19:09:57.000000Z")
+        creation_time_str = creation_time_str.replace('Z', '+00:00')
+        return datetime.fromisoformat(creation_time_str).astimezone(timezone.utc)
+
+    except Exception as e:
+        if logger:
+            logger.error(f"Error extracting video creation time: {e}")
+        return None
 
 
 def detect_thumbnail_track(cap) -> bool:
