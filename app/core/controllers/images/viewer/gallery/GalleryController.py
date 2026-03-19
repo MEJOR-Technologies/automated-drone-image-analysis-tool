@@ -66,6 +66,8 @@ class GalleryController:
         self.filter_temperature_max = None
         self.filter_heatmap_mode = 'off'
         self.filter_heatmap_threshold = 75
+        self.filter_mask_path = None
+        self.filter_mask_mode = 'include'
 
         # Heatmap service for spatial density filtering
         self.heatmap_service = HeatmapService()
@@ -464,6 +466,24 @@ class GalleryController:
                         if self.filter_heatmap_mode == 'display' and not inHotZone:
                             continue
 
+            # Apply image mask filter
+            if self.filter_mask_path is not None and hasattr(self.parent, 'aoi_controller'):
+                image = self.parent.images[img_idx] if self.parent and hasattr(self.parent, 'images') else None
+                if image:
+                    imgWidth = image.get('width')
+                    imgHeight = image.get('height')
+                    if imgWidth and imgHeight:
+                        mask = self.parent.aoi_controller._get_scaled_mask(imgWidth, imgHeight)
+                        if mask is not None:
+                            cx, cy = aoi.get('center', (0, 0))
+                            cx = max(0, min(int(cx), imgWidth - 1))
+                            cy = max(0, min(int(cy), imgHeight - 1))
+                            in_mask = mask[int(cy), int(cx)] > 0
+                            if self.filter_mask_mode == 'include' and not in_mask:
+                                continue
+                            if self.filter_mask_mode == 'exclude' and in_mask:
+                                continue
+
             # AOI passed all filters
             filtered.append((img_idx, aoi_idx, aoi))
 
@@ -588,6 +608,8 @@ class GalleryController:
         self.filter_temperature_max = filters.get('temperature_max')
         self.filter_heatmap_mode = filters.get('heatmap_mode', 'off')
         self.filter_heatmap_threshold = filters.get('heatmap_threshold', 75)
+        self.filter_mask_path = filters.get('mask_filter_path')
+        self.filter_mask_mode = filters.get('mask_filter_mode', 'include')
 
         self.load_all_aois()  # Reload with new filters
 
@@ -620,6 +642,10 @@ class GalleryController:
             self.filter_heatmap_mode = aoi_ctrl.filter_heatmap_mode
         if hasattr(aoi_ctrl, 'filter_heatmap_threshold'):
             self.filter_heatmap_threshold = aoi_ctrl.filter_heatmap_threshold
+        if hasattr(aoi_ctrl, 'filter_mask_path'):
+            self.filter_mask_path = aoi_ctrl.filter_mask_path
+        if hasattr(aoi_ctrl, 'filter_mask_mode'):
+            self.filter_mask_mode = aoi_ctrl.filter_mask_mode
 
         # Sync sort settings
         self.sort_method = aoi_ctrl.sort_method

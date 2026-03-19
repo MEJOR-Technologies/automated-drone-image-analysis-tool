@@ -6,6 +6,7 @@ UI manipulation is handled by AOIUIComponent.
 """
 
 import colorsys
+import cv2
 import fnmatch
 import json
 import math
@@ -66,6 +67,13 @@ class AOIController(TranslationMixin):
         self.filter_temperature_max = None  # Maximum temperature (Celsius) for filtering
         self.filter_heatmap_mode = 'off'  # 'off', 'filter', or 'display'
         self.filter_heatmap_threshold = 75  # Percentile threshold (0-100)
+        self.filter_mask_path = None  # File path to mask image
+        self.filter_mask_mode = 'include'  # 'include' or 'exclude'
+
+        # Mask cache for image mask filter
+        self._mask_image_raw = None  # Raw grayscale mask (loaded once from file)
+        self._mask_cache = {}  # {(width, height): binary_mask_ndarray}
+        self._mask_cache_path = None  # Path of currently cached mask file
 
         # Index mapping from original AOI index to visible container index
         # This is rebuilt when thumbnails are loaded (after sorting and filtering)
@@ -1005,10 +1013,70 @@ class AOIController(TranslationMixin):
                             if self.filter_heatmap_mode == 'display' and not inHotZone:
                                 continue
 
+            # Apply image mask filter
+            if self.filter_mask_path is not None:
+                image = self.parent.images[img_idx] if hasattr(self.parent, 'images') else None
+                if image:
+                    imgWidth = image.get('width')
+                    imgHeight = image.get('height')
+                    if imgWidth and imgHeight:
+                        mask = self._get_scaled_mask(imgWidth, imgHeight)
+                        if mask is not None:
+                            cx, cy = aoi.get('center', (0, 0))
+                            cx = max(0, min(int(cx), imgWidth - 1))
+                            cy = max(0, min(int(cy), imgHeight - 1))
+                            in_mask = mask[int(cy), int(cx)] > 0
+                            if self.filter_mask_mode == 'include' and not in_mask:
+                                continue
+                            if self.filter_mask_mode == 'exclude' and in_mask:
+                                continue
+
             # AOI passed all filters
             filtered.append((original_idx, aoi))
 
         return filtered
+
+    def _get_scaled_mask(self, width, height):
+        """Get binary mask scaled to the specified dimensions, using cache.
+
+        Args:
+            width: Target width
+            height: Target height
+
+        Returns:
+            Binary numpy array (height, width) where 255=white, 0=black, or None
+        """
+        if self.filter_mask_path is None:
+            return None
+
+        # Reload if path changed
+        if self._mask_cache_path != self.filter_mask_path:
+            self._mask_image_raw = cv2.imread(self.filter_mask_path, cv2.IMREAD_GRAYSCALE)
+            self._mask_cache = {}
+            self._mask_cache_path = self.filter_mask_path
+            if self._mask_image_raw is None:
+                self.logger.warning(f"Could not load mask image: {self.filter_mask_path}")
+                return None
+
+        if self._mask_image_raw is None:
+            return None
+
+        # Check cache
+        key = (width, height)
+        if key in self._mask_cache:
+            return self._mask_cache[key]
+
+        # Resize and threshold
+        scaled = cv2.resize(self._mask_image_raw, (width, height), interpolation=cv2.INTER_LINEAR)
+        _, binary = cv2.threshold(scaled, 127, 255, cv2.THRESH_BINARY)
+        self._mask_cache[key] = binary
+        return binary
+
+    def _invalidate_mask_cache(self):
+        """Clear the mask image cache."""
+        self._mask_image_raw = None
+        self._mask_cache = {}
+        self._mask_cache_path = None
 
     def set_sort_method(self, method, color_hue=None):
         """Set the sort method for AOIs.
@@ -1056,6 +1124,11 @@ class AOIController(TranslationMixin):
         self.filter_temperature_max = filters.get('temperature_max')
         self.filter_heatmap_mode = filters.get('heatmap_mode', 'off')
         self.filter_heatmap_threshold = filters.get('heatmap_threshold', 75)
+        new_mask_path = filters.get('mask_filter_path')
+        if new_mask_path != self.filter_mask_path:
+            self._invalidate_mask_cache()
+        self.filter_mask_path = new_mask_path
+        self.filter_mask_mode = filters.get('mask_filter_mode', 'include')
 
         # Refresh AOI display
         self.refresh_aoi_display()
@@ -1290,7 +1363,9 @@ class AOIController(TranslationMixin):
             'temperature_min': self.filter_temperature_min,
             'temperature_max': self.filter_temperature_max,
             'heatmap_mode': self.filter_heatmap_mode,
-            'heatmap_threshold': self.filter_heatmap_threshold
+            'heatmap_threshold': self.filter_heatmap_threshold,
+            'mask_filter_path': self.filter_mask_path,
+            'mask_filter_mode': self.filter_mask_mode
         }
 
         # Get temperature unit and thermal flag from parent viewer

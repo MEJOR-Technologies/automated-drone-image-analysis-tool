@@ -1,13 +1,15 @@
-"""AOIFilterDialog - Dialog for filtering AOIs by color, pixel area, and spatial density."""
+"""AOIFilterDialog - Dialog for filtering AOIs by color, pixel area, spatial density, and image mask."""
 
+import colorsys
+import os
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                QPushButton, QGroupBox, QSlider, QSpinBox,
-                               QCheckBox, QColorDialog, QLineEdit, QDoubleSpinBox,
-                               QRadioButton, QButtonGroup, QFrame)
+                               QCheckBox, QColorDialog, QFileDialog, QLineEdit,
+                               QDoubleSpinBox, QRadioButton, QButtonGroup, QFrame,
+                               QMessageBox)
 from PySide6.QtCore import Qt
-from helpers.TranslationMixin import TranslationMixin
 from PySide6.QtGui import QColor
-import colorsys
+from helpers.TranslationMixin import TranslationMixin
 
 
 class AOIFilterDialog(TranslationMixin, QDialog):
@@ -59,6 +61,10 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         self.heatmap_service = heatmap_service
         self.heatmap_mode = current_filters.get('heatmap_mode', 'off')
         self.heatmap_threshold = current_filters.get('heatmap_threshold', 75)
+
+        # Mask filter state
+        self.mask_filter_path = current_filters.get('mask_filter_path', None)
+        self.mask_filter_mode = current_filters.get('mask_filter_mode', 'include')
 
         self.setupUi()
         self._apply_translations()
@@ -400,6 +406,62 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         heatmap_group.setLayout(heatmap_layout)
         layout.addWidget(heatmap_group)
 
+        # ===== Image Mask Filter =====
+        mask_group = QGroupBox(self.tr("Image Mask Filter"))
+        mask_layout = QVBoxLayout()
+
+        # Enable mask filter checkbox
+        self.mask_filter_enabled = QCheckBox(self.tr("Enable Image Mask Filter"))
+        self.mask_filter_enabled.setChecked(self.mask_filter_path is not None)
+        self.mask_filter_enabled.toggled.connect(self.on_mask_filter_toggled)
+        mask_layout.addWidget(self.mask_filter_enabled)
+
+        # Mask filter mode radio buttons
+        self.mask_mode_group = QButtonGroup(self)
+        self.mask_include_radio = QRadioButton(self.tr("Show Only Detections in Mask"))
+        self.mask_exclude_radio = QRadioButton(self.tr("Exclude Detections in Mask"))
+        self.mask_mode_group.addButton(self.mask_include_radio, 0)
+        self.mask_mode_group.addButton(self.mask_exclude_radio, 1)
+
+        if self.mask_filter_mode == 'exclude':
+            self.mask_exclude_radio.setChecked(True)
+        else:
+            self.mask_include_radio.setChecked(True)
+
+        mask_mode_layout = QHBoxLayout()
+        mask_mode_layout.addWidget(self.mask_include_radio)
+        mask_mode_layout.addWidget(self.mask_exclude_radio)
+        mask_mode_layout.addStretch()
+        mask_layout.addLayout(mask_mode_layout)
+
+        # File selection row
+        file_layout = QHBoxLayout()
+        self.mask_path_display = QLineEdit()
+        self.mask_path_display.setReadOnly(True)
+        self.mask_path_display.setPlaceholderText(self.tr("No mask image selected"))
+        if self.mask_filter_path:
+            self.mask_path_display.setText(os.path.basename(self.mask_filter_path))
+        file_layout.addWidget(self.mask_path_display)
+
+        self.mask_browse_button = QPushButton(self.tr("Browse..."))
+        self.mask_browse_button.clicked.connect(self.browse_mask_image)
+        file_layout.addWidget(self.mask_browse_button)
+
+        self.mask_clear_button = QPushButton(self.tr("Clear"))
+        self.mask_clear_button.clicked.connect(self.clear_mask_image)
+        file_layout.addWidget(self.mask_clear_button)
+
+        mask_layout.addLayout(file_layout)
+
+        # Info label
+        mask_info = QLabel(self.tr("White regions = areas of interest. Mask is scaled to each image's dimensions."))
+        mask_info.setStyleSheet("QLabel { color: gray; font-size: 9pt; }")
+        mask_info.setWordWrap(True)
+        mask_layout.addWidget(mask_info)
+
+        mask_group.setLayout(mask_layout)
+        layout.addWidget(mask_group)
+
         # Spacer
         layout.addStretch()
 
@@ -431,6 +493,7 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         self.on_area_filter_toggled(self.area_filter_enabled.isChecked())
         self.on_temperature_filter_toggled(self.temperature_filter_enabled.isChecked())
         self.on_heatmap_mode_changed(self.heatmap_mode_group.checkedId())
+        self.on_mask_filter_toggled(self.mask_filter_enabled.isChecked())
         self.update_color_preview()
 
     def showEvent(self, event):
@@ -517,6 +580,43 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         self.heatmap_threshold = value
         self.heatmap_threshold_label.setText(f"{value}%")
 
+    def on_mask_filter_toggled(self, checked):
+        """Enable/disable mask filter controls."""
+        self.mask_include_radio.setEnabled(checked)
+        self.mask_exclude_radio.setEnabled(checked)
+        self.mask_browse_button.setEnabled(checked)
+        self.mask_clear_button.setEnabled(checked)
+        self.mask_path_display.setEnabled(checked)
+
+    def browse_mask_image(self):
+        """Open file dialog to select a mask image."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("Select Mask Image"),
+            "",
+            self.tr("Images (*.png *.jpg *.jpeg *.bmp *.tiff);;All Files (*)")
+        )
+
+        if file_path:
+            from core.services.streaming.MaskManager import MaskManager
+            is_valid, error_msg, dimensions = MaskManager.validate_mask_image(file_path)
+
+            if not is_valid:
+                QMessageBox.warning(
+                    self, self.tr("Invalid Image"),
+                    error_msg or self.tr("Could not load the selected image. Please choose a valid image file.")
+                )
+                return
+
+            self.mask_filter_path = file_path
+            self.mask_path_display.setText(os.path.basename(file_path))
+
+    def clear_mask_image(self):
+        """Clear the selected mask image."""
+        self.mask_filter_path = None
+        self.mask_path_display.clear()
+        self.mask_path_display.setPlaceholderText(self.tr("No mask image selected"))
+
     def _update_heatmap_info_label(self):
         """Update the heatmap info label based on current mode."""
         mode_id = self.heatmap_mode_group.checkedId()
@@ -568,6 +668,15 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         self.heatmap_threshold_slider.setValue(75)
         self.heatmap_threshold_label.setText("75%")
         self.on_heatmap_mode_changed(0)
+
+        # Reset mask filter
+        self.mask_filter_enabled.setChecked(False)
+        self.mask_filter_path = None
+        self.mask_filter_mode = 'include'
+        self.mask_include_radio.setChecked(True)
+        self.mask_path_display.clear()
+        self.mask_path_display.setPlaceholderText(self.tr("No mask image selected"))
+        self.on_mask_filter_toggled(False)
 
     def get_filters(self):
         """Get the current filter settings.
@@ -627,6 +736,8 @@ class AOIFilterDialog(TranslationMixin, QDialog):
             'temperature_min': temp_min,
             'temperature_max': temp_max,
             'heatmap_mode': heatmap_mode,
-            'heatmap_threshold': self.heatmap_threshold
+            'heatmap_threshold': self.heatmap_threshold,
+            'mask_filter_path': self.mask_filter_path if self.mask_filter_enabled.isChecked() else None,
+            'mask_filter_mode': 'exclude' if self.mask_exclude_radio.isChecked() else 'include'
         }
         return filters
