@@ -40,6 +40,16 @@ if platform.system() == 'Windows':
                 hiddenimports=[
                     'shapely',
                     'shapely.geometry',
+                    # Image algorithm services (dynamically loaded via importlib in AnalyzeService)
+                    'algorithms.images.ColorRange.services.ColorRangeService',
+                    'algorithms.images.HSVColorRange.services.HSVColorRangeService',
+                    'algorithms.images.MatchedFilter.services.MatchedFilterService',
+                    'algorithms.images.RXAnomaly.services.RXAnomalyService',
+                    'algorithms.images.MRMap.services.MRMapService',
+                    'algorithms.images.ThermalRange.services.ThermalRangeService',
+                    'algorithms.images.ThermalAnomaly.services.ThermalAnomalyService',
+                    'algorithms.images.ThermalResidualAnomaly.services.ThermalResidualAnomalyService',
+                    'algorithms.images.AIPersonDetector.services.AIPersonDetectorService',
                     # Streaming algorithms modules
                     'algorithms.streaming',
                     'algorithms.streaming.MotionDetection',
@@ -95,6 +105,16 @@ elif platform.system() == 'Darwin':
                     hiddenimports=[
                         'shapely',
                         'shapely.geometry',
+                        # Image algorithm services (dynamically loaded via importlib in AnalyzeService)
+                        'algorithms.images.ColorRange.services.ColorRangeService',
+                        'algorithms.images.HSVColorRange.services.HSVColorRangeService',
+                        'algorithms.images.MatchedFilter.services.MatchedFilterService',
+                        'algorithms.images.RXAnomaly.services.RXAnomalyService',
+                        'algorithms.images.MRMap.services.MRMapService',
+                        'algorithms.images.ThermalRange.services.ThermalRangeService',
+                        'algorithms.images.ThermalAnomaly.services.ThermalAnomalyService',
+                        'algorithms.images.ThermalResidualAnomaly.services.ThermalResidualAnomalyService',
+                        'algorithms.images.AIPersonDetector.services.AIPersonDetectorService',
                         # Streaming algorithms modules
                         'algorithms.streaming',
                         'algorithms.streaming.MotionDetection',
