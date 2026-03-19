@@ -62,15 +62,15 @@ class VideoParser(TranslationMixin, QDialog, Ui_VideoParser):
                 self.videoSelectLine.setText(filename.replace('/', '\\'))
 
     def _srtSelectButton_clicked(self):
-        """Handles the subtitle (SRT) file selection button click.
+        """Handles the metadata file selection button click.
 
-        Opens a file dialog for the user to select an SRT file, then
-        updates the `srtSelectLine` text field with the selected file path.
+        Opens a file dialog for the user to select an SRT or CSV metadata file,
+        then updates the `srtSelectLine` text field with the selected file path.
         """
         filename, _ = QFileDialog.getOpenFileName(
             self,
-            self.tr("Select a SRT file"),
-            filter=self.tr("SRT (*.srt)")
+            self.tr("Select a Metadata File"),
+            filter=self.tr("Metadata Files (*.srt *.csv);;SRT Files (*.srt);;CSV Flight Logs (*.csv)")
         )
         if filename:
             self.srtSelectLine.setText(filename)
@@ -265,7 +265,7 @@ class VideoParser(TranslationMixin, QDialog, Ui_VideoParser):
             theme (str): Name of the active theme used to resolve icon paths.
         """
         self.videoSelectButton.setIcon(IconHelper.create_icon('fa6.file-video', theme))
-        self.srtSelectButton.setIcon(IconHelper.create_icon('mdi.subtitles', theme))
+        self.srtSelectButton.setIcon(IconHelper.create_icon('mdi.file-document-outline', theme))
         self.outputSelectButton.setIcon(IconHelper.create_icon('fa6.folder-open', theme))
         self.startButton.setIcon(IconHelper.create_icon('fa6s.play', theme))
         self.cancelButton.setIcon(IconHelper.create_icon('mdi.close-circle', theme))
