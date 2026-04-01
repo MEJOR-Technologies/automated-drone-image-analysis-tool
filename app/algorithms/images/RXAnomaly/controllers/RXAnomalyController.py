@@ -21,6 +21,7 @@ class RXAnomalyController(QWidget, Ui_RXAnomaly, AlgorithmController):
         AlgorithmController.__init__(self, config)
         self.setupUi(self)
         self._init_segments_combo_data()
+        self.fixComboBoxForMacOS(self.segmentsComboBox)
         self.sensitivitySlider.valueChanged.connect(self.update_sensitivity)
 
     def _init_segments_combo_data(self):
