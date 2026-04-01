@@ -1,7 +1,9 @@
+import sys
+
 from algorithms.AlgorithmController import AlgorithmController
 from algorithms.images.MRMap.views.MRMap_ui import Ui_MRMap
 
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QComboBox, QListView, QWidget
 
 
 class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
@@ -21,7 +23,15 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
         AlgorithmController.__init__(self, config)
         self.setupUi(self)
         self._init_combo_data()
+        self._fixComboBoxForMacOS(self.colorspaceComboBox)
+        self._fixComboBoxForMacOS(self.segmentsComboBox)
         self.thresholdSlider.valueChanged.connect(self.updatethreshold)
+
+    def _fixComboBoxForMacOS(self, combo):
+        """Force non-native dropdown rendering on macOS to fix popup positioning and padding."""
+        combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        if sys.platform == 'darwin':
+            combo.setView(QListView())
 
     def _init_combo_data(self):
         """Attach stable option keys so translated labels do not affect config values."""
