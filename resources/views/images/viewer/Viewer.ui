@@ -560,6 +560,36 @@ QToolButton:pressed {
                </widget>
               </item>
               <item>
+               <widget class="QToolButton" name="teamPlanningButton">
+                <property name="toolTip">
+                 <string>Plan Verification (T)</string>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QToolButton {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px;
+}
+QToolButton:hover {
+    border: 1px solid #888;
+    background-color: rgba(136, 136, 136, 0.1);
+}
+QToolButton:pressed {
+    background-color: rgba(136, 136, 136, 0.2);
+}</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="iconSize">
+                 <size>
+                  <width>25</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="Line" name="line">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>

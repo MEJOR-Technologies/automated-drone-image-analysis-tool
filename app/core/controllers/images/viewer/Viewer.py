@@ -12,6 +12,7 @@ from core.services.image.ImageService import ImageService
 from core.services.XmlService import XmlService
 from core.services.LoggerService import LoggerService
 from core.controllers.images.viewer.GPSMapController import GPSMapController
+from core.controllers.images.viewer.TeamPlanningController import TeamPlanningController
 from core.controllers.images.viewer.status.StatusController import StatusController
 from core.controllers.images.viewer.CoordinateController import CoordinateController
 from core.controllers.images.viewer.bearing.BearingRecoveryController import BearingRecoveryController
@@ -168,6 +169,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.coordinate_controller = CoordinateController(self)
         self.status_controller = StatusController(self)
         self.gps_map_controller = GPSMapController(self)
+        self.team_planning_controller = TeamPlanningController(self)
         self.neighbor_tracking_controller = AOINeighborTrackingController(self)
 
         self.ui_style_controller = UIStyleController(self, theme)
@@ -842,6 +844,8 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if e.key() == Qt.Key_M and e.modifiers() == Qt.NoModifier:
             # Show GPS map with 'M' key
             self.gps_map_controller.show_map()
+        if e.key() == Qt.Key_T and e.modifiers() == Qt.NoModifier:
+            self._team_planning_button_clicked()
         if e.key() == Qt.Key_O and e.modifiers() == Qt.ShiftModifier:
             # Manual altitude override with 'Shift+O' key
             self._manual_altitude_override()
@@ -966,6 +970,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.adjustmentsButton.clicked.connect(self._open_image_adjustment_dialog)
             self.magnifyButton.clicked.connect(self._magnifyButton_clicked)
             self.GPSMapButton.clicked.connect(self._gps_map_button_clicked)
+            self.teamPlanningButton.clicked.connect(self._team_planning_button_clicked)
             self.rotateImageButton.clicked.connect(self._rotate_image_button_clicked)
             # Initialize button styling
             self._update_magnify_button_style()
@@ -1444,6 +1449,11 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if hasattr(self, 'gps_map_controller'):
             self.gps_map_controller.show_map()
 
+    def _team_planning_button_clicked(self):
+        """Handle Team Planning button click."""
+        if hasattr(self, 'team_planning_controller'):
+            self.team_planning_controller.show()
+
     def _rotate_image_button_clicked(self):
         """Handle Rotate Image button click."""
         if hasattr(self, 'coordinate_controller'):
@@ -1747,6 +1757,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if hasattr(self, 'thermalHistogramButton'):
             self.thermalHistogramButton.setIcon(IconHelper.create_icon('fa6s.chart-line', self.theme))
         self.GPSMapButton.setIcon(IconHelper.create_icon('fa6s.map-location-dot', self.theme))
+        self.teamPlanningButton.setIcon(IconHelper.create_icon('fa6s.people-group', self.theme))
         self.rotateImageButton.setIcon(IconHelper.create_icon('fa6s.compass', self.theme))
 
     # Qt event filter for viewport resize events and middle mouse button

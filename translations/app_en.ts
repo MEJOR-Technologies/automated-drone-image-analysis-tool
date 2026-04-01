@@ -10614,4 +10614,234 @@ When checked, all images will be exported regardless of flagged AOI status.</tra
 {error}</translation>
     </message>
 </context>
+<context>
+    <name>TeamPlanningDialog</name>
+    <message>
+        <source>Plan Verification</source>
+        <translation>Plan Verification</translation>
+    </message>
+    <message>
+        <source>Teams</source>
+        <translation>Teams</translation>
+    </message>
+    <message>
+        <source>+ New</source>
+        <translation>+ New</translation>
+    </message>
+    <message>
+        <source>Create a new field team</source>
+        <translation>Create a new field team</translation>
+    </message>
+    <message>
+        <source>✕ Remove</source>
+        <translation>✕ Remove</translation>
+    </message>
+    <message>
+        <source>Remove the selected team</source>
+        <translation>Remove the selected team</translation>
+    </message>
+    <message>
+        <source>Assign Selection ▶</source>
+        <translation>Assign Selection ▶</translation>
+    </message>
+    <message>
+        <source>Assign the selected AOIs on the map to the chosen team</source>
+        <translation>Assign the selected AOIs on the map to the chosen team</translation>
+    </message>
+    <message>
+        <source>Team AOIs</source>
+        <translation>Team AOIs</translation>
+    </message>
+    <message>
+        <source>Export Team PDF</source>
+        <translation>Export Team PDF</translation>
+    </message>
+    <message>
+        <source>Generate a PDF report for the selected team only</source>
+        <translation>Generate a PDF report for the selected team only</translation>
+    </message>
+    <message>
+        <source>Export All PDFs</source>
+        <translation>Export All PDFs</translation>
+    </message>
+    <message>
+        <source>Generate one PDF per team plus a master summary PDF</source>
+        <translation>Generate one PDF per team plus a master summary PDF</translation>
+    </message>
+    <message>
+        <source>Zoom In (+)</source>
+        <translation>Zoom In (+)</translation>
+    </message>
+    <message>
+        <source>Zoom Out (-)</source>
+        <translation>Zoom Out (-)</translation>
+    </message>
+    <message>
+        <source>Fit All (F)</source>
+        <translation>Fit All (F)</translation>
+    </message>
+    <message>
+        <source>Rectangle Select</source>
+        <translation>Rectangle Select</translation>
+    </message>
+    <message>
+        <source>Draw a rectangle on the map to select multiple AOIs</source>
+        <translation>Draw a rectangle on the map to select multiple AOIs</translation>
+    </message>
+    <message>
+        <source>Satellite View</source>
+        <translation>Satellite View</translation>
+    </message>
+    <message>
+        <source>Map View</source>
+        <translation>Map View</translation>
+    </message>
+    <message>
+        <source>Click to select AOI • Ctrl+Click to multi-select • Use Rectangle Select for area selection • Scroll to zoom</source>
+        <translation>Click to select AOI • Ctrl+Click to multi-select • Use Rectangle Select for area selection • Scroll to zoom</translation>
+    </message>
+    <message>
+        <source>Team</source>
+        <translation>Team</translation>
+    </message>
+    <message>
+        <source>New Team</source>
+        <translation>New Team</translation>
+    </message>
+    <message>
+        <source>Team name:</source>
+        <translation>Team name:</translation>
+    </message>
+    <message>
+        <source>Duplicate Name</source>
+        <translation>Duplicate Name</translation>
+    </message>
+    <message>
+        <source>A team named '{name}' already exists.</source>
+        <translation>A team named '{name}' already exists.</translation>
+    </message>
+    <message>
+        <source>Unassigned</source>
+        <translation>Unassigned</translation>
+    </message>
+    <message>
+        <source>No Team Selected</source>
+        <translation>No Team Selected</translation>
+    </message>
+    <message>
+        <source>Please select a team to export.</source>
+        <translation>Please select a team to export.</translation>
+    </message>
+    <message>
+        <source>No Teams</source>
+        <translation>No Teams</translation>
+    </message>
+    <message>
+        <source>Create at least one team before exporting.</source>
+        <translation>Create at least one team before exporting.</translation>
+    </message>
+</context>
+<context>
+    <name>TeamPlanningController</name>
+    <message>
+        <source>No Flagged AOIs</source>
+        <translation>No Flagged AOIs</translation>
+    </message>
+    <message>
+        <source>There are no flagged AOIs to assign.
+
+Flag at least one AOI in the viewer before using Plan Verification.</source>
+        <translation>There are no flagged AOIs to assign.
+
+Flag at least one AOI in the viewer before using Plan Verification.</translation>
+    </message>
+    <message>
+        <source>No Team Selected</source>
+        <translation>No Team Selected</translation>
+    </message>
+    <message>
+        <source>Select a target team (or 'Unassigned') in the list first.</source>
+        <translation>Select a target team (or 'Unassigned') in the list first.</translation>
+    </message>
+    <message>
+        <source>No AOIs Selected</source>
+        <translation>No AOIs Selected</translation>
+    </message>
+    <message>
+        <source>Select one or more AOIs on the map first.
+Click on markers, or use Rectangle Select for area selection.</source>
+        <translation>Select one or more AOIs on the map first.
+Click on markers, or use Rectangle Select for area selection.</translation>
+    </message>
+    <message>
+        <source>No AOIs</source>
+        <translation>No AOIs</translation>
+    </message>
+    <message>
+        <source>Team '{name}' has no assigned AOIs.</source>
+        <translation>Team '{name}' has no assigned AOIs.</translation>
+    </message>
+    <message>
+        <source>Save Team PDF</source>
+        <translation>Save Team PDF</translation>
+    </message>
+    <message>
+        <source>PDF files (*.pdf)</source>
+        <translation>PDF files (*.pdf)</translation>
+    </message>
+    <message>
+        <source>Select Export Folder</source>
+        <translation>Select Export Folder</translation>
+    </message>
+    <message>
+        <source>Exporting Team PDFs</source>
+        <translation>Exporting Team PDFs</translation>
+    </message>
+    <message>
+        <source>Generating PDF for {name}...</source>
+        <translation>Generating PDF for {name}...</translation>
+    </message>
+    <message>
+        <source>Generating master summary...</source>
+        <translation>Generating master summary...</translation>
+    </message>
+    <message>
+        <source>Export complete</source>
+        <translation>Export complete</translation>
+    </message>
+    <message>
+        <source>Generating PDF Report</source>
+        <translation>Generating PDF Report</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Done</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>Success</translation>
+    </message>
+    <message>
+        <source>PDF report generated successfully!</source>
+        <translation>PDF report generated successfully!</translation>
+    </message>
+    <message>
+        <source>Export Error</source>
+        <translation>Export Error</translation>
+    </message>
+    <message>
+        <source>PDF generation failed: {error}</source>
+        <translation>PDF generation failed: {error}</translation>
+    </message>
+    <message>
+        <source>Export Complete</source>
+        <translation>Export Complete</translation>
+    </message>
+    <message>
+        <source>Team PDFs saved to:
+{folder}</source>
+        <translation>Team PDFs saved to:
+{folder}</translation>
+    </message>
+</context>
 </TS>

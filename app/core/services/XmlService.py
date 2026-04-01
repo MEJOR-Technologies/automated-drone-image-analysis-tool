@@ -187,6 +187,11 @@ class XmlService:
                             'hex': area_of_interest_xml.get('color_hex', ''),
                             'hue_degrees': float(area_of_interest_xml.get('color_hue', 0))
                         }
+                    # Load team assignment if present
+                    team_value = area_of_interest_xml.get('team', '')
+                    if team_value:
+                        area_of_interest['team'] = team_value
+
                     areas_of_interest.append(area_of_interest)
                 image['areas_of_interest'] = areas_of_interest
                 images.append(image)
@@ -445,6 +450,69 @@ class XmlService:
         except Exception as e:
             self.logger.error(f"Error setting image bearing: {e}")
             return False
+
+    def get_team_planning(self):
+        """Load team definitions from the XML <team_planning> block.
+
+        Returns:
+            list[dict]: Team definitions, each with 'name' and 'color' keys.
+                        Empty list if no team planning data exists.
+        """
+        root = self.xml.getroot()
+        planning_xml = root.find('team_planning')
+        teams = []
+        if planning_xml is not None:
+            for team_xml in planning_xml.findall('team'):
+                teams.append({
+                    'name': team_xml.get('name', ''),
+                    'color': team_xml.get('color', '#888888'),
+                })
+        return teams
+
+    def save_team_planning(self, teams):
+        """Persist team definitions into the XML <team_planning> block.
+
+        Replaces any existing block with the supplied list.
+
+        Args:
+            teams: list[dict] with 'name' and 'color' keys per team.
+        """
+        root = self.xml.getroot()
+        existing = root.find('team_planning')
+        if existing is not None:
+            root.remove(existing)
+
+        if teams:
+            planning_xml = ET.SubElement(root, 'team_planning')
+            for team in teams:
+                team_xml = ET.SubElement(planning_xml, 'team')
+                team_xml.set('name', team['name'])
+                team_xml.set('color', team['color'])
+
+    def save_aoi_team(self, image_index, aoi_index, team_name, images):
+        """Set (or clear) the team assignment for a single AOI and persist to XML.
+
+        Args:
+            image_index: Index of the image in the images list.
+            aoi_index: Index of the AOI within the image.
+            team_name: Team name string, or '' to clear assignment.
+            images: The live images list (same refs as Viewer.images).
+        """
+        if 0 <= image_index < len(images):
+            image = images[image_index]
+            aois = image.get('areas_of_interest', [])
+            if 0 <= aoi_index < len(aois):
+                aoi = aois[aoi_index]
+                if team_name:
+                    aoi['team'] = team_name
+                else:
+                    aoi.pop('team', None)
+                xml_el = aoi.get('xml')
+                if xml_el is not None:
+                    if team_name:
+                        xml_el.set('team', team_name)
+                    elif 'team' in xml_el.attrib:
+                        del xml_el.attrib['team']
 
     def get_image_bearing(self, image_path):
         """

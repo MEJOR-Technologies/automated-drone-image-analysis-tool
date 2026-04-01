@@ -300,6 +300,24 @@ class Ui_Viewer(object):
 
         self.horizontalLayout_5.addWidget(self.zipButton)
 
+        self.teamPlanningButton = QToolButton(self.mainHeaderWidget)
+        self.teamPlanningButton.setObjectName(u"teamPlanningButton")
+        self.teamPlanningButton.setStyleSheet(u"QToolButton {\n"
+"    border: 1px solid transparent;\n"
+"    border-radius: 4px;\n"
+"    padding: 2px;\n"
+"}\n"
+"QToolButton:hover {\n"
+"    border: 1px solid #888;\n"
+"    background-color: rgba(136, 136, 136, 0.1);\n"
+"}\n"
+"QToolButton:pressed {\n"
+"    background-color: rgba(136, 136, 136, 0.2);\n"
+"}")
+        self.teamPlanningButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_5.addWidget(self.teamPlanningButton)
+
         self.line = QFrame(self.mainHeaderWidget)
         self.line.setObjectName(u"line")
         self.line.setFrameShape(QFrame.Shape.VLine)
@@ -626,6 +644,10 @@ class Ui_Viewer(object):
 #endif // QT_CONFIG(tooltip)
         self.zipButton.setText(QCoreApplication.translate("Viewer", u"...", None))
         self.zipButton.setProperty(u"iconName", QCoreApplication.translate("Viewer", u"zip.png", None))
+#if QT_CONFIG(tooltip)
+        self.teamPlanningButton.setToolTip(QCoreApplication.translate("Viewer", u"Plan Verification (T)", None))
+#endif // QT_CONFIG(tooltip)
+        self.teamPlanningButton.setText(QCoreApplication.translate("Viewer", u"...", None))
 #if QT_CONFIG(tooltip)
         self.skipHidden.setToolTip(QCoreApplication.translate("Viewer", u"Skip hidden images when navigating.\n"
 "When enabled, Previous/Next buttons will skip over images marked as hidden.\n"

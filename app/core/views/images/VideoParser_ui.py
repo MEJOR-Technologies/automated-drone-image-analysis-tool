@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QDoubleSpinBox, QFrame,
     QGridLayout, QHBoxLayout, QLabel, QLineEdit,
     QPlainTextEdit, QPushButton, QSizePolicy, QSpacerItem,
     QVBoxLayout, QWidget)
-import resources_rc
+from . import resources_rc
 
 class Ui_VideoParser(object):
     def setupUi(self, VideoParser):

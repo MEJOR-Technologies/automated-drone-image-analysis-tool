@@ -10699,4 +10699,234 @@ Quando selezionato, verranno esportate tutte le immagini indipendentemente dallo
 {error}</translation>
     </message>
 </context>
+<context>
+    <name>TeamPlanningDialog</name>
+    <message>
+        <source>Plan Verification</source>
+        <translation>Pianifica Verifiche</translation>
+    </message>
+    <message>
+        <source>Teams</source>
+        <translation>Squadre</translation>
+    </message>
+    <message>
+        <source>+ New</source>
+        <translation>+ Nuova</translation>
+    </message>
+    <message>
+        <source>Create a new field team</source>
+        <translation>Crea una nuova squadra di verifica</translation>
+    </message>
+    <message>
+        <source>✕ Remove</source>
+        <translation>✕ Rimuovi</translation>
+    </message>
+    <message>
+        <source>Remove the selected team</source>
+        <translation>Rimuovi la squadra selezionata</translation>
+    </message>
+    <message>
+        <source>Assign Selection ▶</source>
+        <translation>Assegna Selezione ▶</translation>
+    </message>
+    <message>
+        <source>Assign the selected AOIs on the map to the chosen team</source>
+        <translation>Assegna gli AOI selezionati sulla mappa alla squadra scelta</translation>
+    </message>
+    <message>
+        <source>Team AOIs</source>
+        <translation>AOI della Squadra</translation>
+    </message>
+    <message>
+        <source>Export Team PDF</source>
+        <translation>Esporta PDF Squadra</translation>
+    </message>
+    <message>
+        <source>Generate a PDF report for the selected team only</source>
+        <translation>Genera un report PDF solo per la squadra selezionata</translation>
+    </message>
+    <message>
+        <source>Export All PDFs</source>
+        <translation>Esporta Tutti i PDF</translation>
+    </message>
+    <message>
+        <source>Generate one PDF per team plus a master summary PDF</source>
+        <translation>Genera un PDF per squadra più un PDF riepilogativo</translation>
+    </message>
+    <message>
+        <source>Zoom In (+)</source>
+        <translation>Ingrandisci (+)</translation>
+    </message>
+    <message>
+        <source>Zoom Out (-)</source>
+        <translation>Riduci (-)</translation>
+    </message>
+    <message>
+        <source>Fit All (F)</source>
+        <translation>Adatta Tutto (F)</translation>
+    </message>
+    <message>
+        <source>Rectangle Select</source>
+        <translation>Selezione Rettangolare</translation>
+    </message>
+    <message>
+        <source>Draw a rectangle on the map to select multiple AOIs</source>
+        <translation>Disegna un rettangolo sulla mappa per selezionare più AOI</translation>
+    </message>
+    <message>
+        <source>Satellite View</source>
+        <translation>Vista Satellite</translation>
+    </message>
+    <message>
+        <source>Map View</source>
+        <translation>Vista Mappa</translation>
+    </message>
+    <message>
+        <source>Click to select AOI • Ctrl+Click to multi-select • Use Rectangle Select for area selection • Scroll to zoom</source>
+        <translation>Clicca per selezionare AOI • Ctrl+Clic per selezione multipla • Usa Selezione Rettangolare per selezione area • Scorri per zoom</translation>
+    </message>
+    <message>
+        <source>Team</source>
+        <translation>Squadra</translation>
+    </message>
+    <message>
+        <source>New Team</source>
+        <translation>Nuova Squadra</translation>
+    </message>
+    <message>
+        <source>Team name:</source>
+        <translation>Nome squadra:</translation>
+    </message>
+    <message>
+        <source>Duplicate Name</source>
+        <translation>Nome Duplicato</translation>
+    </message>
+    <message>
+        <source>A team named '{name}' already exists.</source>
+        <translation>Una squadra chiamata '{name}' esiste già.</translation>
+    </message>
+    <message>
+        <source>Unassigned</source>
+        <translation>Non assegnati</translation>
+    </message>
+    <message>
+        <source>No Team Selected</source>
+        <translation>Nessuna Squadra Selezionata</translation>
+    </message>
+    <message>
+        <source>Please select a team to export.</source>
+        <translation>Seleziona una squadra da esportare.</translation>
+    </message>
+    <message>
+        <source>No Teams</source>
+        <translation>Nessuna Squadra</translation>
+    </message>
+    <message>
+        <source>Create at least one team before exporting.</source>
+        <translation>Crea almeno una squadra prima di esportare.</translation>
+    </message>
+</context>
+<context>
+    <name>TeamPlanningController</name>
+    <message>
+        <source>No Flagged AOIs</source>
+        <translation>Nessun AOI Contrassegnato</translation>
+    </message>
+    <message>
+        <source>There are no flagged AOIs to assign.
+
+Flag at least one AOI in the viewer before using Plan Verification.</source>
+        <translation>Non ci sono AOI contrassegnati da assegnare.
+
+Contrassegna almeno un AOI nel visualizzatore prima di usare Pianifica Verifiche.</translation>
+    </message>
+    <message>
+        <source>No Team Selected</source>
+        <translation>Nessuna Squadra Selezionata</translation>
+    </message>
+    <message>
+        <source>Select a target team (or 'Unassigned') in the list first.</source>
+        <translation>Seleziona prima una squadra di destinazione (o 'Non assegnati') nella lista.</translation>
+    </message>
+    <message>
+        <source>No AOIs Selected</source>
+        <translation>Nessun AOI Selezionato</translation>
+    </message>
+    <message>
+        <source>Select one or more AOIs on the map first.
+Click on markers, or use Rectangle Select for area selection.</source>
+        <translation>Seleziona prima uno o più AOI sulla mappa.
+Clicca sui marker, oppure usa la Selezione Rettangolare per selezionare un'area.</translation>
+    </message>
+    <message>
+        <source>No AOIs</source>
+        <translation>Nessun AOI</translation>
+    </message>
+    <message>
+        <source>Team '{name}' has no assigned AOIs.</source>
+        <translation>La squadra '{name}' non ha AOI assegnati.</translation>
+    </message>
+    <message>
+        <source>Save Team PDF</source>
+        <translation>Salva PDF Squadra</translation>
+    </message>
+    <message>
+        <source>PDF files (*.pdf)</source>
+        <translation>File PDF (*.pdf)</translation>
+    </message>
+    <message>
+        <source>Select Export Folder</source>
+        <translation>Seleziona Cartella di Esportazione</translation>
+    </message>
+    <message>
+        <source>Exporting Team PDFs</source>
+        <translation>Esportazione PDF Squadre</translation>
+    </message>
+    <message>
+        <source>Generating PDF for {name}...</source>
+        <translation>Generazione PDF per {name}...</translation>
+    </message>
+    <message>
+        <source>Generating master summary...</source>
+        <translation>Generazione riepilogo generale...</translation>
+    </message>
+    <message>
+        <source>Export complete</source>
+        <translation>Esportazione completata</translation>
+    </message>
+    <message>
+        <source>Generating PDF Report</source>
+        <translation>Generazione Report PDF</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Completato</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>Successo</translation>
+    </message>
+    <message>
+        <source>PDF report generated successfully!</source>
+        <translation>Report PDF generato con successo!</translation>
+    </message>
+    <message>
+        <source>Export Error</source>
+        <translation>Errore di Esportazione</translation>
+    </message>
+    <message>
+        <source>PDF generation failed: {error}</source>
+        <translation>Generazione PDF fallita: {error}</translation>
+    </message>
+    <message>
+        <source>Export Complete</source>
+        <translation>Esportazione Completata</translation>
+    </message>
+    <message>
+        <source>Team PDFs saved to:
+{folder}</source>
+        <translation>PDF delle squadre salvati in:
+{folder}</translation>
+    </message>
+</context>
 </TS>
