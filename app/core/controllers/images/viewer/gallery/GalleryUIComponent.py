@@ -231,11 +231,9 @@ class GalleryUIComponent(TranslationMixin, QObject):
         original_keyPressEvent = self.gallery_view.keyPressEvent
 
         def keyPressEvent(event):
-            if event.key() == Qt.Key_F and event.modifiers() == Qt.NoModifier:
-                # Forward F key to parent window's keyPressEvent
-                if self.gallery_view.window():
-                    self.gallery_view.window().keyPressEvent(event)
-                return
+            # Arrow keys and F key are handled in eventFilter (which reliably
+            # intercepts before the C++ QListView::keyPressEvent runs).
+            # This fallback only handles keys not caught by the event filter.
             original_keyPressEvent(event)
         self.gallery_view.keyPressEvent = keyPressEvent
 
@@ -485,6 +483,22 @@ class GalleryUIComponent(TranslationMixin, QObject):
     def eventFilter(self, obj, event):
         """Watch for the first time the view/viewport has a valid size, handle flag button clicks, and keyboard events."""
         try:
+            # Intercept arrow keys on the gallery view to navigate AOIs
+            # Note: no modifier check for arrows (Mac reports KeypadModifier
+            # for arrow keys), matching Viewer.keyPressEvent behaviour
+            if (obj is self.gallery_view and
+                    event.type() == QEvent.KeyPress):
+                if event.key() == Qt.Key_Right:
+                    self.gallery_controller.navigate_gallery_aoi(1)
+                    return True
+                if event.key() == Qt.Key_Left:
+                    self.gallery_controller.navigate_gallery_aoi(-1)
+                    return True
+                if event.key() == Qt.Key_F:
+                    if self.gallery_view.window():
+                        self.gallery_view.window().keyPressEvent(event)
+                    return True
+
             # Handle mouse clicks on flag button
             if (obj == self.gallery_view.viewport() and
                     event.type() == QEvent.MouseButtonPress and

@@ -789,6 +789,35 @@ class GalleryController:
             self.logger.error(f"Error handling AOI click: {e}")
             self.logger.error(traceback.format_exc())
 
+    def navigate_gallery_aoi(self, direction):
+        """Navigate to the next or previous AOI in the gallery.
+
+        Args:
+            direction: 1 for next (right), -1 for previous (left)
+        """
+        row_count = self.model.rowCount()
+        if row_count == 0:
+            return
+
+        current_index = self.ui_component.gallery_view.currentIndex()
+        if not current_index.isValid():
+            target_row = 0 if direction == 1 else row_count - 1
+        else:
+            target_row = (current_index.row() + direction) % row_count
+
+        self._select_and_activate_aoi(target_row)
+
+    def _select_and_activate_aoi(self, row):
+        """Select an AOI by row index and trigger click behavior."""
+        index = self.model.index(row, 0)
+        self.ui_component.gallery_view.setCurrentIndex(index)
+        self.ui_component.gallery_view.scrollTo(index)
+
+        aoi_info = self.model.get_aoi_info(index)
+        if aoi_info:
+            image_idx, aoi_idx, aoi_data = aoi_info
+            self.on_aoi_clicked(image_idx, aoi_idx, aoi_data)
+
     def _zoom_to_aoi(self, aoi_data):
         """Zoom to an AOI in the image viewer and highlight it."""
         try:

@@ -692,9 +692,15 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
                 return
 
         if e.key() == Qt.Key_Right:
-            self._nextImageButton_clicked()
+            if self.gallery_mode and hasattr(self, 'gallery_controller'):
+                self.gallery_controller.navigate_gallery_aoi(1)
+            else:
+                self._nextImageButton_clicked()
         if e.key() == Qt.Key_Left:
-            self._previousImageButton_clicked()
+            if self.gallery_mode and hasattr(self, 'gallery_controller'):
+                self.gallery_controller.navigate_gallery_aoi(-1)
+            else:
+                self._previousImageButton_clicked()
         if e.key() == Qt.Key_Down or e.key() == Qt.Key_P:
             self._hide_image_change(True)
         if e.key() == Qt.Key_Up or e.key() == Qt.Key_U:
