@@ -1380,6 +1380,8 @@ class GalleryController:
                                 # Resize main image and reposition overlay
                                 if hasattr(self.parent, '_resize_main_image_and_reposition_overlay'):
                                     self.parent._resize_main_image_and_reposition_overlay()
+                                if hasattr(self.parent, '_sync_aoi_header_width'):
+                                    self.parent._sync_aoi_header_width()
                         except Exception:
                             # self.logger.debug(f"Could not restore gallery splitter position: {e}")
                             pass
@@ -1399,6 +1401,8 @@ class GalleryController:
                         # Resize main image and reposition overlay
                         if hasattr(self.parent, '_resize_main_image_and_reposition_overlay'):
                             self.parent._resize_main_image_and_reposition_overlay()
+                        if hasattr(self.parent, '_sync_aoi_header_width'):
+                            self.parent._sync_aoi_header_width()
 
                 # Gallery widget fills the frame width
                 frame_rect = self.parent.aoiFrame.rect()
@@ -1477,6 +1481,8 @@ class GalleryController:
                     # Resize main image and reposition overlay
                     if hasattr(self.parent, '_resize_main_image_and_reposition_overlay'):
                         self.parent._resize_main_image_and_reposition_overlay()
+                    if hasattr(self.parent, '_sync_aoi_header_width'):
+                        self.parent._sync_aoi_header_width()
 
                 # Reset to reasonable single-column width
                 self.parent.aoiFrame.setMinimumWidth(250)

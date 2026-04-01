@@ -50,7 +50,7 @@ from core.views.components.Toggle import Toggle
 from helpers.TranslationMixin import TranslationMixin
 from PySide6.QtWidgets import (
     QDialog, QMainWindow, QMessageBox, QListWidgetItem, QFileDialog, QApplication, QLabel,
-    QHBoxLayout, QWidget, QProgressDialog, QVBoxLayout
+    QHBoxLayout, QWidget, QProgressDialog, QVBoxLayout, QSizePolicy
 )
 from PySide6.QtCore import (
     Qt, QSize, QThread, QPointF, QPoint, QEvent, QTimer, QUrl, QRectF, QObject
@@ -389,6 +389,40 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             # Use the splitter defined in the UI
             self.image_gallery_splitter = self.mainSplitter
 
+            # Reduce left/right margins and spacing for tighter layout
+            self.verticalLayout.setContentsMargins(2, 2, 2, 2)
+            self.verticalLayout.setSpacing(2)
+            self.horizontalLayout_6.setContentsMargins(0, 0, 0, 0)
+
+            # Reduce status bar height to half
+            self.statusBarWidget.setMaximumHeight(20)
+
+            # Extract headers from splitter panels into a shared header row above the splitter
+            self.verticalLayout_3.removeWidget(self.mainHeaderWidget)
+            self.verticalLayout_4.removeWidget(self.aoiHeaderWidget)
+
+            # Remove aoiHeaderWidget max-width constraint and update size policy
+            self.aoiHeaderWidget.setMaximumSize(QSize(16777215, 35))
+            self.aoiHeaderWidget.setMinimumHeight(35)
+            self.aoiHeaderWidget.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed))
+
+            # Constrain mainHeaderWidget height to icon size
+            self.mainHeaderWidget.setMinimumHeight(35)
+            self.mainHeaderWidget.setMaximumHeight(35)
+
+            # Create header row with both headers side by side
+            self._header_row = QWidget()
+            self._header_row.setFixedHeight(35)
+            self._header_layout = QHBoxLayout(self._header_row)
+            self._header_layout.setContentsMargins(0, 0, 0, 0)
+            self._header_layout.setSpacing(0)
+            self.mainHeaderWidget.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed))
+            self._header_layout.addWidget(self.mainHeaderWidget)
+            self._header_layout.addWidget(self.aoiHeaderWidget)
+
+            # Insert header row above mainWidget in the outer layout
+            self.verticalLayout.insertWidget(0, self._header_row)
+
             # Replace placeholder with the actual image widget in the image area layout
             if hasattr(self, 'placeholderImage') and self.placeholderImage:
                 if hasattr(self, 'verticalLayout_3') and self.verticalLayout_3:
@@ -396,11 +430,14 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
                 self.placeholderImage.deleteLater()
 
             if hasattr(self, 'verticalLayout_3') and self.verticalLayout_3:
-                # Insert main image right after the header (index 1)
-                self.verticalLayout_3.insertWidget(1, self.main_image)
+                # Insert main image at index 0 (header was removed from this layout)
+                self.verticalLayout_3.insertWidget(0, self.main_image)
 
             # Delegate gallery-related splitter setup to GalleryController
             self.gallery_controller.setup_splitter_layout(self.image_gallery_splitter)
+
+            # Initial sync of AOI header width with splitter
+            self._sync_aoi_header_width()
 
         except Exception as e:
             self.logger.error(f"Error setting up splitter layout: {e}")
@@ -427,6 +464,22 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
 
         # Resize main image and reposition overlay when splitter moves
         self._resize_main_image_and_reposition_overlay()
+
+        # Sync AOI header width with splitter panel
+        self._sync_aoi_header_width()
+
+    def _sync_aoi_header_width(self):
+        """Sync aoiHeaderWidget width with the AOI splitter panel."""
+        try:
+            if hasattr(self, 'image_gallery_splitter') and self.image_gallery_splitter:
+                sizes = self.image_gallery_splitter.sizes()
+                if len(sizes) == 2:
+                    self.aoiHeaderWidget.setFixedWidth(sizes[1])
+                    if hasattr(self, '_header_layout'):
+                        self._header_layout.setSpacing(
+                            self.image_gallery_splitter.handleWidth())
+        except Exception:
+            pass
 
     def _update_gallery_geometry(self):
         """Update gallery widget geometry to fill aoiFrame."""
@@ -652,6 +705,10 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
     def resizeEvent(self, event):
         """Handle resize event - adjust main image, gallery widget, and snap aoiFrame."""
         super().resizeEvent(event)
+
+        # Sync AOI header width with splitter panel
+        self._sync_aoi_header_width()
+
         # If gallery widget exists and is visible (in gallery mode), update its geometry
         if (hasattr(self, 'gallery_widget') and self.gallery_widget and
                 hasattr(self, 'gallery_mode') and self.gallery_mode):

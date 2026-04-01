@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                QPushButton, QGroupBox, QSlider, QSpinBox,
                                QCheckBox, QColorDialog, QFileDialog, QLineEdit,
                                QDoubleSpinBox, QRadioButton, QButtonGroup, QFrame,
-                               QMessageBox)
+                               QMessageBox, QScrollArea, QWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from helpers.TranslationMixin import TranslationMixin
@@ -77,7 +77,15 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         self.setMinimumHeight(400)
 
         # Main layout
-        layout = QVBoxLayout()
+        outer_layout = QVBoxLayout()
+
+        # Scroll area for filter content
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setFrameShape(QFrame.NoFrame)
+        container = QWidget()
+        layout = QVBoxLayout(container)
 
         # Instructions
         instructions = QLabel(self.tr("Filter Areas of Interest by flagged status, comments, color, and/or pixel area:"))
@@ -465,6 +473,10 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         # Spacer
         layout.addStretch()
 
+        # Set container as scroll area content
+        scroll_area.setWidget(container)
+        outer_layout.addWidget(scroll_area)
+
         # ===== Buttons =====
         button_layout = QHBoxLayout()
 
@@ -483,9 +495,9 @@ class AOIFilterDialog(TranslationMixin, QDialog):
         self.cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(self.cancel_button)
 
-        layout.addLayout(button_layout)
+        outer_layout.addLayout(button_layout)
 
-        self.setLayout(layout)
+        self.setLayout(outer_layout)
 
         # Update initial UI state
         self.on_comment_filter_toggled(self.comment_filter_enabled.isChecked())
