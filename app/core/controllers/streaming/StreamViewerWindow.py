@@ -1944,14 +1944,6 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         # Draw circle around the detection
         cv2.circle(frame, (cx, cy), radius, highlight_color, thickness)
 
-        # Draw a second outer circle for better visibility
-        cv2.circle(frame, (cx, cy), radius + 8, highlight_color, 2)
-
-        # Draw crosshair at centroid for precise location
-        crosshair_size = 20
-        cv2.line(frame, (cx - crosshair_size, cy), (cx + crosshair_size, cy), highlight_color, 3)
-        cv2.line(frame, (cx, cy - crosshair_size), (cx, cy + crosshair_size), highlight_color, 3)
-
         return frame
 
     def _clear_gallery_highlight(self):
