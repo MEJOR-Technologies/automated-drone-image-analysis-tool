@@ -424,8 +424,20 @@ class RTMPStreamService(QThread):
                 if not ret or frame is None:
                     consecutive_errors += 1
                     if consecutive_errors >= max_consecutive_errors:
-                        self.logger.error(f"Failed to read {consecutive_errors} consecutive frames, stopping")
-                        break
+                        if self._is_file:
+                            # End of video file - pause at end instead of disconnecting
+                            with self._playback_lock:
+                                self._is_playing = False
+                                last_frame = max(0, self._total_frames - 1)
+                                self._cap.set(cv2.CAP_PROP_POS_FRAMES, last_frame)
+                                self._current_frame_pos = last_frame
+                            self.videoPositionChanged.emit(self._total_duration, self._total_duration)
+                            self.streamStatsChanged.emit({'is_playing': False})
+                            consecutive_errors = 0
+                            continue
+                        else:
+                            self.logger.error(f"Failed to read {consecutive_errors} consecutive frames, stopping")
+                            break
                     else:
                         self.logger.warning(f"Failed to read frame ({consecutive_errors}/{max_consecutive_errors})")
                         time.sleep(0.1)  # Small delay before retry
