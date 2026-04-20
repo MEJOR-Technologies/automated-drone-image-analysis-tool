@@ -5,11 +5,22 @@ import math
 import traceback
 
 from algorithms.AlgorithmService import AlgorithmService, AnalysisResult
+from algorithms import DetectionExpansion
 from core.services.LoggerService import LoggerService
 from collections import deque
 
 MAX_SHADES = 256
 NUMBER_OF_QUANTIZED_HISTOGRAM_BINS = 26
+
+
+def _percent_to_u8(value):
+    """Clamp a 0-100 percentage to the OpenCV 0-255 uint8 range."""
+    try:
+        pct = float(value or 0)
+    except (TypeError, ValueError):
+        return 0
+    pct = max(0.0, min(100.0, pct))
+    return int(round(pct / 100.0 * 255.0))
 
 
 class MRMapService(AlgorithmService):
@@ -41,6 +52,12 @@ class MRMapService(AlgorithmService):
         self.threshold = options['threshold']
         self.window_size = options['window']
         self.colorspace = options.get('colorspace', 'LAB')  # Default to LAB to match UI default
+        # Optional AOI expansion. All default to 0 (off) — preserves legacy behavior.
+        self.threshold_expansion = int(options.get('threshold_expansion', 0) or 0)
+        self.hue_expansion = int(options.get('hue_expansion', 0) or 0)
+        # Floors are user-facing percentages (0-100); convert to OpenCV S/V (0-255).
+        self.hue_expansion_sat_floor = _percent_to_u8(options.get('hue_expansion_sat_floor', 0))
+        self.hue_expansion_val_floor = _percent_to_u8(options.get('hue_expansion_val_floor', 0))
 
     def process_image(self, img, full_path, input_dir, output_dir):
         """Process a single image using the MR Map algorithm.
@@ -87,9 +104,26 @@ class MRMapService(AlgorithmService):
 
             areas_of_interest, base_contour_count = self._build_aois_from_clusters(clusters, img.shape)
 
-            # Add confidence scores to AOIs based on bin counts (rarity scores)
+            # Confidence scores run on the *original* detection so rarity reflects
+            # the anomaly itself, not pixels added by expansion.
             if areas_of_interest:
                 areas_of_interest = self._add_confidence_scores(areas_of_interest, bin_counts, mask)
+
+            # Optional anomaly / hue expansion. Overwrites detected_pixels and area
+            # on each AOI and rewrites `mask` to match the expanded pixel set.
+            if areas_of_interest and (self.threshold_expansion > 0 or self.hue_expansion > 0):
+                expanded_bin_mask = None
+                if self.threshold_expansion > 0:
+                    expanded_threshold = self.threshold + self.threshold_expansion
+                    expanded_bin_mask = (0 < bin_counts) & (bin_counts < expanded_threshold)
+
+                hsv_img = None
+                if self.hue_expansion > 0:
+                    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+                areas_of_interest, mask = self._apply_expansion(
+                    areas_of_interest, img.shape, expanded_bin_mask, hsv_img
+                )
 
             output_path = self._construct_output_path(full_path, input_dir, output_dir)
 
@@ -361,6 +395,96 @@ class MRMapService(AlgorithmService):
 
         combined_aois.sort(key=lambda item: (item['center'][1], item['center'][0]))
         return combined_aois, base_contour_count
+
+    def _apply_expansion(self, areas_of_interest, img_shape, expanded_bin_mask, hsv_img):
+        """Apply threshold and/or hue expansion to each AOI.
+
+        Threshold expansion (MRMap-specific): per AOI, expand to all pixels
+        inside the cluster rectangle that pass bin_counts < threshold+expansion,
+        then flood to connected pixels meeting that criterion outside the rect.
+
+        Hue expansion: circular mean hue of the original detected pixels is
+        the reference. Any pixel within +/- hue_expansion of that mean
+        (circular distance) reachable by 8-connected flood from the current
+        selection is added. Safety-capped per AOI.
+
+        Area is replaced with convex-hull area of the expanded pixel set.
+
+        Args:
+            areas_of_interest: List of AOIs (modified in place; also returned).
+            img_shape: (H, W[, C]) of processing image.
+            expanded_bin_mask: Global bool mask for threshold expansion, or None.
+            hsv_img: HxWx3 HSV image for hue expansion, or None.
+
+        Returns:
+            (areas_of_interest, combined_mask). combined_mask is uint8 with
+            255 on every expanded pixel across all AOIs.
+        """
+        h, w = int(img_shape[0]), int(img_shape[1])
+        combined_mask = np.zeros((h, w), dtype=np.uint8)
+
+        for aoi in areas_of_interest:
+            original_pixels = aoi.get('detected_pixels') or []
+            if not original_pixels:
+                continue
+
+            # Seed mask from original detected pixels.
+            coords = np.asarray(original_pixels, dtype=np.int32)
+            seed_mask = np.zeros((h, w), dtype=bool)
+            seed_mask[coords[:, 1], coords[:, 0]] = True
+
+            # Derive cluster rect from the stored contour corners. MRMap stores
+            # the axis-aligned cluster rectangle as 4 corner points.
+            contour = aoi.get('contour') or []
+            if contour:
+                xs = [int(p[0]) for p in contour]
+                ys = [int(p[1]) for p in contour]
+                cluster_rect = [min(xs), min(ys), max(xs), max(ys)]
+            else:
+                cluster_rect = [
+                    int(coords[:, 0].min()), int(coords[:, 1].min()),
+                    int(coords[:, 0].max()), int(coords[:, 1].max()),
+                ]
+
+            safety_cap = DetectionExpansion.compute_safety_cap(cluster_rect)
+
+            # Stage 1: threshold expansion (MRMap only).
+            selected = seed_mask
+            if expanded_bin_mask is not None:
+                threshold_selected = DetectionExpansion.expand_threshold_mrmap(
+                    expanded_bin_mask, cluster_rect, (h, w)
+                )
+                selected = seed_mask | threshold_selected
+
+            # Stage 2: hue expansion. Reference = circular mean of *original*
+            # detected pixel hues.
+            if hsv_img is not None and self.hue_expansion > 0:
+                seed_hues = hsv_img[coords[:, 1], coords[:, 0], 0]
+                mean_hue = DetectionExpansion.circular_mean_hue(seed_hues)
+                if mean_hue is not None:
+                    hue_ok = DetectionExpansion.hue_distance_mask(
+                        hsv_img, mean_hue, self.hue_expansion,
+                        sat_floor=self.hue_expansion_sat_floor,
+                        val_floor=self.hue_expansion_val_floor,
+                    )
+                    flooded, cap_hit = DetectionExpansion.expand_hue_flood(selected, hue_ok, safety_cap)
+                    if cap_hit:
+                        self.logger.warning(
+                            f"MRMap hue expansion cap hit for AOI at {aoi.get('center')}; keeping pre-hue selection."
+                        )
+                    else:
+                        selected = flooded
+
+            # Commit expanded selection back to AOI.
+            ys2, xs2 = np.where(selected)
+            if len(xs2) == 0:
+                continue
+            aoi['detected_pixels'] = np.stack([xs2, ys2], axis=1).tolist()
+            aoi['area'] = int(round(DetectionExpansion.convex_hull_area_from_mask(selected)))
+
+            combined_mask[selected] = 255
+
+        return areas_of_interest, combined_mask
 
     def _add_confidence_scores(self, areas_of_interest, bin_counts, mask):
         """Add confidence scores to AOIs based on histogram bin counts (rarity scores).

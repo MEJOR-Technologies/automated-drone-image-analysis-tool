@@ -15,7 +15,9 @@ from helpers.TranslationMixin import TranslationMixin
 
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QWidget, QColorDialog, QLabel, QSizePolicy, QScrollArea,
-                               QVBoxLayout, QPushButton, QHBoxLayout, QSpacerItem)
+                               QVBoxLayout, QPushButton, QHBoxLayout, QSpacerItem, QCheckBox)
+
+from algorithms import DetectionExpansion as _DE
 from PySide6.QtCore import Qt
 
 
@@ -160,6 +162,32 @@ class HSVColorRangeController(TranslationMixin, QWidget, Ui_HSVColorRange, Algor
         self._update_scroll_area()
         # Update empty state visibility
         self._update_empty_state()
+
+        self._build_expansion_controls()
+
+    def _build_expansion_controls(self):
+        """Append optional hue-expansion checkbox. Defaults are fixed in DetectionExpansion."""
+        container = QWidget(self)
+        v = QVBoxLayout(container)
+        v.setContentsMargins(0, 6, 0, 0)
+        v.setSpacing(4)
+
+        row = QHBoxLayout()
+        self.hueExpansionCheckBox = QCheckBox(self.tr("Hue Expansion"), container)
+        self.hueExpansionCheckBox.setToolTip(self.tr(
+            "When enabled, expand each AOI through neighbors whose hue is within +/- {0}\n"
+            "(OpenCV units) of the mean hue of the original detected pixels.\n"
+            "Pixels with saturation below {1}% or value below {2}% are excluded."
+        ).format(
+            _DE.DEFAULT_HUE_EXPANSION,
+            _DE.DEFAULT_HUE_EXPANSION_SAT_FLOOR_PCT,
+            _DE.DEFAULT_HUE_EXPANSION_VAL_FLOOR_PCT,
+        ))
+        row.addWidget(self.hueExpansionCheckBox)
+        row.addStretch(1)
+        v.addLayout(row)
+
+        self.verticalLayout.addWidget(container)
 
     def _create_scroll_area(self):
         """Create scroll area for color rows if not in UI file."""
@@ -384,6 +412,7 @@ class HSVColorRangeController(TranslationMixin, QWidget, Ui_HSVColorRange, Algor
             options['hue_threshold'] = None
             options['saturation_threshold'] = None
             options['value_threshold'] = None
+            self._apply_expansion_options(options)
             return options
 
         # New format: list of HSV configurations
@@ -413,8 +442,20 @@ class HSVColorRangeController(TranslationMixin, QWidget, Ui_HSVColorRange, Algor
         options['hue_threshold'] = int((first_hsv_ranges['h_minus'] + first_hsv_ranges['h_plus']) * 90)
         options['saturation_threshold'] = int((first_hsv_ranges['s_minus'] + first_hsv_ranges['s_plus']) * 127)
         options['value_threshold'] = int((first_hsv_ranges['v_minus'] + first_hsv_ranges['v_plus']) * 127)
+        self._apply_expansion_options(options)
 
         return options
+
+    def _apply_expansion_options(self, options):
+        """Populate hue-expansion option keys based on the checkbox state."""
+        if hasattr(self, 'hueExpansionCheckBox') and self.hueExpansionCheckBox.isChecked():
+            options['hue_expansion'] = _DE.DEFAULT_HUE_EXPANSION
+            options['hue_expansion_sat_floor'] = _DE.DEFAULT_HUE_EXPANSION_SAT_FLOOR_PCT
+            options['hue_expansion_val_floor'] = _DE.DEFAULT_HUE_EXPANSION_VAL_FLOOR_PCT
+        else:
+            options['hue_expansion'] = 0
+            options['hue_expansion_sat_floor'] = 0
+            options['hue_expansion_val_floor'] = 0
 
     def validate(self):
         """
@@ -493,6 +534,12 @@ class HSVColorRangeController(TranslationMixin, QWidget, Ui_HSVColorRange, Algor
             v_plus = options.get('value_threshold', 50)
 
             self.add_color_row(color, h_minus, h_plus, s_minus, s_plus, v_minus, v_plus)
+
+        if hasattr(self, 'hueExpansionCheckBox') and 'hue_expansion' in options:
+            try:
+                self.hueExpansionCheckBox.setChecked(int(options.get('hue_expansion') or 0) > 0)
+            except (TypeError, ValueError):
+                self.hueExpansionCheckBox.setChecked(False)
 
         self._update_view_range_button()
         self._update_scroll_area()

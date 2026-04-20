@@ -3,7 +3,9 @@ import sys
 from algorithms.AlgorithmController import AlgorithmController
 from algorithms.images.MRMap.views.MRMap_ui import Ui_MRMap
 
-from PySide6.QtWidgets import QComboBox, QListView, QWidget
+from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QListView, QVBoxLayout, QWidget
+
+from algorithms import DetectionExpansion as _DE
 
 
 class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
@@ -26,6 +28,48 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
         self._fixComboBoxForMacOS(self.colorspaceComboBox)
         self._fixComboBoxForMacOS(self.segmentsComboBox)
         self.thresholdSlider.valueChanged.connect(self.updatethreshold)
+        self._build_expansion_controls()
+
+    def _build_expansion_controls(self):
+        """Add optional AOI expansion checkboxes. Defaults are fixed in DetectionExpansion."""
+        container = QWidget(self)
+        v = QVBoxLayout(container)
+        v.setContentsMargins(0, 6, 0, 0)
+        v.setSpacing(4)
+
+        header = QLabel(self.tr("Detection Expansion (optional)"))
+        hf = header.font()
+        hf.setPointSize(10)
+        hf.setBold(True)
+        header.setFont(hf)
+        v.addWidget(header)
+
+        row = QHBoxLayout()
+        self.thresholdExpansionCheckBox = QCheckBox(self.tr("Threshold Expansion"), container)
+        self.thresholdExpansionCheckBox.setToolTip(self.tr(
+            "When enabled, expand each AOI to also include pixels with histogram bin-counts\n"
+            "below (threshold + {0}). Pixels inside the cluster rectangle are added unconditionally;\n"
+            "pixels outside are added if they are connected through other qualifying pixels."
+        ).format(_DE.DEFAULT_THRESHOLD_EXPANSION))
+        row.addWidget(self.thresholdExpansionCheckBox)
+
+        row.addSpacing(20)
+        self.hueExpansionCheckBox = QCheckBox(self.tr("Hue Expansion"), container)
+        self.hueExpansionCheckBox.setToolTip(self.tr(
+            "When enabled, expand each AOI through neighbors whose hue is within +/- {0}\n"
+            "(OpenCV units) of the mean hue of the original detected pixels.\n"
+            "Pixels with saturation below {1}% or value below {2}% are excluded."
+        ).format(
+            _DE.DEFAULT_HUE_EXPANSION,
+            _DE.DEFAULT_HUE_EXPANSION_SAT_FLOOR_PCT,
+            _DE.DEFAULT_HUE_EXPANSION_VAL_FLOOR_PCT,
+        ))
+        row.addWidget(self.hueExpansionCheckBox)
+        row.addStretch(1)
+        v.addLayout(row)
+
+        # Attach to the root layout of the .ui file.
+        self.verticalLayout.addWidget(container)
 
     def _fixComboBoxForMacOS(self, combo):
         """Force non-native dropdown rendering on macOS to fix popup positioning and padding."""
@@ -57,6 +101,17 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
         options['segments'] = int(self.segmentsComboBox.currentData())
         options['window'] = self.windowSpinBox.value()
         options['colorspace'] = str(self.colorspaceComboBox.currentData())
+        options['threshold_expansion'] = (
+            _DE.DEFAULT_THRESHOLD_EXPANSION if self.thresholdExpansionCheckBox.isChecked() else 0
+        )
+        if self.hueExpansionCheckBox.isChecked():
+            options['hue_expansion'] = _DE.DEFAULT_HUE_EXPANSION
+            options['hue_expansion_sat_floor'] = _DE.DEFAULT_HUE_EXPANSION_SAT_FLOOR_PCT
+            options['hue_expansion_val_floor'] = _DE.DEFAULT_HUE_EXPANSION_VAL_FLOOR_PCT
+        else:
+            options['hue_expansion'] = 0
+            options['hue_expansion_sat_floor'] = 0
+            options['hue_expansion_val_floor'] = 0
         return options
 
     def updatethreshold(self):
@@ -100,3 +155,13 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
                 self.colorspaceComboBox.setCurrentIndex(index)
             else:
                 self.colorspaceComboBox.setCurrentText(str(options['colorspace']))
+        if 'threshold_expansion' in options:
+            try:
+                self.thresholdExpansionCheckBox.setChecked(int(options.get('threshold_expansion') or 0) > 0)
+            except (TypeError, ValueError):
+                self.thresholdExpansionCheckBox.setChecked(False)
+        if 'hue_expansion' in options:
+            try:
+                self.hueExpansionCheckBox.setChecked(int(options.get('hue_expansion') or 0) > 0)
+            except (TypeError, ValueError):
+                self.hueExpansionCheckBox.setChecked(False)
