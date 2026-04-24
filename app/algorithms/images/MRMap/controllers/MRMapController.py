@@ -72,10 +72,25 @@ class MRMapController(QWidget, Ui_MRMap, AlgorithmController):
         self.verticalLayout.addWidget(container)
 
     def _fixComboBoxForMacOS(self, combo):
-        """Force non-native dropdown rendering on macOS to fix popup positioning and padding."""
+        """Force non-native dropdown rendering on macOS and size the popup to fit items.
+
+        The popup view's minimumWidth is sized to the widest item plus padding
+        so dropdown entries render without truncation on every platform (the
+        native Windows popup otherwise left this at 0).
+        """
         combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         if sys.platform == 'darwin':
             combo.setView(QListView())
+
+        view = combo.view()
+        model = combo.model()
+        widest = 0
+        for row in range(combo.count()):
+            width = view.sizeHintForIndex(model.index(row, combo.modelColumn())).width()
+            if width > widest:
+                widest = width
+        # +24 accounts for the scrollbar / viewport margin
+        view.setMinimumWidth(widest + 24)
 
     def _init_combo_data(self):
         """Attach stable option keys so translated labels do not affect config values."""

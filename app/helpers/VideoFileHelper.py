@@ -54,6 +54,7 @@ def get_video_creation_time(video_path, logger=None):
             logger.error(f"Error extracting video creation time: {e}")
         return None
 
+
 # Common Homebrew binary directories that may not be in PATH when the app
 # is launched outside a terminal (e.g. from Finder or a .app bundle).
 _HOMEBREW_BIN_DIRS = [

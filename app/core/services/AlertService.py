@@ -109,7 +109,9 @@ class AlertHistory:
         """
         self.max_history = max_history
         self.alerts = []  # List of (timestamp, detection_count) tuples
-        self._lock = threading.Lock()
+        # RLock because get_stats() holds the lock while calling get_alert_count(),
+        # which also acquires it.
+        self._lock = threading.RLock()
 
     def add_alert(self, detection_count: int):
         """Add alert to history.
