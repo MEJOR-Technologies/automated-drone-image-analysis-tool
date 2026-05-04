@@ -10,8 +10,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from helpers.TranslationMixin import TranslationMixin
 
-class WingtraDataDialog(QDialog):
+
+class WingtraDataDialog(TranslationMixin, QDialog):
     """Dialog showing Wingtra CSV import summary and confirmation."""
 
     def __init__(self, parent, matched_count: int, unmatched_csv_count: int,
@@ -39,7 +41,7 @@ class WingtraDataDialog(QDialog):
 
     def _setup_ui(self):
         """Set up the dialog UI."""
-        self.setWindowTitle("Wingtra Data Import")
+        self.setWindowTitle(self.tr("Wingtra Data Import"))
         self.setModal(True)
         self.setMinimumWidth(450)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
@@ -49,13 +51,17 @@ class WingtraDataDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Summary section
-        summary_group = QGroupBox("Import Summary")
+        summary_group = QGroupBox(self.tr("Import Summary"))
         summary_layout = QVBoxLayout(summary_group)
 
-        summary_text = (
-            f"<b>Matched images:</b> {self.matched_count}<br>"
-            f"<b>CSV entries without match:</b> {self.unmatched_csv_count}<br>"
-            f"<b>Result images without CSV data:</b> {self.unmatched_images_count}"
+        summary_text = self.tr(
+            "<b>Matched images:</b> {matched}<br>"
+            "<b>CSV entries without match:</b> {unmatched_csv}<br>"
+            "<b>Result images without CSV data:</b> {unmatched_images}"
+        ).format(
+            matched=self.matched_count,
+            unmatched_csv=self.unmatched_csv_count,
+            unmatched_images=self.unmatched_images_count,
         )
 
         summary_label = QLabel(summary_text)
@@ -64,19 +70,22 @@ class WingtraDataDialog(QDialog):
         layout.addWidget(summary_group)
 
         # Terrain / AGL section
-        terrain_group = QGroupBox("Altitude & GSD")
+        terrain_group = QGroupBox(self.tr("Altitude & GSD"))
         terrain_layout = QVBoxLayout(terrain_group)
 
         if self.agl_computed_count > 0:
-            terrain_text = (
-                f"<b>AGL computed from terrain:</b> {self.agl_computed_count} of {self.matched_count} images<br>"
-                f"<br>"
-                f"Per-image AGL is derived from the CSV altitude (ASL) minus "
-                f"terrain elevation at each GPS location. GSD will be calculated "
-                f"automatically using the camera sensor data and focal length."
+            terrain_text = self.tr(
+                "<b>AGL computed from terrain:</b> {agl_count} of {matched_count} images<br>"
+                "<br>"
+                "Per-image AGL is derived from the CSV altitude (ASL) minus "
+                "terrain elevation at each GPS location. GSD will be calculated "
+                "automatically using the camera sensor data and focal length."
+            ).format(
+                agl_count=self.agl_computed_count,
+                matched_count=self.matched_count,
             )
         else:
-            terrain_text = (
+            terrain_text = self.tr(
                 "<b>Terrain data unavailable</b> - AGL could not be computed.<br>"
                 "<br>"
                 "Orientation (yaw/pitch/roll) will still be applied from the CSV. "
@@ -94,11 +103,11 @@ class WingtraDataDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
-        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button = QPushButton(self.tr("Cancel"))
         self.cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(self.cancel_button)
 
-        self.ok_button = QPushButton("Apply Wingtra Data")
+        self.ok_button = QPushButton(self.tr("Apply Wingtra Data"))
         self.ok_button.setDefault(True)
         self.ok_button.clicked.connect(self.accept)
         button_layout.addWidget(self.ok_button)

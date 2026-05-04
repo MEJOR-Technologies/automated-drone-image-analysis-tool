@@ -31,7 +31,7 @@ class HeatmapViewerDialog(TranslationMixin, QDialog):
         self.threshold = currentThreshold
         self.gridSize = currentGridSize
 
-        self.setWindowTitle("AOI Detection Heatmap")
+        self.setWindowTitle(self.tr("AOI Detection Heatmap"))
         self.setModal(True)
         self.setMinimumSize(850, 900)
 
@@ -56,10 +56,10 @@ class HeatmapViewerDialog(TranslationMixin, QDialog):
         layout.addWidget(self.statsLabel)
 
         # Threshold slider
-        thresholdGroup = QGroupBox("Threshold")
+        thresholdGroup = QGroupBox(self.tr("Threshold"))
         thresholdLayout = QHBoxLayout()
 
-        thresholdLayout.addWidget(QLabel("Percentile:"))
+        thresholdLayout.addWidget(QLabel(self.tr("Percentile:")))
 
         self.thresholdSlider = QSlider(Qt.Horizontal)
         self.thresholdSlider.setMinimum(0)
@@ -78,14 +78,14 @@ class HeatmapViewerDialog(TranslationMixin, QDialog):
         layout.addWidget(thresholdGroup)
 
         # Grid resolution presets
-        resGroup = QGroupBox("Grid Resolution")
+        resGroup = QGroupBox(self.tr("Grid Resolution"))
         resLayout = QHBoxLayout()
 
         self.resButtonGroup = QButtonGroup(self)
 
-        self.lowRadio = QRadioButton("Low (100)")
-        self.medRadio = QRadioButton("Medium (200)")
-        self.highRadio = QRadioButton("High (400)")
+        self.lowRadio = QRadioButton(self.tr("Low (100)"))
+        self.medRadio = QRadioButton(self.tr("Medium (200)"))
+        self.highRadio = QRadioButton(self.tr("High (400)"))
 
         self.resButtonGroup.addButton(self.lowRadio, 100)
         self.resButtonGroup.addButton(self.medRadio, 200)
@@ -110,11 +110,11 @@ class HeatmapViewerDialog(TranslationMixin, QDialog):
         layout.addWidget(resGroup)
 
         # Info label
-        infoLabel = QLabel(
+        infoLabel = QLabel(self.tr(
             "Hot zones (colored) show high-density detection areas. "
             "Gray zones are below the threshold. "
             "Adjust the threshold to control what counts as a hot zone."
-        )
+        ))
         infoLabel.setWordWrap(True)
         infoLabel.setStyleSheet("QLabel { color: gray; font-size: 9pt; }")
         layout.addWidget(infoLabel)
@@ -123,7 +123,7 @@ class HeatmapViewerDialog(TranslationMixin, QDialog):
         buttonLayout = QHBoxLayout()
         buttonLayout.addStretch()
 
-        closeButton = QPushButton("Close")
+        closeButton = QPushButton(self.tr("Close"))
         closeButton.clicked.connect(self.accept)
         buttonLayout.addWidget(closeButton)
 
@@ -147,7 +147,7 @@ class HeatmapViewerDialog(TranslationMixin, QDialog):
     def _renderHeatmap(self):
         """Render the heatmap image with current threshold overlay."""
         if not self.heatmapService.is_valid():
-            self.imageLabel.setText("No heatmap data available")
+            self.imageLabel.setText(self.tr("No heatmap data available"))
             return
 
         heatmapImg, stats = self.heatmapService.generate_heatmap_image(

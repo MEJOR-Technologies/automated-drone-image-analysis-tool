@@ -51,7 +51,7 @@ class CalTopoCredentialDialog(TranslationMixin, QDialog):
             if credential_secret:
                 self.credential_secret_input.setText(credential_secret)
                 self.credential_secret_input.setEchoMode(QLineEdit.Password)
-            self.credential_secret_input.setPlaceholderText("Enter new credential secret...")
+            self.credential_secret_input.setPlaceholderText(self.tr("Enter new credential secret..."))
         elif existing_credentials:
             # Pre-fill existing credentials
             team_id, credential_id, credential_secret = existing_credentials
@@ -201,7 +201,7 @@ class CalTopoCredentialDialog(TranslationMixin, QDialog):
                         self.credential_secret_input.clear()
                 else:
                     self.credential_secret_input.clear()
-                self.credential_secret_input.setPlaceholderText("Enter credential secret...")
+                self.credential_secret_input.setPlaceholderText(self.tr("Enter credential secret..."))
 
     def on_ok_clicked(self):
         """

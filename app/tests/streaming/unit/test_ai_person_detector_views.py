@@ -39,7 +39,7 @@ class TestAIPersonDetectorControlWidget:
         assert config["max_detections"] == 25
         assert config["enable_temporal_voting"] is False
         assert config["enable_aspect_ratio_filter"] is False
-        assert widget.input_processing_tab.frame_rate_preset.currentText() == "Source FPS"
+        assert widget.input_processing_tab.frame_rate_preset.currentData() == "source"
 
     def test_set_config_maps_legacy_fields(self, qapp):
         """Legacy fields should map into shared rendering/input controls."""

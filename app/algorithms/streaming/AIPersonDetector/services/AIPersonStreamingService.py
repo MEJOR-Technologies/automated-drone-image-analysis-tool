@@ -144,7 +144,10 @@ class AIPersonStreamingService(QObject):
                 return frame, [], timings
 
             pre_start = time.perf_counter()
-            processing_frame, scale_x, scale_y = self._prepare_processing_frame(frame, cfg)
+            if self._should_use_tiled_inference(frame, cfg):
+                processing_frame, scale_x, scale_y = frame, 1.0, 1.0
+            else:
+                processing_frame, scale_x, scale_y = self._prepare_processing_frame(frame, cfg)
             timings.preprocessing_ms = (time.perf_counter() - pre_start) * 1000.0
 
             detect_start = time.perf_counter()

@@ -201,7 +201,7 @@ class RecentColorsDialog(TranslationMixin, QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
-        cancel_btn = QPushButton("Cancel", self)
+        cancel_btn = QPushButton(self.tr("Cancel"), self)
         cancel_btn.clicked.connect(self.reject)
         button_layout.addWidget(cancel_btn)
 

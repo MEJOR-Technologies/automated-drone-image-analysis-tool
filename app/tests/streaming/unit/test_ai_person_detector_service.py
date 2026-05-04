@@ -135,6 +135,67 @@ class TestAIPersonStreamingService:
         assert pad_x == 0.0
         assert pad_y == 0.0
 
+    def test_process_frame_tiles_on_source_skipping_pre_resize(self):
+        """Oversized frames should bypass pre-resize so tiles preserve source resolution."""
+        service = AIPersonStreamingService()
+        service.update_config(
+            AIPersonStreamingConfig(
+                confidence_threshold=0.5,
+                max_detections_to_render=10,
+                render_text=False,
+                enable_temporal_voting=False,
+                enable_tiled_inference=True,
+                processing_width=1280,
+                processing_height=720,
+            )
+        )
+
+        frame = np.zeros((1500, 2000, 3), dtype=np.uint8)
+        captured = {}
+
+        def fake_infer(received_frame, cfg):
+            captured["shape"] = received_frame.shape
+            return [(10, 20, 110, 220, 0.9)]
+
+        with patch(
+            "algorithms.streaming.AIPersonDetector.services.AIPersonStreamingService.ONNXRUNTIME_AVAILABLE",
+            True,
+        ), patch.object(service, "_infer", side_effect=fake_infer):
+            _, detections, _ = service.process_frame(frame, 0.0)
+
+        assert captured["shape"] == (1500, 2000, 3)
+        assert detections[0].bbox == (10, 20, 100, 200)
+
+    def test_process_frame_pre_resizes_when_not_tiling(self):
+        """Without tiling, the frame should still be downscaled to processing resolution."""
+        service = AIPersonStreamingService()
+        service.update_config(
+            AIPersonStreamingConfig(
+                confidence_threshold=0.5,
+                max_detections_to_render=10,
+                render_text=False,
+                enable_temporal_voting=False,
+                enable_tiled_inference=False,
+                processing_width=640,
+                processing_height=480,
+            )
+        )
+
+        frame = np.zeros((1500, 2000, 3), dtype=np.uint8)
+        captured = {}
+
+        def fake_infer(received_frame, cfg):
+            captured["shape"] = received_frame.shape
+            return []
+
+        with patch(
+            "algorithms.streaming.AIPersonDetector.services.AIPersonStreamingService.ONNXRUNTIME_AVAILABLE",
+            True,
+        ), patch.object(service, "_infer", side_effect=fake_infer):
+            service.process_frame(frame, 0.0)
+
+        assert captured["shape"] == (480, 640, 3)
+
     def test_tiled_inference_fallback_disables_tiles_after_slow_window(self):
         """Sustained slow tiled inference should auto-disable tiles until reset."""
         service = AIPersonStreamingService()

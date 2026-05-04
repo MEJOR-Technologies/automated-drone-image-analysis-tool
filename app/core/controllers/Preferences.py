@@ -56,6 +56,8 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         self.languageComboBox.setFont(font)
         self.languageComboBox.addItem("English", "en")
         self.languageComboBox.addItem("Italiano", "it")
+        self.languageComboBox.addItem("Español", "es")
+        self.languageComboBox.addItem("Nederlands", "nl")
 
         self.languageLayout.addWidget(self.languageLabel)
         self.languageLayout.addWidget(self.languageComboBox)

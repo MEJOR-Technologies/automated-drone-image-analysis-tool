@@ -209,7 +209,7 @@ class HSVColorRowWizardWidget(TranslationMixin, QWidget):
             pass
 
         # Tolerance label (for preset mode)
-        self.toleranceLabel = QLabel("Match\nTolerance:", self.rowFrame)
+        self.toleranceLabel = QLabel(self.tr("Match\nTolerance:"), self.rowFrame)
         # Force 11pt font
         _lbl_font = QFont(self.font())
         _lbl_font.setPointSize(11)
@@ -223,7 +223,7 @@ class HSVColorRowWizardWidget(TranslationMixin, QWidget):
         combo_font.setPointSize(11)
         self.toleranceCombo.setFont(combo_font)
         for label, _ in self.TOLERANCE_PRESETS:
-            self.toleranceCombo.addItem(label)
+            self.toleranceCombo.addItem(self.tr(label))
         self.toleranceCombo.setCurrentIndex(self.tolerance_index)
         self.toleranceCombo.currentIndexChanged.connect(self._on_tolerance_changed)
         self.toleranceCombo.setMinimumWidth(150)

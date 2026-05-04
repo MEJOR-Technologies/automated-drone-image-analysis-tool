@@ -18,6 +18,9 @@ import sys
 from pathlib import Path
 
 
+LANGUAGES = ["en", "it", "es", "nl"]
+
+
 def extract(project_root: Path, translations_dir: Path):
     """Extract translatable strings from source files."""
     # Collect all source files
@@ -30,19 +33,14 @@ def extract(project_root: Path, translations_dir: Path):
 
     print(f"Sources: {len(ui_files)} .ui files, {len(py_files)} .py files")
 
-    # Find or create .ts files
-    ts_files = list(translations_dir.glob("*.ts")) or [translations_dir / "app_en.ts", translations_dir / "app_it.ts"]
-
-    # If app_it.ts doesn't exist yet, ensure it's in the list
-    if not (translations_dir / "app_it.ts").exists():
-        if translations_dir / "app_it.ts" not in ts_files:
-            ts_files.append(translations_dir / "app_it.ts")
+    # Ensure every supported language has a .ts file in the list (pyside6-lupdate creates missing ones)
+    ts_files = [translations_dir / f"app_{lang}.ts" for lang in LANGUAGES]
 
     for ts_file in ts_files:
         print(f"  Updating {ts_file.name}...")
         result = subprocess.run(
-            ["pyside6-lupdate"] + all_files + ["-ts", str(ts_file)],
-            capture_output=True, text=True
+            ["pyside6-lupdate", "-no-obsolete"] + all_files + ["-ts", str(ts_file)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace"
         )
         if result.stderr:
             for line in result.stderr.strip().split('\n'):
@@ -64,7 +62,7 @@ def compile_translations(translations_dir: Path):
         qm_file = ts_file.with_suffix(".qm")
         result = subprocess.run(
             ["pyside6-lrelease", str(ts_file)],
-            capture_output=True, text=True
+            capture_output=True, text=True, encoding="utf-8", errors="replace"
         )
         if qm_file.exists():
             print(f"  {ts_file.name} -> {qm_file.name}")

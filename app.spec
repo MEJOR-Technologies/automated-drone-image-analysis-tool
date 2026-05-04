@@ -13,6 +13,7 @@ except NameError:
 translation_candidates = [
     os.path.join(spec_dir, 'translations', 'app_en.qm'),
     os.path.join(spec_dir, 'translations', 'app_it.qm'),
+    os.path.join(spec_dir, 'translations', 'app_es.qm'),
 ]
 translation_datas = [(path, 'translations') for path in translation_candidates if os.path.exists(path)]
 

@@ -38,7 +38,7 @@ class TrackGalleryWidget(TranslationMixin, QWidget):
         layout.setSpacing(5)
 
         # Header
-        self.header = QLabel("Detection Gallery")
+        self.header = QLabel(self.tr("Detection Gallery"))
         self.header.setStyleSheet("font-weight: bold; font-size: 12px;")
         layout.addWidget(self.header)
 
@@ -79,7 +79,7 @@ class TrackGalleryWidget(TranslationMixin, QWidget):
         layout.addWidget(self.gallery_list)
 
         # Count label
-        self.count_label = QLabel("0 detections")
+        self.count_label = QLabel(self.tr("0 detections"))
         self.count_label.setStyleSheet("color: #888;")
         layout.addWidget(self.count_label)
 

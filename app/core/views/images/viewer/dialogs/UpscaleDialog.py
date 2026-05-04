@@ -230,10 +230,10 @@ class UpscaleDialog(TranslationMixin, QDialog):
         method_layout.addWidget(method_label)
 
         self.method_combo = QComboBox()
-        self.method_combo.addItem("Auto (Recommended)", "auto")
-        self.method_combo.addItem("Fast (Lanczos)", "fast")
+        self.method_combo.addItem(self.tr("Auto (Recommended)"), "auto")
+        self.method_combo.addItem(self.tr("Fast (Lanczos)"), "fast")
         if OPENCV_SR_AVAILABLE:
-            self.method_combo.addItem("Balanced (OpenCV EDSR)", "balanced")
+            self.method_combo.addItem(self.tr("Balanced (OpenCV EDSR)"), "balanced")
         # Don't show "Best" option until it's implemented
         # self.method_combo.addItem("Best Quality (Real-ESRGAN) - Not Implemented", "best")
 
@@ -298,10 +298,18 @@ class UpscaleDialog(TranslationMixin, QDialog):
         height, width = image_array.shape[:2]
         orig_h, orig_w = self.original_size
         self.info_label.setText(
-            f"Resolution: {width} × {height} pixels | "
-            f"Original: {orig_w} × {orig_h} pixels | "
-            f"Upscale: {self.current_level}x | "
-            f"Use mouse wheel to zoom, right-click to pan"
+            self.tr(
+                "Resolution: {width} × {height} pixels | "
+                "Original: {orig_w} × {orig_h} pixels | "
+                "Upscale: {level}x | "
+                "Use mouse wheel to zoom, right-click to pan"
+            ).format(
+                width=width,
+                height=height,
+                orig_w=orig_w,
+                orig_h=orig_h,
+                level=self.current_level,
+            )
         )
 
     def _get_visible_portion(self):

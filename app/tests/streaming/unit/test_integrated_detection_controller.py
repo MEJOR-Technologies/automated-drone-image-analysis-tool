@@ -133,7 +133,7 @@ class TestColorAnomalyAndMotionDetectionController:
 
             controller.set_config({'processing_resolution': None})
 
-            assert controller.integrated_controls.input_processing_tab.resolution_preset.currentText() == "Original"
+            assert controller.integrated_controls.input_processing_tab.resolution_preset.currentData() == "original"
 
     def test_config_changed_signal(self, qapp, algorithm_config, mock_logger):
         """Test config changed signal emission."""

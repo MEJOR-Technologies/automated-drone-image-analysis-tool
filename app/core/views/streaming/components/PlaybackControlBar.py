@@ -51,7 +51,7 @@ class PlaybackControlBar(TranslationMixin, QWidget):
                 font-weight: bold;
             }
         """)
-        self.play_pause_btn.setToolTip("Play/Pause (Space)")
+        self.play_pause_btn.setToolTip(self.tr("Play/Pause (Space)"))
         layout.addWidget(self.play_pause_btn)
 
         # Current time
@@ -64,7 +64,7 @@ class PlaybackControlBar(TranslationMixin, QWidget):
         self.timeline_slider = QSlider(Qt.Horizontal)
         self.timeline_slider.setRange(0, 1000)
         self.timeline_slider.setValue(0)
-        self.timeline_slider.setToolTip("Seek through video")
+        self.timeline_slider.setToolTip(self.tr("Seek through video"))
         layout.addWidget(self.timeline_slider, 1)
 
         # Total duration

@@ -1120,7 +1120,7 @@ class StreamControlWidget(TranslationMixin, QWidget):
             self.url_input.setEnabled(True)
             self.browse_button.setEnabled(True)
             # For HDMI, re-enable device combo and scan button
-            if self.type_combo.currentText() == "HDMI Capture":
+            if self.type_combo.currentData() == "HDMI Capture":
                 self.hdmi_device_combo.setEnabled(True)
                 self.scan_button.setEnabled(True)
 

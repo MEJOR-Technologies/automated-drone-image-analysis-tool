@@ -48,7 +48,7 @@ class TestColorAnomalyAndMotionDetectionControlWidget:
         # Check custom resolution inputs exist
         assert hasattr(widget.input_processing_tab, 'processing_width')
         assert hasattr(widget.input_processing_tab, 'processing_height')
-        assert widget.input_processing_tab.frame_rate_preset.currentText() == "Source FPS"
+        assert widget.input_processing_tab.frame_rate_preset.currentData() == "source"
 
         # Check performance options
         assert hasattr(widget.input_processing_tab, 'render_at_processing_res')
@@ -161,7 +161,7 @@ class TestColorAnomalyAndMotionDetectionControlWidget:
         # Check shape options (in shared RenderingTab)
         assert hasattr(widget, 'rendering_tab')
         assert hasattr(widget.rendering_tab, 'render_shape')
-        assert widget.rendering_tab.render_shape.currentText() == "Circle"  # Default Circle
+        assert widget.rendering_tab.render_shape.currentData() == 1  # Default Circle
 
         # Check visual options (in shared RenderingTab)
         assert hasattr(widget.rendering_tab, 'render_text')
@@ -224,20 +224,22 @@ class TestColorAnomalyAndMotionDetectionControlWidget:
         """Test resolution preset changes."""
         widget = ColorAnomalyAndMotionDetectionControlWidget()
 
+        preset_combo = widget.input_processing_tab.resolution_preset
+
         # Test Custom preset enables inputs
-        widget.input_processing_tab.resolution_preset.setCurrentText("Custom")
+        preset_combo.setCurrentIndex(preset_combo.findData("custom"))
         assert widget.input_processing_tab.processing_width.isEnabled() is True
         assert widget.input_processing_tab.processing_height.isEnabled() is True
 
         # Test preset disables inputs and sets values
-        widget.input_processing_tab.resolution_preset.setCurrentText("1080P (1920x1080)")
+        preset_combo.setCurrentIndex(preset_combo.findData("1080P"))
         assert widget.input_processing_tab.processing_width.isEnabled() is False
         assert widget.input_processing_tab.processing_height.isEnabled() is False
         assert widget.input_processing_tab.processing_width.value() == 1920
         assert widget.input_processing_tab.processing_height.value() == 1080
 
         # Test Original preset
-        widget.input_processing_tab.resolution_preset.setCurrentText("Original")
+        preset_combo.setCurrentIndex(preset_combo.findData("original"))
         assert widget.input_processing_tab.processing_width.isEnabled() is False
         assert widget.input_processing_tab.processing_height.isEnabled() is False
 
@@ -372,7 +374,8 @@ class TestColorAnomalyAndMotionDetectionControlWidget:
         """Test that Original resolution preset is handled correctly."""
         widget = ColorAnomalyAndMotionDetectionControlWidget()
 
-        widget.input_processing_tab.resolution_preset.setCurrentText("Original")
+        preset_combo = widget.input_processing_tab.resolution_preset
+        preset_combo.setCurrentIndex(preset_combo.findData("original"))
         config = widget.get_config()
 
         assert config['processing_width'] is None
@@ -384,6 +387,6 @@ class TestColorAnomalyAndMotionDetectionControlWidget:
 
         widget.input_processing_tab.set_processing_resolution(99999, 99999)
 
-        assert widget.input_processing_tab.resolution_preset.currentText() == "Original"
+        assert widget.input_processing_tab.resolution_preset.currentData() == "original"
         assert widget.input_processing_tab.processing_width.isEnabled() is False
         assert widget.input_processing_tab.processing_height.isEnabled() is False
