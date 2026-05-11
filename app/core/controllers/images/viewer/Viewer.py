@@ -28,6 +28,7 @@ from core.controllers.images.viewer.exports.ZipExportController import ZipExport
 from core.controllers.images.viewer.exports.PDFExportController import PDFExportController
 from core.controllers.images.viewer.AltitudeController import AltitudeController
 from core.controllers.images.viewer.WingtraDataController import WingtraDataController
+from core.controllers.images.viewer.WaldoPrePassController import WaldoPrePassController
 from core.controllers.images.viewer.image.ImageLoadController import ImageLoadController
 from core.controllers.images.viewer.PixelInfoController import PixelInfoController
 from core.controllers.images.viewer.ThermalDataController import ThermalDataController
@@ -42,6 +43,7 @@ from core.views.images.viewer.widgets.OverlayWidget import OverlayWidget
 from core.controllers.images.viewer.MagnifyingGlass import MagnifyingGlass
 from core.views.images.viewer.dialogs.MeasureDialog import MeasureDialog
 from core.views.images.viewer.dialogs.LoadingDialog import LoadingDialog
+from core.views.images.viewer.dialogs.ResultsLoadingDialog import ResultsLoadingDialog
 from core.views.images.viewer.widgets.ScaleBarWidget import ScaleBarWidget
 from core.views.images.viewer.dialogs.ImageAdjustmentDialog import ImageAdjustmentDialog
 from core.controllers.images.viewer.status.StatusDict import StatusDict
@@ -120,10 +122,24 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self._add_Toggles()
         # self._adjust_ui_sizing()
         # ---------------- settings / data ----------------
+        # A heartbeat dialog so the user knows the app is working during
+        # the synchronous open flow (path validation, source-folder scan,
+        # WALDO pre-pass coordination, AOI init, first image decode).
+        # Without it the window just looks frozen for several seconds.
+        self._loading_dialog = ResultsLoadingDialog(parent=None)
+        self._loading_dialog.show()
+        self._loading_dialog.set_status(self.tr("Reading result file..."))
+
         self.xml_path = xml_path
         self.xml_service = XmlService(xml_path)
         self.images = self.xml_service.get_images()
+        # Settings parsed early so the WALDO pre-pass and source-folder enumeration
+        # can both see settings['input_dir'] (the original capture folder).
+        self.settings, _ = self.xml_service.get_settings()
 
+        self._loading_dialog.set_status(
+            self.tr("Checking image dimensions ({n} images)...").format(n=len(self.images))
+        )
         # Check for missing image dimensions and offer to backfill
         self._backfill_image_dimensions_if_needed()
 
@@ -132,9 +148,11 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.path_validation_controller = PathValidationController(self)
         self.bearing_recovery_controller = BearingRecoveryController(self)
 
+        self._loading_dialog.set_status(self.tr("Validating image paths..."))
         # Validate and fix paths if needed
         if not self.path_validation_controller.validate_and_fix_paths(self.images):
             # User cancelled folder selection - show error and close viewer
+            self._loading_dialog.close()
             QMessageBox.critical(
                 self,
                 self.tr("Load Results Failed"),
@@ -145,6 +163,24 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             )
             QTimer.singleShot(0, self.close)  # Close after __init__ completes
             return
+
+        self._loading_dialog.set_status(self.tr("Scanning source folder for full flight..."))
+        # Build the full source-folder image list (all captures from the original
+        # flight, not just the AOI subset that lives in the result XML). The map
+        # view, coverage extents, and the WALDO heading derivation all need the
+        # full set; per-AOI navigation continues to iterate self.images.
+        self.source_images = self._build_source_images()
+
+        # WALDO airframe pre-pass runs its own dialog with detailed progress;
+        # hide the heartbeat dialog so we don't have two modals stacked.
+        self._loading_dialog.hide()
+        try:
+            self.waldo_pre_pass_controller = WaldoPrePassController(self)
+            self.waldo_pre_pass_controller.run_pre_pass_if_needed(self.source_images)
+        except Exception as waldo_err:
+            self.logger.warning(f"WALDO pre-pass failed; continuing without synthesis: {waldo_err}")
+        self._loading_dialog.show()
+        self._loading_dialog.set_status(self.tr("Initialising controllers..."))
 
         # Initialize settings service for reviewer name
         self.settings_service = SettingsService()
@@ -157,7 +193,6 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.skipHidden.setText(
             self.tr("Skip Hidden ({count}) ").format(count=self.hidden_image_count)
         )
-        self.settings, _ = self.xml_service.get_settings()
 
         # Store alternative cache directory (set by _check_and_prompt_for_caches)
         self.alternative_cache_dir = None
@@ -184,6 +219,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         # Initialize services
         self.cache_path_service = CachePathService()
 
+        self._loading_dialog.set_status(
+            self.tr("Loading detection results from {n} images...").format(n=len(self.images))
+        )
         # Load flagged AOIs from XML
         self.aoi_controller.initialize_from_xml(self.images)
         self.is_thermal = (self.settings['thermal'] == 'True')
@@ -253,6 +291,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.gallery_loading_overlay = None
 
         # ---- load everything ----
+        self._loading_dialog.set_status(self.tr("Loading first image..."))
         self._load_images()
 
         # Check for missing bearings and offer recovery
@@ -267,6 +306,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         # Set up UI elements for controllers
         # Controllers get UI elements directly from parent
 
+        self._loading_dialog.set_status(self.tr("Preparing thumbnails..."))
         # Defer thumbnail initialization to avoid blocking with large datasets
         # Only initialize visible thumbnails first
         self.thumbnail_controller.initialize_thumbnails_deferred()
@@ -278,6 +318,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.skipHidden.setFocusPolicy(Qt.NoFocus)
         self.setStyleSheet("QToolTip {background-color: lightblue; color:black; border:1px solid blue;}")
 
+        # Heartbeat is no longer needed once the viewer itself is visible.
+        self._loading_dialog.close()
+        self._loading_dialog = None
         self.showMaximized()
 
     def _initial_fit_image(self):
@@ -877,6 +920,63 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if e.key() == Qt.Key_W and e.modifiers() == Qt.ShiftModifier:
             # Load Wingtra CSV flight log with 'Shift+W' key
             self.wingtra_controller.prompt_and_load_csv()
+
+    def _build_source_images(self):
+        """Enumerate every capture from the original flight folder.
+
+        The result XML carries only images that produced an AOI; map markers,
+        coverage extents, and WALDO heading derivation all need the full set.
+        Reads settings['input_dir'] (written by AnalyzeService at detection
+        time). When that folder is missing or unreachable, falls back to the
+        AOI subset so the viewer still loads cleanly on relocated projects.
+
+        Each entry: {'path', 'name', 'has_aoi'}.
+        """
+        IMAGE_EXTS = ('.jpg', '.jpeg', '.tif', '.tiff', '.png', '.dng')
+        aoi_paths = {img['path'] for img in self.images if img.get('path')}
+        input_dir = (self.settings or {}).get('input_dir', '') or ''
+
+        if not input_dir or not os.path.isdir(input_dir):
+            if input_dir:
+                self.logger.info(
+                    f"Source folder unreachable ({input_dir}); map and coverage "
+                    f"will use AOI subset only."
+                )
+            return [
+                {'path': img['path'], 'name': os.path.basename(img['path']), 'has_aoi': True}
+                for img in self.images if img.get('path')
+            ]
+
+        source_images = []
+        try:
+            entries = sorted(os.listdir(input_dir))
+        except OSError as e:
+            self.logger.warning(f"Cannot list source folder {input_dir}: {e}")
+            return [
+                {'path': img['path'], 'name': os.path.basename(img['path']), 'has_aoi': True}
+                for img in self.images if img.get('path')
+            ]
+
+        for name in entries:
+            if not name.lower().endswith(IMAGE_EXTS):
+                continue
+            full_path = os.path.join(input_dir, name)
+            if not os.path.isfile(full_path):
+                continue
+            source_images.append({
+                'path': full_path,
+                'name': name,
+                'has_aoi': full_path in aoi_paths,
+            })
+
+        # Append AOI images that aren't in the source folder (relocated/renamed).
+        source_paths = {entry['path'] for entry in source_images}
+        for img in self.images:
+            p = img.get('path')
+            if p and p not in source_paths:
+                source_images.append({'path': p, 'name': os.path.basename(p), 'has_aoi': True})
+
+        return source_images
 
     def _backfill_image_dimensions_if_needed(self):
         """Check if image dimensions are missing and offer to backfill from image files."""

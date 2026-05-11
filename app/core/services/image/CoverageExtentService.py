@@ -177,7 +177,9 @@ class CoverageExtentService:
             # Load image service
             image_service = ImageService(image_path, image.get('mask_path', ''), calculated_bearing=image.get('bearing'))
 
-            # Check gimbal angle - must be nadir
+            # Check gimbal angle - must be nadir (allowing for outward roll on
+            # fixed-wing rigs like WALDO, where pitch stays at -90 but roll is
+            # applied about the heading axis to push the footprint sideways).
             gimbal_pitch = image_service.get_camera_pitch()
             if gimbal_pitch is not None:
                 # Nadir is typically -90 degrees (camera pointing straight down)
@@ -185,6 +187,13 @@ class CoverageExtentService:
                 if not (-95 <= gimbal_pitch <= -85):
                     self.logger.warning(f"Image {image.get('name', 'unknown')} skipped: gimbal not nadir ({gimbal_pitch:.1f}°)")
                     return None
+
+            # Outward gimbal roll (e.g. WALDO ±22.5°) shifts the ground footprint
+            # cross-track by h*tan(roll). >90° rolls are the DJI "inverted gimbal"
+            # pattern where get_camera_yaw already flips yaw 180°, so skip those.
+            gimbal_roll = image_service.get_gimbal_roll() or 0.0
+            if abs(gimbal_roll) > 90.0:
+                gimbal_roll = 0.0
 
             # Get GSD
             gsd_cm = image_service.get_average_gsd(custom_altitude_ft=self.custom_altitude_ft)
@@ -210,12 +219,25 @@ class CoverageExtentService:
                 bearing = 0  # Default to north if bearing not available
 
             # Calculate the four corners of the image in GPS coordinates
-            # Corners in image space (centered at origin)
+            # Corners in image space (centered at the drone-nadir point on the
+            # ground plane). Outward roll shifts that center cross-track by
+            # h*tan(roll); positive roll points the optical axis to the LEFT
+            # of heading (matches AOIService convention), so the centroid
+            # offset along the camera-X (right) axis is -h*tan(roll).
+            agl_m = image_service.get_relative_altitude('m')
+            if agl_m is None or agl_m <= 0:
+                # Custom altitude already factored into GSD; back-derive in m.
+                if self.custom_altitude_ft and self.custom_altitude_ft > 0:
+                    agl_m = self.custom_altitude_ft / 3.28084
+                else:
+                    agl_m = 0.0
+            roll_offset_x = -agl_m * math.tan(math.radians(gimbal_roll))
+
             corners_image = [
-                (-width_m / 2, -height_m / 2),  # Top-left
-                (width_m / 2, -height_m / 2),   # Top-right
-                (width_m / 2, height_m / 2),    # Bottom-right
-                (-width_m / 2, height_m / 2)    # Bottom-left
+                (roll_offset_x - width_m / 2, -height_m / 2),  # Top-left
+                (roll_offset_x + width_m / 2, -height_m / 2),  # Top-right
+                (roll_offset_x + width_m / 2, height_m / 2),   # Bottom-right
+                (roll_offset_x - width_m / 2, height_m / 2)    # Bottom-left
             ]
 
             # Rotate corners by bearing and convert to GPS

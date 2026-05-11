@@ -174,3 +174,41 @@ def test_get_exif_data_piexif(example_image_path):
         result = MetaDataHelper.get_exif_data_piexif(example_image_path)
         assert result == mock_exif_data
         mock_piexif_load.assert_called_once_with(example_image_path)
+
+
+def test_add_xmp_fields_multi_namespace_round_trip():
+    """Batched writer must register one prefix per unique URI; before the fix this
+    triggered libxml2 'Prefix format reserved for internal use' when six DJI tags
+    were written alongside two WALDO tags in a single call."""
+    drone_ns = "http://www.dji.com/drone-dji/1.0/"
+    waldo_ns = "http://adiat.io/ns/waldo/1.0/"
+    fields = [
+        (drone_ns, "GimbalPitchDegree", "-90.0000"),
+        (drone_ns, "GimbalYawDegree", "+45.0000"),
+        (drone_ns, "GimbalRollDegree", "+22.5000"),
+        (drone_ns, "FlightYawDegree", "+45.0000"),
+        (drone_ns, "RelativeAltitude", "+275.0000"),
+        (drone_ns, "AbsoluteAltitude", "+3245.0000"),
+        (waldo_ns, "Processed", "true"),
+        (waldo_ns, "ProcessorVersion", "1"),
+    ]
+
+    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+        tmp_path = tmp.name
+    try:
+        Image.new("RGB", (16, 16), color=(128, 128, 128)).save(tmp_path, "JPEG")
+        MetaDataHelper.add_xmp_fields(tmp_path, fields)
+
+        xmp_xml = MetaDataHelper.get_xmp_data(tmp_path)
+        # Each value must be present, and each unique URI must appear exactly once
+        # as an xmlns declaration with a stable, human-readable prefix.
+        for _, _, value in fields:
+            assert value in xmp_xml, f"value {value} missing from XMP after round-trip"
+        assert xmp_xml.count(f'xmlns:drone-dji="{drone_ns}"') == 1
+        assert xmp_xml.count(f'xmlns:waldo="{waldo_ns}"') == 1
+        # Sanity: no leaked synthetic 'ns0'/'ns1'/... bindings for the well-known URIs.
+        assert f'xmlns:ns0="{drone_ns}"' not in xmp_xml
+        assert f'xmlns:ns1="{drone_ns}"' not in xmp_xml
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)

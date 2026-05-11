@@ -108,6 +108,15 @@ class AOIService:
             pitch = self.image_service.get_camera_pitch()
             if pitch is None:
                 pitch = -90  # assume nadir
+            # Gimbal roll about the heading axis (e.g. WALDO airframe cameras
+            # mount cam 0 / cam 1 with ±22.5° outward roll). Default 0 keeps
+            # existing nadir/oblique drone behaviour unchanged.
+            # |roll| > 90° is the DJI "inverted gimbal" pattern — get_camera_yaw
+            # already compensates that by flipping yaw 180°, so we ignore roll
+            # in that case to avoid double-rotating.
+            roll = self.image_service.get_gimbal_roll() or 0.0
+            if abs(roll) > 90.0:
+                roll = 0.0
 
             # Get altitude - use override or get from ImageService
             if agl_override_m and agl_override_m > 0:
@@ -182,7 +191,7 @@ class AOIService:
             initial_result = self._calculate_ground_position(
                 lat0, lon0, u, v, cx, cy, img_width, img_height,
                 focal_mm, sensor_w_mm, sensor_h_mm,
-                reported_agl, pitch, yaw
+                reported_agl, pitch, yaw, roll
             )
 
             if initial_result is None:
@@ -199,7 +208,7 @@ class AOIService:
                     initial_lat, initial_lon,
                     u, v, cx, cy, img_width, img_height,
                     focal_mm, sensor_w_mm, sensor_h_mm,
-                    reported_agl, pitch, yaw,
+                    reported_agl, pitch, yaw, roll,
                     terrain_service,
                     absolute_alt,
                     geoid_undulation
@@ -225,7 +234,8 @@ class AOIService:
         cx: float, cy: float,
         img_width: int, img_height: int,
         focal_mm: float, sensor_w_mm: float, sensor_h_mm: float,
-        altitude_m: float, pitch_deg: float, yaw_deg: float
+        altitude_m: float, pitch_deg: float, yaw_deg: float,
+        roll_deg: float = 0.0
     ) -> Optional[Tuple[float, float]]:
         """
         Calculate ground position using 3D ray-casting projection.
@@ -243,6 +253,10 @@ class AOIService:
             altitude_m: Altitude above ground in meters
             pitch_deg: Camera pitch in degrees (-90=nadir, 0=horizontal)
             yaw_deg: Camera yaw in degrees (0=North, 90=East)
+            roll_deg: Camera roll about the heading axis in degrees. Default 0.
+                Positive rotates the optical axis to the left of heading; negative
+                to the right. Used for fixed-wing rigs (WALDO ±22.5°) where the
+                pod is mounted with outward roll relative to flight direction.
 
         Returns:
             (lat, lon) or None
@@ -297,6 +311,23 @@ class AOIService:
         # Rotation matrix: columns are camera axes expressed in NED
         R_cam_to_ned = np.column_stack([cam_x_ned, cam_y_ned, opt_axis_ned])
 
+        # Apply gimbal roll about the heading axis. For a fixed-wing rig with
+        # outward-rolled cameras (WALDO ±22.5°), the optical axis is tilted
+        # in the cross-track direction. We post-multiply a Rodrigues rotation
+        # about the NED heading-axis unit vector so existing pitch/yaw
+        # behaviour is preserved at roll_deg = 0.
+        if roll_deg != 0.0:
+            roll_rad = math.radians(roll_deg)
+            heading_axis = np.array([math.cos(opt_azimuth), math.sin(opt_azimuth), 0.0])
+            kx, ky, kz = heading_axis
+            K = np.array([
+                [0.0, -kz, ky],
+                [kz, 0.0, -kx],
+                [-ky, kx, 0.0],
+            ])
+            R_roll = np.eye(3) + math.sin(roll_rad) * K + (1.0 - math.cos(roll_rad)) * (K @ K)
+            R_cam_to_ned = R_roll @ R_cam_to_ned
+
         # Step 3: Transform ray from camera to NED frame
         ray_ned = R_cam_to_ned @ ray_cam
         ray_ned = ray_ned / np.linalg.norm(ray_ned)
@@ -338,6 +369,7 @@ class AOIService:
         img_width: int, img_height: int,
         focal_mm: float, sensor_w_mm: float, sensor_h_mm: float,
         reported_agl: float, pitch: float, yaw: float,
+        roll: float,
         terrain_service,
         absolute_alt: Optional[float] = None,
         precomputed_geoid: Optional[float] = None
@@ -420,7 +452,7 @@ class AOIService:
             new_result = self._calculate_ground_position(
                 drone_lat, drone_lon, u, v, cx, cy, img_width, img_height,
                 focal_mm, sensor_w_mm, sensor_h_mm,
-                effective_agl, pitch, yaw
+                effective_agl, pitch, yaw, roll
             )
 
             if new_result is None:
