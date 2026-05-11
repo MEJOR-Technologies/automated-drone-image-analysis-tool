@@ -79,47 +79,47 @@ L&apos;accelerazione GPU migliora significativamente la velocità di elaborazion
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="54"/>
         <source>Person Detection</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamento Persone</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="55"/>
         <source>Input &amp;&amp; Processing</source>
-        <translation type="unfinished">Input &amp;&amp; Elaborazione</translation>
+        <translation>Input &amp;&amp; Elaborazione</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="56"/>
         <source>Frame</source>
-        <translation type="unfinished">Frame</translation>
+        <translation>Frame</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="57"/>
         <source>Rendering &amp;&amp; Cleanup</source>
-        <translation type="unfinished">Rendering &amp;&amp; Pulizia</translation>
+        <translation>Rendering &amp;&amp; Pulizia</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="78"/>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modello</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="80"/>
         <source>Force CPU (disable DirectML)</source>
-        <translation type="unfinished"></translation>
+        <translation>Forza CPU (disattiva DirectML)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="81"/>
         <source>Use 1024 model (higher quality, slower)</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa modello 1024 (qualità superiore, più lento)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="86"/>
         <source>Detection</source>
-        <translation type="unfinished">Rilevamento</translation>
+        <translation>Rilevamento</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/views/AIPersonDetectorControlWidget.py" line="91"/>
         <source>Confidence Threshold:</source>
-        <translation type="unfinished">Soglia di Confidenza:</translation>
+        <translation>Soglia di Confidenza:</translation>
     </message>
 </context>
 <context>
@@ -137,12 +137,12 @@ L&apos;accelerazione GPU migliora significativamente la velocità di elaborazion
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/controllers/AIPersonDetectorController.py" line="88"/>
         <source>FPS: {fps} | Processing: {ms}ms</source>
-        <translation type="unfinished"></translation>
+        <translation>FPS: {fps} | Elaborazione: {ms} ms</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/AIPersonDetector/controllers/AIPersonDetectorController.py" line="93"/>
         <source>{status} | Tile fallback active</source>
-        <translation type="unfinished"></translation>
+        <translation>{status} | Fallback tile attivo</translation>
     </message>
 </context>
 <context>
@@ -354,12 +354,12 @@ Permissivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="125"/>
         <source>e.g., damage or crack</source>
-        <translation type="unfinished"></translation>
+        <translation>es. danno o crepa</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="133"/>
         <source>Case-insensitive substring match (e.g. &quot;blue&quot; matches &quot;blueface&quot;)</source>
-        <translation type="unfinished"></translation>
+        <translation>Corrispondenza di sottostringa, ignora maiuscole/minuscole (es. "blue" corrisponde a "blueface")</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="137"/>
@@ -379,12 +379,12 @@ Permissivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="156"/>
         <source>Show Only This Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra Solo Questo Colore</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="157"/>
         <source>Exclude This Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Escludi Questo Colore</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="174"/>
@@ -450,84 +450,84 @@ Permissivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="336"/>
         <source>Spatial Filters</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtri Spaziali</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="341"/>
         <source>Detection Density Heatmap</source>
-        <translation type="unfinished"></translation>
+        <translation>Heatmap della Densità dei Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="347"/>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Off</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="348"/>
         <source>Filter Hot Zones</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra Zone Critiche</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="349"/>
         <source>Show Hot Zones Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra Solo le Zone Critiche</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="374"/>
         <source>Threshold:</source>
-        <translation type="unfinished">Soglia:</translation>
+        <translation>Soglia:</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="392"/>
         <source>View Heatmap</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza Heatmap</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="405"/>
         <source>Heatmap filtering unavailable (image dimensions not in dataset)</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtraggio per heatmap non disponibile (dimensioni immagine non presenti nel dataset)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="418"/>
         <source>Image Mask Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtro Maschera Immagine</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="422"/>
         <source>Enable Image Mask Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Filtro Maschera Immagine</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="429"/>
         <source>Show Only Detections in Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra Solo i Rilevamenti nella Maschera</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="430"/>
         <source>Exclude Detections in Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Escludi i Rilevamenti nella Maschera</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="449"/>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="630"/>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="690"/>
         <source>No mask image selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna maschera immagine selezionata</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="454"/>
         <source>Browse...</source>
-        <translation type="unfinished">Sfoglia...</translation>
+        <translation>Sfoglia...</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="458"/>
         <source>Clear</source>
-        <translation type="unfinished">Cancella</translation>
+        <translation>Cancella</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="465"/>
         <source>White regions = areas of interest. Mask is scaled to each image&apos;s dimensions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le aree bianche = aree di interesse. La maschera viene scalata in base alle dimensioni di ciascuna immagine.</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="483"/>
@@ -552,47 +552,47 @@ Permissivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="607"/>
         <source>Select Mask Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona Maschera Immagine</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="609"/>
         <source>Images (*.png *.jpg *.jpeg *.bmp *.tiff);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Immagini (*.png *.jpg *.jpeg *.bmp *.tiff);;Tutti i file (*)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="618"/>
         <source>Invalid Image</source>
-        <translation type="unfinished">Immagine Non Valida</translation>
+        <translation>Immagine Non Valida</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="619"/>
         <source>Could not load the selected image. Please choose a valid image file.</source>
-        <translation type="unfinished">Impossibile caricare l&apos;immagine selezionata. Scegli un file immagine valido.</translation>
+        <translation>Impossibile caricare l&apos;immagine selezionata. Scegli un file immagine valido.</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="637"/>
         <source>AOIs in high-density zones (above threshold) will be hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Le AOI nelle zone ad alta densità (oltre la soglia) verranno nascoste</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="640"/>
         <source>Only AOIs in high-density zones (above threshold) will be shown</source>
-        <translation type="unfinished"></translation>
+        <translation>Verranno mostrate solo le AOI nelle zone ad alta densità (oltre la soglia)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="643"/>
         <source>Heatmap spatial filtering is disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Il filtraggio spaziale tramite heatmap è disabilitato</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="649"/>
         <source>Heatmap</source>
-        <translation type="unfinished"></translation>
+        <translation>Heatmap</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/AOIFilterDialog.py" line="650"/>
         <source>No heatmap data available. Ensure image dimensions are present in the dataset.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun dato heatmap disponibile. Assicurati che le dimensioni delle immagini siano presenti nel dataset.</translation>
     </message>
 </context>
 <context>
@@ -890,7 +890,7 @@ Dettagli:
     <message>
         <location filename="../app/core/controllers/images/guidePages/AlgorithmSelectionPage.py" line="168"/>
         <source>Do you want to detect anomalies relative to local surroundings?</source>
-        <translation type="unfinished"></translation>
+        <translation>Vuoi rilevare anomalie rispetto alle aree circostanti locali?</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/AlgorithmSelectionPage.py" line="185"/>
@@ -1484,7 +1484,7 @@ Prova:
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/CalTopoCredentialDialog.py" line="54"/>
         <source>Enter new credential secret...</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci la nuova parola segreta delle credenziali...</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/CalTopoCredentialDialog.py" line="76"/>
@@ -1567,7 +1567,7 @@ Queste possono essere trovate nella pagina Team Admin sotto Service Accounts.</t
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/CalTopoCredentialDialog.py" line="204"/>
         <source>Enter credential secret...</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci la parola segreta delle credenziali...</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/CalTopoCredentialDialog.py" line="226"/>
@@ -2122,12 +2122,12 @@ pagina Admin Team CalTopo. Il metodo Browser utilizza il tuo normale accesso.</t
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="32"/>
         <source>Temporal Voting</source>
-        <translation type="unfinished"></translation>
+        <translation>Voto Temporale</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="35"/>
         <source>Enable Temporal Voting (reduce flicker)</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Voto Temporale (riduce lo sfarfallio)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="38"/>
@@ -2135,12 +2135,15 @@ pagina Admin Team CalTopo. Il metodo Browser utilizza il tuo normale accesso.</t
 Detections must appear in N out of M consecutive frames to be confirmed.
 Significantly reduces flickering false positives.
 Recommended: ON for all use cases (default).</source>
-        <translation type="unfinished"></translation>
+        <translation>Smussa i rilevamenti tra i frame usando la consistenza temporale.
+I rilevamenti devono comparire in N degli M frame consecutivi per essere confermati.
+Riduce notevolmente i falsi positivi intermittenti.
+Consigliato: ON in tutti i casi d'uso (predefinito).</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="48"/>
         <source>Window Frames (M):</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame Finestra (M):</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="53"/>
@@ -2149,12 +2152,16 @@ Detections must appear in N out of M consecutive frames.
 Larger values = longer memory, more stable, slower response to new objects.
 Smaller values = shorter memory, faster response, less stable.
 Recommended: 5 for 30fps (~167ms window), 7 for 60fps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione della finestra di voto temporale (2-30 frame).
+I rilevamenti devono comparire in N degli M frame consecutivi.
+Valori più alti = memoria più lunga, più stabile, risposta più lenta ai nuovi oggetti.
+Valori più bassi = memoria più breve, risposta più rapida, meno stabile.
+Consigliato: 5 per 30 fps (finestra ~167 ms), 7 per 60 fps.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="61"/>
         <source>Threshold (N of M):</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia (N su M):</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="66"/>
@@ -2163,29 +2170,35 @@ Higher values = more stringent, filters transient false positives.
 Lower values = more lenient, faster response to new objects.
 Must be &lt;= Window Frames.
 Recommended: 3 out of 5 (detection in 60% of frames).</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di frame, all'interno della finestra, in cui il rilevamento deve comparire (N su M).
+Valori più alti = più rigoroso, filtra i falsi positivi transitori.
+Valori più bassi = più permissivo, risposta più rapida ai nuovi oggetti.
+Deve essere ≤ Frame Finestra.
+Consigliato: 3 su 5 (rilevamento nel 60% dei frame).</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="78"/>
         <source>Detection Cleanup</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulizia Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="82"/>
         <source>Enable Aspect Ratio Filtering</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Filtro Rapporto d'Aspetto</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="85"/>
         <source>Filter out very thin or stretched detections based on width/height.
 Useful for removing wires, long shadows, or other non-object shapes.
 Most users can leave this OFF unless you see many long skinny false detections.</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra i rilevamenti molto sottili o allungati in base a larghezza/altezza.
+Utile per rimuovere fili, ombre allungate o altre forme non corrispondenti a oggetti.
+La maggior parte degli utenti può lasciarlo OFF, a meno di rilevare molti falsi positivi sottili e allungati.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="94"/>
         <source>Min Ratio:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto Min:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="100"/>
@@ -2193,48 +2206,57 @@ Most users can leave this OFF unless you see many long skinny false detections.<
 Lower values = allow taller, thinner detections.
 Higher values = require detections to be more square.
 Example: 0.2 = reject if height is more than 5x width.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto larghezza/altezza minimo da mantenere (0,1-10,0).
+Valori più bassi = consente rilevamenti più alti e sottili.
+Valori più alti = richiede rilevamenti più simili a un quadrato.
+Esempio: 0,2 = rifiuta se l'altezza è più di 5x la larghezza.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="107"/>
         <source>Max Ratio:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto Max:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="113"/>
         <source>Maximum width/height ratio to keep (0.1-20.0).
 Lower values = reject very wide, thin detections.
 Higher values = allow wider objects such as vehicles or long equipment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto larghezza/altezza massimo da mantenere (0,1-20,0).
+Valori più bassi = rifiuta i rilevamenti molto larghi e sottili.
+Valori più alti = consente oggetti più larghi come veicoli o attrezzature lunghe.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="122"/>
         <source>Detection Clustering</source>
-        <translation type="unfinished"></translation>
+        <translation>Clustering Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="125"/>
         <source>Enable Detection Clustering</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Clustering Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="128"/>
         <source>Optionally merge nearby detections into a single, larger detection.
 Useful when one object appears as many small adjacent detections.
 Most users can leave this OFF unless objects look fragmented.</source>
-        <translation type="unfinished"></translation>
+        <translation>Unisce facoltativamente i rilevamenti vicini in un unico rilevamento più grande.
+Utile quando un oggetto compare come molti piccoli rilevamenti adiacenti.
+La maggior parte degli utenti può lasciarlo OFF, a meno che gli oggetti non appaiano frammentati.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="137"/>
         <source>Clustering Distance (px):</source>
-        <translation type="unfinished"></translation>
+        <translation>Distanza Clustering (px):</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/CleanupTab.py" line="142"/>
         <source>Maximum distance between detection centers to merge them (0-500 pixels).
 Lower values = only merge very close detections.
 Higher values = merge detections that are farther apart (may over-merge).</source>
-        <translation type="unfinished"></translation>
+        <translation>Distanza massima tra i centri di rilevamento per unirli (0-500 pixel).
+Valori più bassi = unisce solo rilevamenti molto vicini.
+Valori più alti = unisce rilevamenti più distanti (può unire troppo).</translation>
     </message>
 </context>
 <context>
@@ -2301,7 +2323,7 @@ Clicca per cambiare colore</translation>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="146"/>
         <source>Enable Motion Detection</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Rilevamento Movimento</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="149"/>
@@ -2309,32 +2331,35 @@ Clicca per cambiare colore</translation>
 Most users can leave all other settings at their defaults.
 Works best for stationary or slow-moving cameras and can be combined
 with Color-Based Anomaly Detection for more robust results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva per evidenziare gli oggetti in movimento nella scena.
+La maggior parte degli utenti può lasciare tutte le altre impostazioni sui valori predefiniti.
+Funziona meglio con telecamere fisse o a movimento lento e può essere combinato
+con il Rilevamento Anomalie Basato sul Colore per risultati più affidabili.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="162"/>
         <source>Algorithm</source>
-        <translation type="unfinished">Algoritmo</translation>
+        <translation>Algoritmo</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="167"/>
         <source>Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="169"/>
         <source>FRAME_DIFF</source>
-        <translation type="unfinished"></translation>
+        <translation>FRAME_DIFF</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="170"/>
         <source>MOG2</source>
-        <translation type="unfinished"></translation>
+        <translation>MOG2</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="171"/>
         <source>KNN</source>
-        <translation type="unfinished"></translation>
+        <translation>KNN</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="174"/>
@@ -2345,17 +2370,23 @@ with Color-Based Anomaly Detection for more robust results.</source>
 • KNN – More robust to noise and complex backgrounds.
 
 If you are unsure, leave this set to MOG2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Algoritmo di rilevamento movimento (impostazione avanzata):
+
+• FRAME_DIFF – Veloce e semplice; molto sensibile a qualsiasi movimento.
+• MOG2 – Bilanciato e adattivo (consigliato per la maggior parte delle scene).
+• KNN – Più robusto al rumore e agli sfondi complessi.
+
+In caso di dubbi, lascia impostato MOG2.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="185"/>
         <source>Detection Parameters</source>
-        <translation type="unfinished">Parametri Rilevamento</translation>
+        <translation>Parametri Rilevamento</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="191"/>
         <source>Motion Threshold:</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia Movimento:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="196"/>
@@ -2363,12 +2394,15 @@ If you are unsure, leave this set to MOG2.</source>
 Lower values = more sensitive, detects subtle motion, more false positives.
 Higher values = less sensitive, only strong motion, fewer false positives.
 Recommended: 10 for general use, 5 for subtle motion, 15-20 for high contrast scenes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Variazione minima di intensità dei pixel da considerare come movimento (1-255).
+Valori più bassi = più sensibile, rileva movimenti sottili, più falsi positivi.
+Valori più alti = meno sensibile, solo movimenti marcati, meno falsi positivi.
+Consigliato: 10 per uso generale, 5 per movimenti sottili, 15-20 per scene ad alto contrasto.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="204"/>
         <source>Blur Kernel (odd):</source>
-        <translation type="unfinished"></translation>
+        <translation>Kernel Sfocatura (dispari):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="210"/>
@@ -2377,12 +2411,16 @@ Smooths the frame before motion detection to reduce noise.
 Larger values = more smoothing, less noise, less detail.
 Smaller values = less smoothing, more detail, more noise.
 Recommended: 5 for general use, 1 for no blur, 7-9 for noisy videos.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione del kernel di sfocatura gaussiana (deve essere dispari: 1, 3, 5, 7, ecc.).
+Leviga il frame prima del rilevamento movimento per ridurre il rumore.
+Valori più alti = più sfocatura, meno rumore, meno dettaglio.
+Valori più bassi = meno sfocatura, più dettaglio, più rumore.
+Consigliato: 5 per uso generale, 1 per nessuna sfocatura, 7-9 per video rumorosi.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="219"/>
         <source>Morphology Kernel:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kernel Morfologia:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="225"/>
@@ -2391,17 +2429,21 @@ Removes small noise and fills holes in detections.
 Larger values = remove more noise, merge nearby detections.
 Smaller values = preserve detail, keep detections separate.
 Recommended: 3 for general use, 1 for precise edges, 5-7 for noisy videos.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione del kernel per operazioni morfologiche (numeri dispari: 1, 3, 5, ecc.).
+Rimuove il rumore di piccola entità e riempie i fori nei rilevamenti.
+Valori più alti = rimuove più rumore, unisce rilevamenti vicini.
+Valori più bassi = preserva il dettaglio, mantiene separati i rilevamenti.
+Consigliato: 3 per uso generale, 1 per bordi precisi, 5-7 per video rumorosi.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="236"/>
         <source>Persistence Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtro Persistenza</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="241"/>
         <source>Window Frames (M):</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame Finestra (M):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="246"/>
@@ -2410,12 +2452,16 @@ Motion must appear in N out of M consecutive frames to be confirmed.
 Larger values = longer memory, more stable, slower response.
 Smaller values = shorter memory, faster response, more flicker.
 Recommended: 3 for 30fps video (100ms window), 5 for 60fps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione della finestra temporale per il filtro di persistenza (2-30 frame).
+Il movimento deve comparire in N degli M frame consecutivi per essere confermato.
+Valori più alti = memoria più lunga, più stabile, risposta più lenta.
+Valori più bassi = memoria più breve, risposta più rapida, più sfarfallio.
+Consigliato: 3 per video a 30 fps (finestra di 100 ms), 5 per 60 fps.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="254"/>
         <source>Threshold (N of M):</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia (N su M):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="259"/>
@@ -2424,17 +2470,21 @@ Higher values = more stringent, filters flickering false positives.
 Lower values = more lenient, detects brief/intermittent motion.
 Must be ≤ Window Frames.
 Recommended: 2 (motion in 2 of last 3 frames).</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di frame, all'interno della finestra, in cui il movimento deve comparire (N su M).
+Valori più alti = più rigoroso, filtra i falsi positivi intermittenti.
+Valori più bassi = più permissivo, rileva movimenti brevi o intermittenti.
+Deve essere ≤ Frame Finestra.
+Consigliato: 2 (movimento in 2 degli ultimi 3 frame).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="270"/>
         <source>Background Subtraction (MOG2/KNN)</source>
-        <translation type="unfinished"></translation>
+        <translation>Sottrazione Sfondo (MOG2/KNN)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="275"/>
         <source>History Frames:</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame Cronologia:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="280"/>
@@ -2443,12 +2493,16 @@ Only applies to MOG2 and KNN algorithms.
 Longer history = adapts slower to lighting changes, more stable.
 Shorter history = adapts faster, less stable.
 Recommended: 50 (~1.7 sec at 30fps) for general use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di frame utilizzati per apprendere il modello di sfondo (10-500).
+Si applica solo agli algoritmi MOG2 e KNN.
+Cronologia più lunga = si adatta più lentamente ai cambi di illuminazione, più stabile.
+Cronologia più breve = si adatta più rapidamente, meno stabile.
+Consigliato: 50 (~1,7 sec a 30 fps) per uso generale.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="288"/>
         <source>Variance Threshold:</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia Varianza:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="293"/>
@@ -2457,12 +2511,16 @@ Only applies to MOG2 and KNN algorithms.
 Lower values = more sensitive, detects subtle changes, more false positives.
 Higher values = less sensitive, only strong foreground objects.
 Recommended: 10.0 for indoor, 15-20 for outdoor with varying lighting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia di varianza per la classificazione sfondo/primo piano (1,0-100,0).
+Si applica solo agli algoritmi MOG2 e KNN.
+Valori più bassi = più sensibile, rileva variazioni sottili, più falsi positivi.
+Valori più alti = meno sensibile, solo oggetti in primo piano marcati.
+Consigliato: 10,0 per interni, 15-20 per esterni con illuminazione variabile.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="301"/>
         <source>Detect Shadows (slower)</source>
-        <translation type="unfinished"></translation>
+        <translation>Rileva Ombre (più lento)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="303"/>
@@ -2470,18 +2528,21 @@ Recommended: 10.0 for indoor, 15-20 for outdoor with varying lighting.</source>
 Helps distinguish shadows from actual objects (reduces false positives).
 Adds ~10-20% processing overhead.
 Recommended: ON for outdoor scenes with strong shadows, OFF for speed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita il rilevamento delle ombre nel sottrattore di sfondo MOG2.
+Aiuta a distinguere le ombre dagli oggetti reali (riduce i falsi positivi).
+Aumenta il carico di elaborazione del ~10-20%.
+Consigliato: ON per scene esterne con ombre marcate, OFF per la velocità.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="313"/>
         <source>Object Size Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtro Dimensione Oggetti</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="318"/>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="454"/>
         <source>Min Object Area (px):</source>
-        <translation type="unfinished">Area Min Oggetto (px):</translation>
+        <translation>Area Min Oggetto (px):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="323"/>
@@ -2490,13 +2551,17 @@ Filters out very small detections such as noise, insects, or raindrops.
 Lower values = detect smaller objects (more noise).
 Higher values = only larger objects (less noise).
 Recommended: 5-10 for person-sized motion, 50-100 for vehicles.</source>
-        <translation type="unfinished"></translation>
+        <translation>Area minima di rilevamento in pixel (1-100000).
+Esclude i rilevamenti molto piccoli come rumore, insetti o gocce di pioggia.
+Valori più bassi = rileva oggetti più piccoli (più rumore).
+Valori più alti = solo oggetti più grandi (meno rumore).
+Consigliato: 5-10 per soggetti delle dimensioni di una persona, 50-100 per i veicoli.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="331"/>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="467"/>
         <source>Max Object Area (px):</source>
-        <translation type="unfinished">Area Max Oggetto (px):</translation>
+        <translation>Area Max Oggetto (px):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="336"/>
@@ -2505,17 +2570,21 @@ Filters out very large regions such as full-frame lighting changes or giant shad
 Lower values = only small/medium objects.
 Higher values = allow large objects.
 Recommended: 1000 for people, 10000 for vehicles, higher for very large objects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Area massima di rilevamento in pixel (10-1000000).
+Esclude regioni molto grandi come variazioni di luce a pieno campo o ombre estese.
+Valori più bassi = solo oggetti piccoli/medi.
+Valori più alti = consente oggetti grandi.
+Consigliato: 1000 per le persone, 10000 per i veicoli, valori più alti per oggetti molto grandi.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="347"/>
         <source>Camera Movement Detection</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamento Movimento Telecamera</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="350"/>
         <source>Pause on Camera Movement</source>
-        <translation type="unfinished"></translation>
+        <translation>Metti in Pausa Durante il Movimento della Telecamera</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="353"/>
@@ -2523,12 +2592,15 @@ Recommended: 1000 for people, 10000 for vehicles, higher for very large objects.
 Prevents false positives caused by camera movement (entire scene appears to move).
 Detects camera movement by measuring percentage of frame with motion.
 Recommended: ON for handheld/drone footage, OFF for stationary tripod cameras.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mette automaticamente in pausa il rilevamento movimento quando la telecamera si sposta o effettua una panoramica.
+Evita i falsi positivi causati dal movimento della telecamera (l'intera scena appare in movimento).
+Il movimento della telecamera è rilevato misurando la percentuale di frame in movimento.
+Consigliato: ON per riprese a mano libera o da drone, OFF per telecamere su treppiede fisso.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="361"/>
         <source>Threshold:</source>
-        <translation type="unfinished">Soglia:</translation>
+        <translation>Soglia:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="366"/>
@@ -2537,24 +2609,30 @@ If more than this % of pixels show motion, pause detection.
 Lower values = detect camera movement sooner (more pauses).
 Higher values = tolerate more motion before pausing (fewer pauses).
 Recommended: 15% for drone/handheld, 30% for shaky tripod.</source>
-        <translation type="unfinished"></translation>
+        <translation>Percentuale di frame in movimento da considerare come movimento della telecamera (1-100%).
+Se più di questa percentuale di pixel risulta in movimento, il rilevamento viene messo in pausa.
+Valori più bassi = il movimento della telecamera viene rilevato prima (più pause).
+Valori più alti = tollera più movimento prima di mettere in pausa (meno pause).
+Consigliato: 15% per drone/mano libera, 30% per treppiedi instabili.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="380"/>
         <source>Show Advanced Motion Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra Impostazioni Avanzate Movimento</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="383"/>
         <source>Advanced users can expand this to adjust the motion algorithm
 and detailed thresholds (sensitivity, filters, background model).
 If you are unsure, leave this unchecked and use the defaults.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gli utenti esperti possono espandere questa sezione per regolare l'algoritmo di movimento
+e le soglie di dettaglio (sensibilità, filtri, modello di sfondo).
+In caso di dubbi, lascia disattivata questa opzione e usa le impostazioni predefinite.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="402"/>
         <source>Enable Color-Based Anomaly Detection</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Rilevamento Anomalie Basato sul Colore</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="405"/>
@@ -2562,17 +2640,20 @@ If you are unsure, leave this unchecked and use the defaults.</source>
 Conceptually similar to MRMap&apos;s rarity-based detection for images.
 Works well for: bright colored clothing, vehicles, equipment in natural scenes.
 Can be combined with Motion Detection for more robust detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rileva i pixel i cui colori sono statisticamente rari nel frame.
+Concettualmente simile al rilevamento basato sulla rarità di MRMap per le immagini.
+Funziona bene con: abbigliamento dai colori vivaci, veicoli, attrezzature in scene naturali.
+Può essere combinato con il Rilevamento Movimento per un rilevamento più robusto.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="413"/>
         <source>Color Rarity Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni Rarità Colore</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="418"/>
         <source>Color Resolution (bins):</source>
-        <translation type="unfinished"></translation>
+        <translation>Risoluzione Colore (bin):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="424"/>
@@ -2582,17 +2663,22 @@ Lower values (3-4) = fewer bins → faster, more grouping, fewer but stronger de
 Higher values (6-8) = more bins → slower, less grouping, more but weaker/smaller detections.
 Recommended: 4-5 for a balanced number of detections; use lower for very clean results,
 and higher only when you need to pull out very subtle color differences.</source>
-        <translation type="unfinished"></translation>
+        <translation>Regola la granularità con cui i colori sono raggruppati nei bin dell'istogramma (3-8 bit).
+Analogo al binning dei colori di MRMap.
+Valori più bassi (3-4) = meno bin → più veloce, più raggruppamento, rilevamenti meno numerosi ma più marcati.
+Valori più alti (6-8) = più bin → più lento, meno raggruppamento, rilevamenti più numerosi ma più deboli/piccoli.
+Consigliato: 4-5 per un numero bilanciato di rilevamenti; usa valori più bassi per risultati molto puliti,
+e più alti solo quando devi cogliere differenze di colore molto sottili.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="432"/>
         <source>4 bits</source>
-        <translation type="unfinished"></translation>
+        <translation>4 bit</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="436"/>
         <source>Rarity Threshold (% of colors):</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia Rarità (% dei colori):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="442"/>
@@ -2602,7 +2688,12 @@ to MRMap&apos;s detection threshold.
 Lower values (10-20%) = stricter: only very rare colors (fewer detections).
 Medium values (25-40%) = balanced (recommended for general use).
 Higher values (40-60%) = more sensitive: includes more common colors (more detections).</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia di sensibilità per stabilire quanto deve essere raro un colore per essere segnalato (0-100%).
+Viene calcolata dalla distribuzione dei conteggi dei bin di colore nel frame, con un ruolo simile
+alla soglia di rilevamento di MRMap.
+Valori più bassi (10-20%) = più rigoroso: solo colori molto rari (meno rilevamenti).
+Valori medi (25-40%) = bilanciato (consigliato per uso generale).
+Valori più alti (40-60%) = più sensibile: include colori più comuni (più rilevamenti).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="459"/>
@@ -2611,7 +2702,11 @@ Conceptually matches MRMap&apos;s minimum AOI area.
 Lower values = detect smaller colored objects (more noise).
 Higher values = only larger colored regions (less noise).
 Recommended: 15 for person-sized targets, 50+ for vehicles or large objects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Area minima in pixel affinché un'anomalia di colore venga considerata un oggetto di interesse.
+Corrisponde concettualmente all'area minima dell'AOI in MRMap.
+Valori più bassi = rileva oggetti colorati più piccoli (più rumore).
+Valori più alti = solo regioni colorate più grandi (meno rumore).
+Consigliato: 15 per soggetti delle dimensioni di una persona, 50+ per veicoli o oggetti grandi.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="472"/>
@@ -2620,22 +2715,26 @@ Conceptually matches MRMap&apos;s maximum AOI area.
 Lower values = only detect smaller colored objects.
 Higher values = allow larger colored regions.
 Recommended: 50000 for general use, 10000 for small-object-only searches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Area massima in pixel affinché un'anomalia di colore venga considerata un oggetto di interesse.
+Corrisponde concettualmente all'area massima dell'AOI in MRMap.
+Valori più bassi = rileva solo oggetti colorati più piccoli.
+Valori più alti = consente regioni colorate più grandi.
+Consigliato: 50000 per uso generale, 10000 per ricerche di soli oggetti piccoli.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="480"/>
         <source>Blob Detection Method:</source>
-        <translation type="unfinished"></translation>
+        <translation>Metodo Rilevamento Blob:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="482"/>
         <source>Find Contours</source>
-        <translation type="unfinished"></translation>
+        <translation>Trova Contorni</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="483"/>
         <source>Connected Components</source>
-        <translation type="unfinished"></translation>
+        <translation>Componenti Connesse</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="486"/>
@@ -2646,32 +2745,38 @@ Find Contours: Traditional OpenCV contour detection (default).
 
 Connected Components: Uses cv2.connectedComponentsWithStats.
   Provides direct blob statistics in a single pass.</source>
-        <translation type="unfinished"></translation>
+        <translation>Metodo per estrarre le regioni blob dalla maschera di rilevamento:
+
+Trova Contorni: rilevamento contorni OpenCV tradizionale (predefinito).
+  Migliore per forme irregolari, fornisce contorni dettagliati.
+
+Componenti Connesse: usa cv2.connectedComponentsWithStats.
+  Fornisce statistiche dei blob in un'unica passata.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="497"/>
         <source>Color Space (Lighting Invariance)</source>
-        <translation type="unfinished"></translation>
+        <translation>Spazio Colore (Invarianza Luminosa)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="502"/>
         <source>Color Space:</source>
-        <translation type="unfinished">Spazio colore:</translation>
+        <translation>Spazio colore:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="504"/>
         <source>RGB</source>
-        <translation type="unfinished">RGB</translation>
+        <translation>RGB</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="505"/>
         <source>HSV</source>
-        <translation type="unfinished">HSV</translation>
+        <translation>HSV</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="506"/>
         <source>LAB</source>
-        <translation type="unfinished">LAB</translation>
+        <translation>LAB</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="509"/>
@@ -2687,12 +2792,23 @@ HSV (Hue-based): Uses only Hue channel - lighting invariant.
 LAB (a,b chromaticity): Uses a,b channels - lighting invariant, perceptually uniform.
   No discontinuity at red (unlike HSV). Best for search &amp; rescue.
   Filters out neutral grays where a,b are near zero.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spazio colore per il rilevamento anomalie basato su istogramma:
+
+RGB: usa tutti e 3 i canali colore. Veloce, ma sensibile alla luce.
+  Una maglietta rossa in ombra potrebbe non corrispondere a una rossa al sole.
+
+HSV (basato sulla tonalità): usa solo il canale Hue, invariante alla luce.
+  Il rosso rimane rosso indipendentemente dalla luminosità. Adatto agli oggetti colorati.
+  Esclude grigi/bianchi dove la tonalità è indefinita.
+
+LAB (cromaticità a,b): usa i canali a,b, invariante alla luce, percettivamente uniforme.
+  Nessuna discontinuità sul rosso (a differenza di HSV). Ideale per ricerca e soccorso.
+  Esclude i grigi neutri dove a,b sono vicini a zero.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="522"/>
         <source>HSV Min Saturation:</source>
-        <translation type="unfinished"></translation>
+        <translation>Saturazione Min HSV:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="529"/>
@@ -2702,12 +2818,17 @@ These have undefined/noisy hue values.
 Lower = include more desaturated colors (may add noise).
 Higher = only vivid colors (may miss faded/shadowed objects).
 Recommended: 30-50 for general use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Saturazione minima per la modalità HSV (0-255).
+I pixel sotto questa saturazione vengono ignorati (grigi, bianchi, neri).
+Hanno valori di tonalità indefiniti o rumorosi.
+Più basso = include più colori desaturati (può aggiungere rumore).
+Più alto = solo colori vividi (può perdere oggetti sbiaditi o in ombra).
+Consigliato: 30-50 per uso generale.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="542"/>
         <source>LAB Min Chroma:</source>
-        <translation type="unfinished"></translation>
+        <translation>Croma Min LAB:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="549"/>
@@ -2717,17 +2838,22 @@ Pixels below this are ignored (near-neutral grays).
 Lower = include more muted colors.
 Higher = only vivid, saturated colors.
 Recommended: 10-20 for general use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Croma minimo (intensità colore) per la modalità LAB (0-128).
+Croma = distanza dal grigio neutro nel piano a,b.
+I pixel sotto questo valore vengono ignorati (grigi quasi neutri).
+Più basso = include più colori smorzati.
+Più alto = solo colori vividi e saturi.
+Consigliato: 10-20 per uso generale.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="567"/>
         <source>Color Match Expansion</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione Corrispondenza Colore</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="570"/>
         <source>Allow Similar Colors (Hue Expansion)</source>
-        <translation type="unfinished"></translation>
+        <translation>Consenti Colori Simili (Espansione Tonalità)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="573"/>
@@ -2735,12 +2861,15 @@ Recommended: 10-20 for general use.</source>
 For example, a red jacket that looks slightly orange in some frames will still be grouped together.
 Turn this OFF if you only care about one very specific color shade.
 Turn this ON if you want a whole family of colors (e.g., any warm reds/oranges).</source>
-        <translation type="unfinished"></translation>
+        <translation>Consente al rilevatore di trattare colori simili come lo stesso oggetto.
+Ad esempio, una giacca rossa che in alcuni frame appare leggermente arancione verrà comunque raggruppata insieme.
+Disattivalo se ti interessa una sola tonalità molto specifica.
+Attivalo se vuoi un'intera famiglia di colori (es. tutti i rossi/aranci caldi).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="581"/>
         <source>Color Match Range:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo Corrispondenza Colore:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="586"/>
@@ -2748,22 +2877,25 @@ Turn this ON if you want a whole family of colors (e.g., any warm reds/oranges).
 Smaller values = stay very close to the original color (more specific).
 Larger values = include a wider range of similar colors (more forgiving).
 Recommended: low values for precise colors, higher values when lighting or camera color shifts a lot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quanto ampliare la corrispondenza di colore attorno a ciascun colore rilevato.
+Valori più bassi = restano molto vicini al colore originale (più specifico).
+Valori più alti = includono una gamma più ampia di colori simili (più tollerante).
+Consigliato: valori bassi per colori precisi, valori più alti quando la luce o il colore della telecamera variano molto.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="592"/>
         <source>±5 (~10°)</source>
-        <translation type="unfinished"></translation>
+        <translation>±5 (~10°)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="599"/>
         <source>Color Exclusion</source>
-        <translation type="unfinished"></translation>
+        <translation>Esclusione Colori</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="602"/>
         <source>Enable Color Exclusion</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Esclusione Colori</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="605"/>
@@ -2771,29 +2903,34 @@ Recommended: low values for precise colors, higher values when lighting or camer
 Useful for ignoring dominant scene colors such as grass, sky, or buildings.
 Click on the color wheel below to choose colors to ignore.
 Selected colors are highlighted with a dark border.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esclude specifici colori di sfondo dal rilevamento anomalie di colore.
+Utile per ignorare colori dominanti della scena come erba, cielo o edifici.
+Clicca sulla ruota dei colori in basso per scegliere quali colori ignorare.
+I colori selezionati sono evidenziati con un bordo scuro.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="613"/>
         <source>Click on color wheel to exclude colors (20° steps, 0-360°):</source>
-        <translation type="unfinished"></translation>
+        <translation>Clicca sulla ruota dei colori per escludere colori (passi di 20°, 0-360°):</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="618"/>
         <source>Click on any color segment to toggle exclusion on/off.
 Segments represent broad color ranges (e.g., blues, greens, reds).
 Use this to teach the system which background colors to ignore.</source>
-        <translation type="unfinished"></translation>
+        <translation>Clicca su qualsiasi segmento di colore per attivare/disattivare l'esclusione.
+I segmenti rappresentano gamme cromatiche ampie (es. blu, verdi, rossi).
+Usa questa funzione per indicare al sistema quali colori di sfondo ignorare.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="635"/>
         <source>Detection Fusion</source>
-        <translation type="unfinished"></translation>
+        <translation>Fusione Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="638"/>
         <source>Enable Fusion (when both motion and color enabled)</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Fusione (quando movimento e colore sono entrambi attivi)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="641"/>
@@ -2801,32 +2938,35 @@ Use this to teach the system which background colors to ignore.</source>
 Only active when both Motion and Color detection are ON.
 Different modes control how detections are merged.
 Recommended: ON for robust multi-modal detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Combina i rilevamenti di movimento e colore quando entrambi sono attivi.
+Attivo solo quando sia il rilevamento Movimento sia quello Colore sono attivi.
+Le diverse modalità controllano come vengono unite le rilevazioni.
+Consigliato: ON per un rilevamento multi-modale affidabile.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="649"/>
         <source>Fusion Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modalità Fusione:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="651"/>
         <source>UNION</source>
-        <translation type="unfinished"></translation>
+        <translation>UNIONE</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="652"/>
         <source>INTERSECTION</source>
-        <translation type="unfinished"></translation>
+        <translation>INTERSEZIONE</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="653"/>
         <source>COLOR_PRIORITY</source>
-        <translation type="unfinished"></translation>
+        <translation>PRIORITÀ_COLORE</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="654"/>
         <source>MOTION_PRIORITY</source>
-        <translation type="unfinished"></translation>
+        <translation>PRIORITÀ_MOVIMENTO</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="657"/>
@@ -2843,17 +2983,29 @@ Recommended: ON for robust multi-modal detection.</source>
 
 • MOTION_PRIORITY: Show motion detections + color detections that match motion.
   Use for: Trust motion more (e.g., moving camouflaged objects).</source>
-        <translation type="unfinished"></translation>
+        <translation>Come combinare i rilevamenti di movimento e colore:
+
+• UNIONE: mostra tutti i rilevamenti di entrambi (massimo numero di rilevamenti).
+  Da usare per: copertura massima, non perdere nulla.
+
+• INTERSEZIONE: mostra solo i rilevamenti trovati da entrambi (minimo dei falsi positivi).
+  Da usare per: alta affidabilità, riduzione dei falsi positivi.
+
+• PRIORITÀ_COLORE: mostra i rilevamenti di colore + i rilevamenti di movimento che corrispondono al colore.
+  Da usare per: dare maggior peso al colore (es. oggetti dai colori vivaci).
+
+• PRIORITÀ_MOVIMENTO: mostra i rilevamenti di movimento + i rilevamenti di colore che corrispondono al movimento.
+  Da usare per: dare maggior peso al movimento (es. oggetti mimetizzati in movimento).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="757"/>
         <source>{value} bits</source>
-        <translation type="unfinished"></translation>
+        <translation>{value} bit</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/views/ColorAnomalyAndMotionDetectionControlWidget.py" line="770"/>
         <source>±{value} (~{degrees}°)</source>
-        <translation type="unfinished"></translation>
+        <translation>±{value} (~{degrees}°)</translation>
     </message>
 </context>
 <context>
@@ -2861,7 +3013,7 @@ Recommended: ON for robust multi-modal detection.</source>
     <message>
         <location filename="../app/algorithms/streaming/ColorAnomalyAndMotionDetection/controllers/ColorAnomalyAndMotionDetectionController.py" line="142"/>
         <source>FPS: {fps} | Processing: {time}ms</source>
-        <translation type="unfinished"></translation>
+        <translation>FPS: {fps} | Elaborazione: {time} ms</translation>
     </message>
 </context>
 <context>
@@ -2999,7 +3151,7 @@ Utile per comprendere e perfezionare il rilevamento multicolore.</translation>
     <message>
         <location filename="../app/algorithms/streaming/ColorDetection/views/ColorDetectionControlWidget.py" line="157"/>
         <source>No colors configured. Add at least one color to start detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun colore configurato. Aggiungi almeno un colore per avviare il rilevamento.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/streaming/ColorDetection/views/ColorDetectionControlWidget.py" line="178"/>
@@ -3087,7 +3239,7 @@ Consigliato: 50% per un filtraggio bilanciato, 30% per più rilevamenti, 70% per
     <message>
         <location filename="../app/algorithms/streaming/ColorDetection/controllers/ColorDetectionController.py" line="134"/>
         <source>FPS: {fps} | Processing: {time}ms</source>
-        <translation type="unfinished"></translation>
+        <translation>FPS: {fps} | Elaborazione: {time} ms</translation>
     </message>
 </context>
 <context>
@@ -3417,29 +3569,31 @@ Usa questo per vedere quali colori verranno rilevati e ottimizzare gli intervall
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="122"/>
         <source>Color Range Selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Selezione Intervallo Colore</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="206"/>
         <source>Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="210"/>
         <source>Original Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Immagine Originale</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="216"/>
         <source>Original image preview.
 Shows the unmodified input image for reference.
 Use this to compare with the filtered result below.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima dell'immagine originale.
+Mostra l'immagine di input non modificata per riferimento.
+Usala per confrontarla con il risultato filtrato qui sotto.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="222"/>
         <source>Filtered Result</source>
-        <translation type="unfinished"></translation>
+        <translation>Risultato Filtrato</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="228"/>
@@ -3447,12 +3601,15 @@ Use this to compare with the filtered result below.</source>
 Shows pixels that match your current HSV color range settings.
 Updates in real-time as you adjust the color and range values.
 Matching pixels are shown, non-matching pixels appear black.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima del risultato filtrato.
+Mostra i pixel che corrispondono alle attuali impostazioni dell'intervallo colore HSV.
+Si aggiorna in tempo reale mentre regoli colore e valori di intervallo.
+I pixel corrispondenti vengono mostrati, gli altri appaiono in nero.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="235"/>
         <source>Show mask only</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra solo la maschera</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="237"/>
@@ -3460,72 +3617,80 @@ Matching pixels are shown, non-matching pixels appear black.</source>
 • Unchecked (default): Shows the original image with matching colors visible
 • Checked: Shows a black and white mask where white = matching pixels
 Use the mask view to clearly see which pixels are being detected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alterna tra risultato a colori mascherato e maschera in scala di grigi.
+• Non selezionato (predefinito): mostra l'immagine originale con i colori corrispondenti visibili
+• Selezionato: mostra una maschera in bianco e nero dove bianco = pixel corrispondenti
+Usa la vista a maschera per vedere chiaramente quali pixel vengono rilevati.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="244"/>
         <source>Original:</source>
-        <translation type="unfinished"></translation>
+        <translation>Originale:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="246"/>
         <source>Result:</source>
-        <translation type="unfinished"></translation>
+        <translation>Risultato:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="262"/>
         <source>Pick from Image...</source>
-        <translation type="unfinished"></translation>
+        <translation>Preleva dall'Immagine...</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="268"/>
         <source>Test on Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Prova sull'Immagine</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="270"/>
         <source>Test current HSV range settings on the loaded image.
 Manually triggers a preview update to see detection results.
 Preview updates automatically as you adjust settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prova le impostazioni HSV correnti sull'immagine caricata.
+Forza manualmente l'aggiornamento dell'anteprima per vedere i risultati di rilevamento.
+L'anteprima si aggiorna automaticamente mentre modifichi le impostazioni.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="280"/>
         <source>Cancel</source>
-        <translation type="unfinished">Annulla</translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="282"/>
         <source>Cancel color selection.
 Discards all changes and closes the dialog without applying the color range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla la selezione del colore.
+Scarta tutte le modifiche e chiude la finestra senza applicare l'intervallo colore.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="287"/>
         <source>OK</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="289"/>
         <source>Apply color selection.
 Saves the current HSV color range settings and closes the dialog.
 The selected color range will be used for image analysis.</source>
-        <translation type="unfinished"></translation>
+        <translation>Applica la selezione del colore.
+Salva le impostazioni dell'intervallo colore HSV correnti e chiude la finestra.
+L'intervallo selezionato verrà usato per l'analisi delle immagini.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="309"/>
         <source>Custom Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Colori Personalizzati</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="312"/>
         <source>Standard Dialog...</source>
-        <translation type="unfinished"></translation>
+        <translation>Finestra Standard...</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="318"/>
         <source>Add Current</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi Corrente</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="381"/>
@@ -3600,12 +3765,12 @@ Fai clic sulle immagini per spostarle nella sezione Selezionate in alto.</transl
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="596"/>
         <source>RGB: ({r}, {g}, {b})</source>
-        <translation type="unfinished"></translation>
+        <translation>RGB: ({r}, {g}, {b})</translation>
     </message>
     <message>
         <location filename="../app/algorithms/Shared/views/ColorRangeDialog.py" line="609"/>
         <source>Empty slot - add a custom color</source>
-        <translation type="unfinished"></translation>
+        <translation>Slot vuoto - aggiungi un colore personalizzato</translation>
     </message>
 </context>
 <context>
@@ -4348,36 +4513,40 @@ Area totale: {area}{skip_info}</translation>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="52"/>
         <source>Enable Processing Region Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Maschera Regione di Elaborazione</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="55"/>
         <source>Enable to restrict detection processing to a specific region of the video.
 Useful for excluding edges, UI overlays, or focusing on specific areas.
 Improves performance by not processing masked regions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attiva per limitare l'elaborazione del rilevamento a una specifica area del video.
+Utile per escludere i bordi, gli overlay dell'interfaccia o concentrarsi su aree specifiche.
+Migliora le prestazioni evitando di elaborare le aree mascherate.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="67"/>
         <source>Enable Frame Buffer</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Frame Buffer</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="69"/>
         <source>Exclude a uniform border from all edges of the video.
 Enter the number of pixels to exclude from each edge.
 The inner area will be processed for detections.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esclude un bordo uniforme su tutti i lati del video.
+Inserisci il numero di pixel da escludere da ogni lato.
+L'area interna verrà elaborata per il rilevamento.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="77"/>
         <source>Frame Buffer Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni Frame Buffer</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="82"/>
         <source>Buffer (pixels):</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffer (pixel):</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="87"/>
@@ -4385,73 +4554,80 @@ The inner area will be processed for detections.</source>
 A value of 50 excludes 50 pixels from top, bottom, left, and right.
 Useful for removing UI overlays or camera lens distortion at edges.
 This value is based on the original video resolution.</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di pixel da escludere da tutti i bordi (0-1000).
+Un valore di 50 esclude 50 pixel da alto, basso, sinistra e destra.
+Utile per rimuovere overlay dell'interfaccia o distorsioni di lente ai bordi.
+Il valore è riferito alla risoluzione originale del video.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="97"/>
         <source>Enable Image Mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Maschera Immagine</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="99"/>
         <source>Load a black/white image as a custom mask.
 White areas will be processed, black areas excluded.
 The mask will be scaled to match the video resolution.</source>
-        <translation type="unfinished"></translation>
+        <translation>Carica un'immagine in bianco e nero come maschera personalizzata.
+Le aree bianche verranno elaborate, le aree nere escluse.
+La maschera verrà ridimensionata in base alla risoluzione del video.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="107"/>
         <source>Image Mask Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni Maschera Immagine</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="114"/>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="211"/>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="332"/>
         <source>No mask image selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna immagine maschera selezionata</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="117"/>
         <source>Browse...</source>
-        <translation type="unfinished">Sfoglia...</translation>
+        <translation>Sfoglia...</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="118"/>
         <source>Select a black/white image file to use as mask</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona un file immagine in bianco e nero da usare come maschera</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="121"/>
         <source>Clear</source>
-        <translation type="unfinished">Cancella</translation>
+        <translation>Cancella</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="122"/>
         <source>Clear the selected mask image</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancella l'immagine maschera selezionata</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="128"/>
         <source>White = Process, Black = Exclude</source>
-        <translation type="unfinished"></translation>
+        <translation>Bianco = Elabora, Nero = Escludi</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="136"/>
         <source>Visualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizzazione</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="139"/>
         <source>Show mask overlay on video</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra overlay della maschera sul video</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="142"/>
         <source>Display the processing region on the rendered video.
 Frame mode: Shows a cyan rectangle outline of the processed area.
 Image mask: Shows a semi-transparent overlay of excluded regions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la regione di elaborazione sul video renderizzato.
+Modalità frame: mostra un riquadro ciano del contorno dell'area elaborata.
+Maschera immagine: mostra un overlay semitrasparente delle aree escluse.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/FrameTab.py" line="226"/>
@@ -4497,7 +4673,7 @@ Vuoi continuare?</translation>
     <message>
         <location filename="../app/core/controllers/images/viewer/GPSMapController.py" line="338"/>
         <source>GPS coordinate not in any images</source>
-        <translation type="unfinished"></translation>
+        <translation>Coordinata GPS non presente in nessuna immagine</translation>
     </message>
 </context>
 <context>
@@ -4525,7 +4701,7 @@ Vuoi continuare?</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/GPSMapDialog.py" line="108"/>
         <source>Rotate (R)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruota (R)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/GPSMapDialog.py" line="116"/>
@@ -4573,7 +4749,7 @@ La mappa continuerà a funzionare con i tasselli memorizzati nella cache, ove di
     <message>
         <location filename="../app/core/views/images/viewer/widgets/GPSMapView.py" line="1682"/>
         <source>Zoom FOV</source>
-        <translation type="unfinished"></translation>
+        <translation>Zoom FOV</translation>
     </message>
 </context>
 <context>
@@ -4874,12 +5050,29 @@ DISPLAY:
 • White overlay = selected pixels
 • Yellow text = HSV values at cursor position
 • Circular cursor appears when holding CTRL</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizzatore immagini interattivo con selezione del colore.
+
+NAVIGAZIONE:
+• Rotella del mouse: zoom avanti/indietro
+• Trascina con tasto sinistro: spostati nell'immagine
+• Doppio clic: adatta l'immagine alla vista
+
+SELEZIONE COLORE:
+• CTRL + clic sinistro: seleziona colori simili
+• CTRL+MAIUSC + clic sinistro: rimuove/cancella la selezione
+• Tasti [ ]: regola il raggio di selezione
+• CTRL+Z: annulla l'ultima selezione
+• CTRL+MAIUSC+Z: ripeti
+
+VISUALIZZAZIONE:
+• Overlay bianco = pixel selezionati
+• Testo giallo = valori HSV nella posizione del cursore
+• Il cursore circolare appare tenendo premuto CTRL</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="741"/>
         <source>Browse...</source>
-        <translation type="unfinished">Sfoglia...</translation>
+        <translation>Sfoglia...</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="743"/>
@@ -4888,12 +5081,16 @@ Opens a file dialog to select an image from your computer.
 • Supported formats: PNG, JPG, JPEG, BMP
 • Load an image to start selecting colors
 The image will be displayed in the main viewer on the left.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sfoglia per scegliere un file immagine da caricare.
+Apre una finestra di dialogo per selezionare un'immagine dal computer.
+• Formati supportati: PNG, JPG, JPEG, BMP
+• Carica un'immagine per iniziare a selezionare i colori
+L'immagine verrà mostrata nel visualizzatore principale a sinistra.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="753"/>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Reimposta</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="755"/>
@@ -4903,18 +5100,24 @@ The image will be displayed in the main viewer on the left.</source>
 • Clears the mask preview
 • Undoable with CTRL+Z
 Use this to start fresh without reloading the image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reimposta tutte le selezioni e ricomincia da capo.
+• Cancella tutti i pixel selezionati (overlay bianco)
+• Ripristina gli intervalli HSV ai valori predefiniti
+• Cancella l'anteprima della maschera
+• Annullabile con CTRL+Z
+Utile per ripartire da zero senza ricaricare l'immagine.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="766"/>
         <source>Selection Radius:</source>
-        <translation type="unfinished"></translation>
+        <translation>Raggio di Selezione:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="768"/>
         <source>Size of the circular selection cursor.
 Determines how many pixels are sampled when you CTRL+Click.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione del cursore circolare di selezione.
+Determina quanti pixel vengono campionati con CTRL+Clic.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="777"/>
@@ -4929,18 +5132,29 @@ Smaller radius:
 • More precise selection
 • Better for solid colors
 Keyboard shortcuts: [ decrease, ] increase by 2 pixels</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta il raggio del cursore di selezione in pixel.
+• Intervallo: 1-50 pixel
+• Predefinito: 1 pixel (selezione singolo pixel)
+Raggio più grande:
+• Campiona più pixel a ogni clic
+• Calcola la media dei colori all'interno del cerchio
+• Adatto per selezionare gradienti o aree con texture
+Raggio più piccolo:
+• Selezione più precisa
+• Migliore per colori uniformi
+Scorciatoie da tastiera: [ diminuisce, ] aumenta di 2 pixel.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="793"/>
         <source>Color Tolerance:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tolleranza Colore:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="795"/>
         <source>HSV color matching tolerance.
 Controls how similar colors must be to get selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tolleranza di corrispondenza dei colori HSV.
+Controlla quanto i colori devono essere simili per essere selezionati.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="803"/>
@@ -4958,17 +5172,30 @@ Higher tolerance:
 Lower tolerance:
 • More precise color matching
 • May miss some pixels of target color</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta la tolleranza colore per il rilevamento dei pixel simili.
+• Intervallo: 0-50
+• Predefinito: 2
+Quando usi CTRL+Clic, i pixel vengono selezionati se i loro valori HSV rientrano in questa tolleranza:
+• 0: solo corrispondenza esatta (molto rigoroso)
+• 2-5: piccole variazioni (consigliato nella maggior parte dei casi)
+• 10+: variazioni ampie (può selezionare troppi colori)
+Tolleranza più alta:
+• Seleziona più colori simili
+• Adatta a immagini con variazioni di luce
+• Può includere colori indesiderati
+Tolleranza più bassa:
+• Corrispondenza colore più precisa
+• Può non rilevare alcuni pixel del colore target.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="825"/>
         <source>CTRL+Click: Select similar colors | CTRL+SHIFT+Click: Remove | [ ] : Radius</source>
-        <translation type="unfinished"></translation>
+        <translation>CTRL+Clic: seleziona colori simili | CTRL+MAIUSC+Clic: rimuovi | [ ] : raggio</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="831"/>
         <source>Help</source>
-        <translation type="unfinished">Aiuto</translation>
+        <translation>Aiuto</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="833"/>
@@ -4979,74 +5206,87 @@ Opens a dialog with:
 • Color selection techniques
 • Keyboard shortcuts reference
 Click here if you&apos;re unsure how to use this tool.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra una guida dettagliata e le istruzioni.
+Apre una finestra di dialogo con:
+• Istruzioni d'uso passo-passo
+• Spiegazione dei comandi di navigazione
+• Tecniche di selezione del colore
+• Riferimento alle scorciatoie da tastiera
+Clicca qui se non sei sicuro di come usare questo strumento.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="859"/>
         <source>Selected Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore Selezionato</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="861"/>
         <source>Average color of all selected pixels.
 Shows the center/mean color that will be used for HSV range detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore medio di tutti i pixel selezionati.
+Mostra il colore centrale/medio che verrà usato per il rilevamento dell'intervallo HSV.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="866"/>
         <source>Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colore:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="868"/>
         <source>Visual preview of the average selected color.
 This is the center color calculated from all selected pixels.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima visiva del colore medio selezionato.
+È il colore centrale calcolato da tutti i pixel selezionati.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="876"/>
         <source>Color swatch showing the average of all selected pixels.
 This becomes the center color for HSV range detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Campione che mostra la media di tutti i pixel selezionati.
+Diventa il colore centrale per il rilevamento dell'intervallo HSV.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="881"/>
         <source>HEX:</source>
-        <translation type="unfinished"></translation>
+        <translation>HEX:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="883"/>
         <source>Hexadecimal representation of the selected color.
 Format: #RRGGBB</source>
-        <translation type="unfinished"></translation>
+        <translation>Rappresentazione esadecimale del colore selezionato.
+Formato: #RRGGBB</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="889"/>
         <source>Hex color code of the average selected color.
 Can be used to identify the exact RGB color value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Codice esadecimale del colore medio selezionato.
+Può essere usato per identificare l'esatto valore RGB.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="894"/>
         <source>HSV:</source>
-        <translation type="unfinished"></translation>
+        <translation>HSV:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="896"/>
         <source>HSV values of the selected color.
 H = Hue (0-360°), S = Saturation (0-100%), V = Value (0-100%)</source>
-        <translation type="unfinished"></translation>
+        <translation>Valori HSV del colore selezionato.
+H = Tonalità (0-360°), S = Saturazione (0-100%), V = Valore (0-100%)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="902"/>
         <source>HSV color values of the average selected color.
 This is the center point of your color range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valori di colore HSV del colore medio selezionato.
+È il punto centrale del tuo intervallo cromatico.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="910"/>
         <source>HSV Ranges</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervalli HSV</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="912"/>
@@ -5054,74 +5294,79 @@ This is the center point of your color range.</source>
 Defines the detection range for each HSV channel.
 Center values are calculated from selected pixels.
 Buffer values add extra tolerance to catch color variations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurazione dell'intervallo cromatico HSV.
+Definisce l'intervallo di rilevamento per ciascun canale HSV.
+I valori centrali sono calcolati dai pixel selezionati.
+I valori di buffer aggiungono tolleranza per catturare le variazioni cromatiche.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="920"/>
         <source>Channel</source>
-        <translation type="unfinished"></translation>
+        <translation>Canale</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="921"/>
         <source>HSV color channel (Hue, Saturation, Value)</source>
-        <translation type="unfinished"></translation>
+        <translation>Canale colore HSV (Tonalità, Saturazione, Valore)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="924"/>
         <source>Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Centro</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="925"/>
         <source>Average value of selected pixels for this channel</source>
-        <translation type="unfinished"></translation>
+        <translation>Valore medio dei pixel selezionati per questo canale</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="928"/>
         <source>- Buffer</source>
-        <translation type="unfinished"></translation>
+        <translation>- Buffer</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="929"/>
         <source>Extra tolerance below center value (lower bound buffer)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tolleranza extra sotto il valore centrale (buffer del limite inferiore)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="932"/>
         <source>+ Buffer</source>
-        <translation type="unfinished"></translation>
+        <translation>+ Buffer</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="933"/>
         <source>Extra tolerance above center value (upper bound buffer)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tolleranza extra sopra il valore centrale (buffer del limite superiore)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="936"/>
         <source>Final Range</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo Finale</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="937"/>
         <source>Complete detection range (min-max) after applying buffers</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo di rilevamento completo (min-max) dopo l'applicazione dei buffer</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="941"/>
         <source>Hue:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tonalità:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="942"/>
         <source>Hue channel (color type): 0-360 degrees on color wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Canale Tonalità (tipo di colore): 0-360 gradi sulla ruota dei colori</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="947"/>
         <source>Center hue value (average of selected pixels).
 Automatically calculated from your selection.
 Range: 0-360° (red=0°, green=120°, blue=240°)</source>
-        <translation type="unfinished"></translation>
+        <translation>Valore di tonalità centrale (media dei pixel selezionati).
+Calcolato automaticamente dalla tua selezione.
+Intervallo: 0-360° (rosso=0°, verde=120°, blu=240°)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="957"/>
@@ -5131,7 +5376,12 @@ Range: 0-360° (red=0°, green=120°, blue=240°)</source>
 • Larger values detect more hues in the minus direction
 • Keep narrow to avoid detecting unwanted colors
 WARNING: Total hue range (minus + plus) &gt; 60° may cause false positives</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffer del limite inferiore di tonalità (sottratto dal centro).
+• Intervallo: 0-360°
+• Aggiunge tolleranza sotto la tonalità centrale
+• Valori più alti rilevano più tonalità in direzione meno
+• Mantieni stretto per evitare di rilevare colori indesiderati
+AVVISO: un intervallo totale di tonalità (meno + più) &gt; 60° può causare falsi positivi</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="971"/>
@@ -5141,19 +5391,26 @@ WARNING: Total hue range (minus + plus) &gt; 60° may cause false positives</sou
 • Larger values detect more hues in the plus direction
 • Keep narrow to avoid detecting unwanted colors
 WARNING: Total hue range (minus + plus) &gt; 60° may cause false positives</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffer del limite superiore di tonalità (sommato al centro).
+• Intervallo: 0-360°
+• Aggiunge tolleranza sopra la tonalità centrale
+• Valori più alti rilevano più tonalità in direzione più
+• Mantieni stretto per evitare di rilevare colori indesiderati
+AVVISO: un intervallo totale di tonalità (meno + più) &gt; 60° può causare falsi positivi</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="983"/>
         <source>Final hue detection range.
 Shows the complete min-max hue range that will be detected.
 Calculated as: (center - minus buffer) to (center + plus buffer)</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo finale di rilevamento della tonalità.
+Mostra l'intervallo completo min-max di tonalità che verrà rilevato.
+Calcolato come: (centro - buffer meno) fino a (centro + buffer più).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="990"/>
         <source>WARNING: Too wide of a Hue range can result in false positives!</source>
-        <translation type="unfinished"></translation>
+        <translation>AVVISO: un intervallo di Tonalità troppo ampio può causare falsi positivi!</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="994"/>
@@ -5161,24 +5418,29 @@ Calculated as: (center - minus buffer) to (center + plus buffer)</source>
 Your total hue range exceeds 60°.
 Wide hue ranges may detect many different colors.
 Consider narrowing the buffers for more accurate detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso intervallo di tonalità.
+L'intervallo di tonalità totale supera i 60°.
+Intervalli di tonalità ampi possono rilevare molti colori diversi.
+Considera di restringere i buffer per un rilevamento più accurato.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1002"/>
         <source>Sat:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sat:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1003"/>
         <source>Saturation channel (color intensity): 0-100%</source>
-        <translation type="unfinished"></translation>
+        <translation>Canale Saturazione (intensità del colore): 0-100%</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1008"/>
         <source>Center saturation value (average of selected pixels).
 Automatically calculated from your selection.
 Range: 0-100% (0%=gray, 100%=vivid color)</source>
-        <translation type="unfinished"></translation>
+        <translation>Valore centrale di saturazione (media dei pixel selezionati).
+Calcolato automaticamente dalla tua selezione.
+Intervallo: 0-100% (0%=grigio, 100%=colore vivido)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1018"/>
@@ -5188,7 +5450,12 @@ Range: 0-100% (0%=gray, 100%=vivid color)</source>
 • Larger values detect more desaturated/grayish colors
 • Be careful: very low saturation includes gray colors
 WARNING: Lower bound &lt; 25% may include unwanted gray/desaturated colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffer del limite inferiore di saturazione (sottratto dal centro).
+• Intervallo: 0-100%
+• Aggiunge tolleranza sotto la saturazione centrale
+• Valori più alti rilevano colori più desaturati/grigiastri
+• Attenzione: una saturazione molto bassa include i colori grigi
+AVVISO: un limite inferiore &lt; 25% può includere colori grigi/desaturati indesiderati</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1032"/>
@@ -5197,19 +5464,25 @@ WARNING: Lower bound &lt; 25% may include unwanted gray/desaturated colors</sour
 • Adds tolerance above the center saturation
 • Larger values detect more saturated/vivid colors
 • Higher saturation generally safe to increase</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffer del limite superiore di saturazione (sommato al centro).
+• Intervallo: 0-100%
+• Aggiunge tolleranza sopra la saturazione centrale
+• Valori più alti rilevano colori più saturi/vividi
+• Aumentare la saturazione superiore è in genere sicuro.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1043"/>
         <source>Final saturation detection range.
 Shows the complete min-max saturation range that will be detected.
 Calculated as: (center - minus buffer) to (center + plus buffer)</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo finale di rilevamento della saturazione.
+Mostra l'intervallo completo min-max di saturazione che verrà rilevato.
+Calcolato come: (centro - buffer meno) fino a (centro + buffer più).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1050"/>
         <source>WARNING: Too low of a Saturation level can result in false positives!</source>
-        <translation type="unfinished"></translation>
+        <translation>AVVISO: un livello di Saturazione troppo basso può causare falsi positivi!</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1054"/>
@@ -5217,24 +5490,29 @@ Calculated as: (center - minus buffer) to (center + plus buffer)</source>
 Your lower saturation bound is below 25%.
 Low saturation includes grayish/washed out colors.
 May detect unwanted gray or desaturated objects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso intervallo di saturazione.
+Il limite inferiore di saturazione è inferiore al 25%.
+Una saturazione bassa include colori grigiastri/sbiaditi.
+Potrebbe rilevare oggetti grigi o desaturati indesiderati.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1062"/>
         <source>Val:</source>
-        <translation type="unfinished"></translation>
+        <translation>Val:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1063"/>
         <source>Value channel (brightness): 0-100%</source>
-        <translation type="unfinished"></translation>
+        <translation>Canale Valore (luminosità): 0-100%</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1068"/>
         <source>Center value/brightness (average of selected pixels).
 Automatically calculated from your selection.
 Range: 0-100% (0%=black, 100%=bright)</source>
-        <translation type="unfinished"></translation>
+        <translation>Valore/luminosità centrale (media dei pixel selezionati).
+Calcolato automaticamente dalla tua selezione.
+Intervallo: 0-100% (0%=nero, 100%=luminoso)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1078"/>
@@ -5244,7 +5522,12 @@ Range: 0-100% (0%=black, 100%=bright)</source>
 • Larger values detect darker versions of the color
 • Be careful: very low value includes very dark/black colors
 WARNING: Lower bound &lt; 25% may include unwanted shadows or dark objects</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffer del limite inferiore del valore (sottratto dal centro).
+• Intervallo: 0-100%
+• Aggiunge tolleranza sotto la luminosità centrale
+• Valori più alti rilevano versioni più scure del colore
+• Attenzione: un valore molto basso include colori molto scuri/neri
+AVVISO: un limite inferiore &lt; 25% può includere ombre o oggetti scuri indesiderati</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1092"/>
@@ -5253,19 +5536,25 @@ WARNING: Lower bound &lt; 25% may include unwanted shadows or dark objects</sour
 • Adds tolerance above the center brightness
 • Larger values detect brighter versions of the color
 • Higher brightness generally safe to increase</source>
-        <translation type="unfinished"></translation>
+        <translation>Buffer del limite superiore del valore (sommato al centro).
+• Intervallo: 0-100%
+• Aggiunge tolleranza sopra la luminosità centrale
+• Valori più alti rilevano versioni più luminose del colore
+• Aumentare la luminosità è in genere sicuro.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1103"/>
         <source>Final value/brightness detection range.
 Shows the complete min-max brightness range that will be detected.
 Calculated as: (center - minus buffer) to (center + plus buffer)</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo finale di rilevamento del valore/luminosità.
+Mostra l'intervallo completo min-max di luminosità che verrà rilevato.
+Calcolato come: (centro - buffer meno) fino a (centro + buffer più).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1110"/>
         <source>WARNING: Too low of a Value level can result in false positives!</source>
-        <translation type="unfinished"></translation>
+        <translation>AVVISO: un livello di Valore troppo basso può causare falsi positivi!</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1114"/>
@@ -5273,37 +5562,43 @@ Calculated as: (center - minus buffer) to (center + plus buffer)</source>
 Your lower value bound is below 25%.
 Low value includes very dark colors.
 May detect unwanted shadows or dark objects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso intervallo del valore.
+Il limite inferiore del valore è inferiore al 25%.
+Un valore basso include colori molto scuri.
+Potrebbe rilevare ombre o oggetti scuri indesiderati.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1124"/>
         <source>Statistics</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistiche</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1126"/>
         <source>Statistics about your current selection.
 Shows how many pixels are selected and what percentage of the image they represent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Statistiche sulla selezione corrente.
+Mostra quanti pixel sono selezionati e quale percentuale dell'immagine rappresentano.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1130"/>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1225"/>
         <source>Selected Pixels: 0</source>
-        <translation type="unfinished"></translation>
+        <translation>Pixel Selezionati: 0</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1132"/>
         <source>Number of pixels currently selected.
 Shows the total count of white-highlighted pixels in the main viewer.
 Updates in real-time as you select colors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di pixel attualmente selezionati.
+Mostra il conteggio totale dei pixel evidenziati in bianco nel visualizzatore principale.
+Si aggiorna in tempo reale mentre selezioni i colori.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1137"/>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1226"/>
         <source>Coverage: 0%</source>
-        <translation type="unfinished"></translation>
+        <translation>Copertura: 0%</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1139"/>
@@ -5311,18 +5606,22 @@ Updates in real-time as you select colors.</source>
 Shows what portion of the total image is selected.
 • Low %: Precise selection, may miss some target pixels
 • High %: Broad selection, may include unwanted areas</source>
-        <translation type="unfinished"></translation>
+        <translation>Percentuale di immagine coperta dalla selezione.
+Mostra quale porzione dell'immagine totale è selezionata.
+• Percentuale bassa: selezione precisa, potrebbe perdere alcuni pixel target
+• Percentuale alta: selezione ampia, potrebbe includere aree indesiderate</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1148"/>
         <source>Mask Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima Maschera</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1150"/>
         <source>Black and white preview of the detection mask.
 Shows what pixels will be detected with current HSV ranges and buffers.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima in bianco e nero della maschera di rilevamento.
+Mostra quali pixel verranno rilevati con gli attuali intervalli HSV e buffer.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1161"/>
@@ -5331,27 +5630,31 @@ Shows what pixels will be detected with current HSV ranges and buffers.</source>
 • Black pixels: Will NOT be detected
 Updates automatically when you adjust buffers.
 Use this to verify your HSV range captures the target without false positives.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima della maschera in scala di grigi.
+• Pixel bianchi: verranno rilevati con le impostazioni correnti
+• Pixel neri: NON verranno rilevati
+Si aggiorna automaticamente quando regoli i buffer.
+Usala per verificare che il tuo intervallo HSV catturi il target senza falsi positivi.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1179"/>
         <source>Select Image</source>
-        <translation type="unfinished">Seleziona Immagine</translation>
+        <translation>Seleziona Immagine</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1180"/>
         <source>Images (*.png *.jpg *.jpeg *.bmp)</source>
-        <translation type="unfinished"></translation>
+        <translation>Immagini (*.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1237"/>
         <source>Selected Pixels: {0:,}</source>
-        <translation type="unfinished"></translation>
+        <translation>Pixel Selezionati: {0:,}</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1238"/>
         <source>Coverage: {0:.1f}%</source>
-        <translation type="unfinished"></translation>
+        <translation>Copertura: {0:.1f}%</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVColorRangeAssistant.py" line="1476"/>
@@ -5430,14 +5733,16 @@ Clicca sul pulsante SFOGLIA per aprire un&apos;immagine.&lt;/p&gt;
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeController.py" line="176"/>
         <source>Hue Expansion</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione per Tonalità</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeController.py" line="178"/>
         <source>When enabled, expand each AOI through neighbors whose hue is within +/- {0}
 (OpenCV units) of the mean hue of the original detected pixels.
 Pixels with saturation below {1}% or value below {2}% are excluded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, espande ogni AOI attraverso i pixel adiacenti la cui tonalità rientra in ± {0}
+(unità OpenCV) rispetto alla tonalità media dei pixel originali rilevati.
+I pixel con saturazione inferiore al {1}% o valore inferiore al {2}% vengono esclusi.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeController.py" line="468"/>
@@ -5468,14 +5773,16 @@ Pixels with saturation below {1}% or value below {2}% are excluded.</source>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="96"/>
         <source>Hue Expansion</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione per Tonalità</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="98"/>
         <source>When enabled, expand each AOI through neighbors whose hue is within +/- {0}
 (OpenCV units) of the mean hue of the original detected pixels.
 Pixels with saturation below {1}% or value below {2}% are excluded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, espande ogni AOI attraverso i pixel adiacenti la cui tonalità rientra in ± {0}
+(unità OpenCV) rispetto alla tonalità media dei pixel originali rilevati.
+I pixel con saturazione inferiore al {1}% o valore inferiore al {2}% vengono esclusi.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="385"/>
@@ -5495,7 +5802,8 @@ Pixels with saturation below {1}% or value below {2}% are excluded.</source>
         <location filename="../app/algorithms/Shared/views/HSVColorRowWizardWidget.py" line="212"/>
         <source>Match
 Tolerance:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tolleranza
+Corrispondenza:</translation>
     </message>
 </context>
 <context>
@@ -5503,13 +5811,14 @@ Tolerance:</source>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="89"/>
         <source>HEX:</source>
-        <translation type="unfinished"></translation>
+        <translation>HEX:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="92"/>
         <source>Hexadecimal color code input.
 Enter colors as hex codes (e.g., #FF0000 for red).</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserimento codice colore esadecimale.
+Inserisci i colori come codici esadecimali (es. #FF0000 per il rosso).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="101"/>
@@ -5518,12 +5827,16 @@ Enter colors as hex codes (e.g., #FF0000 for red).</source>
 • Also accepts short format: #RGB (e.g., #F00 for red)
 Type or paste a hex code to quickly set a specific color.
 The color will be converted to HSV automatically.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci un codice colore esadecimale.
+• Formato: #RRGGBB (es. #FF0000 per il rosso, #00FF00 per il verde)
+• Accetta anche il formato breve: #RGB (es. #F00 per il rosso)
+Digita o incolla un codice esadecimale per impostare rapidamente un colore specifico.
+Il colore verrà convertito automaticamente in HSV.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="110"/>
         <source>Reset to Default</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina Predefiniti</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="113"/>
@@ -5533,19 +5846,26 @@ The color will be converted to HSV automatically.</source>
 • Saturation range: ±20%
 • Value range: ±20%
 Use this to start over with standard settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina colore e intervalli predefiniti.
+• Colore: rosso puro (H:0°, S:100%, V:100%)
+• Intervallo tonalità: ±20° (totale 40°)
+• Intervallo saturazione: ±20%
+• Intervallo valore: ±20%
+Usalo per ripartire dalle impostazioni standard.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="136"/>
         <source>Saturation / Value</source>
-        <translation type="unfinished"></translation>
+        <translation>Saturazione / Valore</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="140"/>
         <source>Saturation and Value (brightness) selector.
 Saturation controls color intensity (left=gray, right=vivid).
 Value controls brightness (bottom=dark, top=bright).</source>
-        <translation type="unfinished"></translation>
+        <translation>Selettore di Saturazione e Valore (luminosità).
+La Saturazione controlla l'intensità del colore (sinistra=grigio, destra=vivido).
+Il Valore controlla la luminosità (basso=scuro, alto=luminoso).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="148"/>
@@ -5557,18 +5877,26 @@ Value controls brightness (bottom=dark, top=bright).</source>
 • Horizontal range = saturation tolerance
 • Vertical range = value/brightness tolerance
 Larger ranges detect more color variations but may include unwanted colors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selettore interattivo Saturazione/Valore.
+• Clicca in qualsiasi punto per impostare saturazione e luminosità del colore centrale
+• Cerchio bianco = posizione attuale del colore centrale
+• Rettangolo bianco = intervallo di rilevamento (regolabile)
+• Trascina le maniglie bianche agli angoli per regolare gli intervalli di saturazione/valore
+• Intervallo orizzontale = tolleranza di saturazione
+• Intervallo verticale = tolleranza di valore/luminosità
+Intervalli più ampi rilevano più variazioni di colore ma possono includere colori indesiderati.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="164"/>
         <source>Hue</source>
-        <translation type="unfinished"></translation>
+        <translation>Tonalità</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="168"/>
         <source>Hue (color type) selector.
 Hue represents the actual color: red, orange, yellow, green, cyan, blue, purple, magenta.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selettore di Tonalità (tipo di colore).
+La Tonalità rappresenta il colore effettivo: rosso, arancione, giallo, verde, ciano, blu, viola, magenta.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="175"/>
@@ -5580,12 +5908,19 @@ Hue represents the actual color: red, orange, yellow, green, cyan, blue, purple,
 • Left handle = lower bound (minus range)
 • Right handle = upper bound (plus range)
 Warning: Hue ranges wider than 60° may detect too many colors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selettore interattivo ad anello della Tonalità.
+• Clicca sull'anello per selezionare una tonalità (tipo di colore)
+• Linea bianca = tonalità centrale attuale
+• Archi e linee grigie = intervallo di rilevamento della tonalità (regolabile)
+• Trascina le maniglie circolari bianche per regolare l'intervallo di tonalità
+• Maniglia sinistra = limite inferiore (intervallo meno)
+• Maniglia destra = limite superiore (intervallo più)
+Avviso: intervalli di tonalità superiori a 60° possono rilevare troppi colori.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="204"/>
         <source>Use Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa Immagine</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="207"/>
@@ -5596,12 +5931,18 @@ Advanced tool for selecting colors from an image:
 • Automatically calculates optimal HSV ranges
 • See real-time preview of detection results
 Recommended for finding the best color range for your target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri l'Assistente Intervallo Colore HSV.
+Strumento avanzato per selezionare colori da un'immagine:
+• Carica un'immagine dalla tua cartella di input
+• Clicca sui pixel per campionare i colori
+• Calcola automaticamente gli intervalli HSV ottimali
+• Visualizza un'anteprima in tempo reale dei risultati di rilevamento
+Consigliato per trovare l'intervallo cromatico migliore per il tuo target.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="218"/>
         <source>Pick Screen Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Preleva Colore dallo Schermo</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="221"/>
@@ -5611,12 +5952,17 @@ Opens a color picker that lets you:
 • Sample from other applications or images
 The picked color will be set as the center color.
 Ranges remain unchanged - adjust manually after picking.</source>
-        <translation type="unfinished"></translation>
+        <translation>Preleva un colore da qualsiasi punto dello schermo.
+Apre un selettore di colore che ti consente di:
+• Cliccare ovunque sullo schermo per campionare un colore
+• Campionare da altre applicazioni o immagini
+Il colore prelevato verrà impostato come colore centrale.
+Gli intervalli restano invariati: regolali manualmente dopo il prelievo.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="231"/>
         <source>Add to Custom Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi ai Colori Personalizzati</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="234"/>
@@ -5626,19 +5972,26 @@ Adds the current center color to the first empty slot in Custom Colors.
 • Click saved colors to quickly reuse them
 • Custom colors persist across sessions
 Useful for building a palette of frequently used colors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva il colore corrente nella tavolozza dei Colori Personalizzati.
+Aggiunge il colore centrale corrente al primo slot libero in Colori Personalizzati.
+• Salva solo il colore, non gli intervalli
+• Clicca sui colori salvati per riutilizzarli rapidamente
+• I colori personalizzati vengono mantenuti tra le sessioni
+Utile per costruire una tavolozza dei colori usati di frequente.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="252"/>
         <source>Basic Colors:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colori di Base:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="255"/>
         <source>Preset basic color palette.
 Quick access to common colors like red, orange, yellow, green, cyan, blue, purple, and grayscale.
 Click any color swatch to set it as the center color.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tavolozza di colori di base predefiniti.
+Accesso rapido ai colori comuni come rosso, arancione, giallo, verde, ciano, blu, viola e scala di grigi.
+Clicca su un campione di colore per impostarlo come colore centrale.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="263"/>
@@ -5647,19 +6000,25 @@ Click any color to quickly set it as your center color.
 • Top row: Primary colors and tints
 • Bottom row: Grayscale and darker shades
 Useful for quickly selecting standard colors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Campioni di colori di base.
+Clicca su un colore per impostarlo rapidamente come colore centrale.
+• Riga superiore: colori primari e tinte
+• Riga inferiore: scala di grigi e tonalità più scure
+Utile per selezionare velocemente i colori standard.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="273"/>
         <source>Custom Colors:</source>
-        <translation type="unfinished"></translation>
+        <translation>Colori Personalizzati:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="276"/>
         <source>Your saved custom color palette.
 Colors you&apos;ve saved using &apos;Add to Custom Colors&apos; button.
 Click any saved color to reuse it.</source>
-        <translation type="unfinished"></translation>
+        <translation>La tua tavolozza di colori personalizzati salvati.
+Colori che hai salvato con il pulsante "Aggiungi ai Colori Personalizzati".
+Clicca su un colore salvato per riutilizzarlo.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="284"/>
@@ -5669,63 +6028,74 @@ Click any color to set it as your center color.
 • Use &apos;Add to Custom Colors&apos; button to save current color
 • Custom colors persist across sessions
 Build your own palette of frequently used colors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Campioni di colori personalizzati.
+Clicca su un colore per impostarlo come colore centrale.
+• Gli slot vuoti sono mostrati in grigio
+• Usa il pulsante "Aggiungi ai Colori Personalizzati" per salvare il colore corrente
+• I colori personalizzati vengono mantenuti tra le sessioni
+Costruisci la tua tavolozza di colori usati di frequente.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="460"/>
         <source>Current HSV color range summary.
 Shows the center color and detection ranges in real-time.
 Warning indicators appear when ranges may cause detection issues.</source>
-        <translation type="unfinished"></translation>
+        <translation>Riepilogo dell'intervallo colore HSV corrente.
+Mostra in tempo reale il colore centrale e gli intervalli di rilevamento.
+Gli indicatori di avviso compaiono quando gli intervalli possono causare problemi di rilevamento.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
         <source>Center HSV:</source>
-        <translation type="unfinished"></translation>
+        <translation>HSV Centro:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
         <source>Hue Range:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo Tonalità:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
         <source>Sat Range:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo Sat:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
         <source>Val Range:</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo Val:</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="471"/>
         <source>Current center HSV color values.
 H = Hue (0-360°), S = Saturation (0-100%), V = Value/brightness (0-100%).</source>
-        <translation type="unfinished"></translation>
+        <translation>Valori HSV correnti del colore centrale.
+H = Tonalità (0-360°), S = Saturazione (0-100%), V = Valore/luminosità (0-100%).</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="472"/>
         <source>Hue detection range (minus/plus from center).
 Total range = minus + plus. Warning shown if total &gt; 60°.</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo di rilevamento tonalità (meno/più dal centro).
+Intervallo totale = meno + più. L'avviso appare se il totale &gt; 60°.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="473"/>
         <source>Saturation detection range (minus/plus from center).
 Warning shown if lower bound &lt; 25%.</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo di rilevamento saturazione (meno/più dal centro).
+L'avviso appare se il limite inferiore &lt; 25%.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="474"/>
         <source>Value detection range (minus/plus from center).
 Warning shown if lower bound &lt; 25%.</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo di rilevamento valore (meno/più dal centro).
+L'avviso appare se il limite inferiore &lt; 25%.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="496"/>
         <source>⚠ Too wide!</source>
-        <translation type="unfinished"></translation>
+        <translation>⚠ Troppo ampio!</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="501"/>
@@ -5733,13 +6103,16 @@ Warning shown if lower bound &lt; 25%.</source>
 Your hue range is wider than 60° total.
 Wide hue ranges may detect too many different colors.
 Consider narrowing the range for more accurate detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso intervallo di tonalità.
+Il tuo intervallo di tonalità totale è superiore a 60°.
+Intervalli di tonalità ampi possono rilevare troppi colori diversi.
+Considera di restringere l'intervallo per un rilevamento più accurato.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="509"/>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="522"/>
         <source>⚠ Too low!</source>
-        <translation type="unfinished"></translation>
+        <translation>⚠ Troppo basso!</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="514"/>
@@ -5747,7 +6120,10 @@ Consider narrowing the range for more accurate detection.</source>
 Your saturation lower bound is below 25%.
 Low saturation includes grayish/washed out colors.
 May detect unintended gray or desaturated colors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso intervallo di saturazione.
+Il tuo limite inferiore di saturazione è inferiore al 25%.
+Una saturazione bassa include colori grigiastri/sbiaditi.
+Potrebbe rilevare colori grigi o desaturati indesiderati.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="527"/>
@@ -5755,7 +6131,10 @@ May detect unintended gray or desaturated colors.</source>
 Your value lower bound is below 25%.
 Low value includes very dark colors.
 May detect shadows or dark unintended objects.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avviso intervallo del valore.
+Il tuo limite inferiore del valore è inferiore al 25%.
+Un valore basso include colori molto scuri.
+Potrebbe rilevare ombre o oggetti scuri indesiderati.</translation>
     </message>
 </context>
 <context>
@@ -5763,52 +6142,52 @@ May detect shadows or dark unintended objects.</source>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="34"/>
         <source>AOI Detection Heatmap</source>
-        <translation type="unfinished"></translation>
+        <translation>Heatmap dei Rilevamenti AOI</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="59"/>
         <source>Threshold</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="62"/>
         <source>Percentile:</source>
-        <translation type="unfinished"></translation>
+        <translation>Percentile:</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="81"/>
         <source>Grid Resolution</source>
-        <translation type="unfinished"></translation>
+        <translation>Risoluzione Griglia</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="86"/>
         <source>Low (100)</source>
-        <translation type="unfinished"></translation>
+        <translation>Bassa (100)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="87"/>
         <source>Medium (200)</source>
-        <translation type="unfinished"></translation>
+        <translation>Media (200)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="88"/>
         <source>High (400)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alta (400)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="114"/>
         <source>Hot zones (colored) show high-density detection areas. Gray zones are below the threshold. Adjust the threshold to control what counts as a hot zone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le zone calde (colorate) mostrano aree con alta densità di rilevamenti. Le zone grigie sono sotto la soglia. Regola la soglia per controllare cosa viene considerato una zona calda.</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="126"/>
         <source>Close</source>
-        <translation type="unfinished">Chiudi</translation>
+        <translation>Chiudi</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/HeatmapViewerDialog.py" line="150"/>
         <source>No heatmap data available</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun dato heatmap disponibile</translation>
     </message>
 </context>
 <context>
@@ -6117,77 +6496,77 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="78"/>
         <source>Select Drone/Camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona Drone/Fotocamera</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="82"/>
         <source>No drones available</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun drone disponibile</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="126"/>
         <source>Other</source>
-        <translation type="unfinished"></translation>
+        <translation>Altro</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="162"/>
         <source>Error loading drone data</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore nel caricamento dei dati del drone</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="240"/>
         <source>-- (Invalid camera data)</source>
-        <translation type="unfinished"></translation>
+        <translation>-- (Dati fotocamera non validi)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="473"/>
         <source>{sensor_name}: Focal length not found in image EXIF</source>
-        <translation type="unfinished"></translation>
+        <translation>{sensor_name}: lunghezza focale non trovata nei metadati EXIF dell'immagine</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="475"/>
         <source>{sensor_name}: Select input directory to extract focal length from images</source>
-        <translation type="unfinished"></translation>
+        <translation>{sensor_name}: seleziona la cartella di input per estrarre la lunghezza focale dalle immagini</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="482"/>
         <source>-- (Missing camera data)</source>
-        <translation type="unfinished"></translation>
+        <translation>-- (Dati fotocamera mancanti)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="483"/>
         <source>Unable to calculate GSD. Sensor dimensions found, but:</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile calcolare il GSD. Dimensioni del sensore trovate, ma:</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="484"/>
         <source>• Focal length is required (available from image EXIF data)</source>
-        <translation type="unfinished"></translation>
+        <translation>• È richiesta la lunghezza focale (disponibile nei metadati EXIF delle immagini)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="485"/>
         <source>GSD calculation requires an actual image file to extract focal length.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il calcolo del GSD richiede un file immagine reale da cui estrarre la lunghezza focale.</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="491"/>
         <source>-- (Error)</source>
-        <translation type="unfinished"></translation>
+        <translation>-- (Errore)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="523"/>
         <source>Sensor {n}</source>
-        <translation type="unfinished"></translation>
+        <translation>Sensore {n}</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="525"/>
         <source>Primary</source>
-        <translation type="unfinished"></translation>
+        <translation>Principale</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/guidePages/ImageCapturePage.py" line="527"/>
         <source>Sensor</source>
-        <translation type="unfinished"></translation>
+        <translation>Sensore</translation>
     </message>
 </context>
 <context>
@@ -6208,22 +6587,22 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="31"/>
         <source>Processing Resolution</source>
-        <translation type="unfinished"></translation>
+        <translation>Risoluzione di Elaborazione</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="36"/>
         <source>Resolution:</source>
-        <translation type="unfinished"></translation>
+        <translation>Risoluzione:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="41"/>
         <source>Original</source>
-        <translation type="unfinished"></translation>
+        <translation>Originale</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="52"/>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>Personalizzata</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="61"/>
@@ -6231,46 +6610,53 @@ li.checked::marker { content: &quot;\2612&quot;; }
 &apos;Original&apos; uses the video&apos;s native resolution (no downsampling).
 720P (1280x720) provides excellent balance between speed and detection accuracy.
 Select &apos;Custom&apos; to manually set width and height.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona una risoluzione predefinita per l'elaborazione. Risoluzioni più basse sono più veloci ma meno dettagliate.
+"Originale" usa la risoluzione nativa del video (nessun sottocampionamento).
+720P (1280x720) offre un ottimo equilibrio tra velocità e precisione di rilevamento.
+Seleziona "Personalizzata" per impostare manualmente larghezza e altezza.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="71"/>
         <source>Width:</source>
-        <translation type="unfinished"></translation>
+        <translation>Larghezza:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="78"/>
         <source>Custom processing width in pixels (320-3840).
 Only enabled when &apos;Custom&apos; resolution is selected.
 Lower values = faster processing, less detail.</source>
-        <translation type="unfinished"></translation>
+        <translation>Larghezza di elaborazione personalizzata in pixel (320-3840).
+Abilitata solo quando è selezionata la risoluzione "Personalizzata".
+Valori più bassi = elaborazione più rapida, meno dettaglio.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="84"/>
         <source>Height:</source>
-        <translation type="unfinished"></translation>
+        <translation>Altezza:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="91"/>
         <source>Custom processing height in pixels (240-2160).
 Only enabled when &apos;Custom&apos; resolution is selected.
 Lower values = faster processing, less detail.</source>
-        <translation type="unfinished"></translation>
+        <translation>Altezza di elaborazione personalizzata in pixel (240-2160).
+Abilitata solo quando è selezionata la risoluzione "Personalizzata".
+Valori più bassi = elaborazione più rapida, meno dettaglio.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="107"/>
         <source>Performance Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni Prestazioni</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="112"/>
         <source>Frame Rate:</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame Rate:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="118"/>
         <source>Source FPS</source>
-        <translation type="unfinished"></translation>
+        <translation>FPS della Sorgente</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="133"/>
@@ -6286,12 +6672,23 @@ Lower values = faster processing, less detail.</source>
 
 Lower frame rates reduce CPU usage but may miss fast-moving objects.
 Detections persist between skipped frames for visual continuity.</source>
-        <translation type="unfinished"></translation>
+        <translation>Limita il frame rate dell'elaborazione.
+
+• FPS della Sorgente – segue la cadenza della sorgente (le sorgenti live possono applicare un limite di sicurezza)
+• 30 FPS – buon equilibrio tra fluidità e prestazioni
+• 25 FPS – standard per video PAL
+• 20 FPS – uso CPU ridotto
+• 15 FPS – uso CPU più basso
+• 10 FPS – risparmio CPU significativo
+• 5 FPS – massimo risparmio CPU, può perdere oggetti veloci
+
+Frame rate più bassi riducono l'uso della CPU ma possono perdere oggetti in rapido movimento.
+I rilevamenti persistono tra i frame saltati per garantire continuità visiva.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="148"/>
         <source>Render at Processing Resolution (faster for high-res)</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderizza alla Risoluzione di Elaborazione (più veloce per alte risoluzioni)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/InputProcessingTab.py" line="151"/>
@@ -6299,7 +6696,10 @@ Detections persist between skipped frames for visual continuity.</source>
 Significantly faster for high-resolution videos (1080p+) with minimal visual impact.
 Example: Processing at 720p but video is 4K - renders at 720p then upscales.
 Recommended: ON for high-res videos, OFF for native 720p or lower.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disegna gli overlay dei rilevamenti alla risoluzione di elaborazione anziché a quella originale del video.
+Molto più rapido per video ad alta risoluzione (1080p+) con impatto visivo minimo.
+Esempio: elaborazione a 720p ma video in 4K – il rendering avviene a 720p e poi viene scalato.
+Consigliato: ON per video ad alta risoluzione, OFF per 720p nativo o inferiore.</translation>
     </message>
 </context>
 <context>
@@ -6533,31 +6933,35 @@ Valori più bassi = rilevamento più sensibile.</translation>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapController.py" line="40"/>
         <source>Detection Expansion (optional)</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione Rilevamento (opzionale)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapController.py" line="48"/>
         <source>Threshold Expansion</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione per Soglia</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapController.py" line="50"/>
         <source>When enabled, expand each AOI to also include pixels with histogram bin-counts
 below (threshold + {0}). Pixels inside the cluster rectangle are added unconditionally;
 pixels outside are added if they are connected through other qualifying pixels.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, espande ogni AOI includendo anche i pixel con conteggi nei bin dell'istogramma
+inferiori a (soglia + {0}). I pixel all'interno del rettangolo del cluster vengono aggiunti senza condizioni;
+quelli esterni vengono aggiunti se collegati tramite altri pixel idonei.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapController.py" line="57"/>
         <source>Hue Expansion</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione per Tonalità</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapController.py" line="59"/>
         <source>When enabled, expand each AOI through neighbors whose hue is within +/- {0}
 (OpenCV units) of the mean hue of the original detected pixels.
 Pixels with saturation below {1}% or value below {2}% are excluded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, espande ogni AOI attraverso i pixel adiacenti la cui tonalità rientra in ± {0}
+(unità OpenCV) rispetto alla tonalità media dei pixel originali rilevati.
+I pixel con saturazione inferiore al {1}% o valore inferiore al {2}% vengono esclusi.</translation>
     </message>
 </context>
 <context>
@@ -6622,31 +7026,35 @@ Aggressivo</translation>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapWizardController.py" line="60"/>
         <source>Detection Expansion (optional)</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione Rilevamento (opzionale)</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapWizardController.py" line="67"/>
         <source>Threshold Expansion</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione per Soglia</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapWizardController.py" line="69"/>
         <source>When enabled, expand each AOI to also include pixels with histogram bin-counts
 below (threshold + {0}). Pixels inside the cluster rectangle are added unconditionally;
 pixels outside are added if they are connected through other qualifying pixels.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, espande ogni AOI includendo anche i pixel con conteggi nei bin dell'istogramma
+inferiori a (soglia + {0}). I pixel all'interno del rettangolo del cluster vengono aggiunti senza condizioni;
+quelli esterni vengono aggiunti se collegati tramite altri pixel idonei.</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapWizardController.py" line="76"/>
         <source>Hue Expansion</source>
-        <translation type="unfinished"></translation>
+        <translation>Espansione per Tonalità</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/MRMap/controllers/MRMapWizardController.py" line="78"/>
         <source>When enabled, expand each AOI through neighbors whose hue is within +/- {0}
 (OpenCV units) of the mean hue of the original detected pixels.
 Pixels with saturation below {1}% or value below {2}% are excluded.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se abilitato, espande ogni AOI attraverso i pixel adiacenti la cui tonalità rientra in ± {0}
+(unità OpenCV) rispetto alla tonalità media dei pixel originali rilevati.
+I pixel con saturazione inferiore al {1}% o valore inferiore al {2}% vengono esclusi.</translation>
     </message>
 </context>
 <context>
@@ -6936,7 +7344,7 @@ Risoluzioni più basse = elaborazione più veloce ma possono perdere oggetti pic
     <message>
         <location filename="../app/core/controllers/images/MainWindow.py" line="863"/>
         <source>The selected file is not a valid XML file: {path}</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file selezionato non è un file XML valido: {path}</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/MainWindow.py" line="1044"/>
@@ -7034,7 +7442,43 @@ MR MAP: Multi-resolution detection for objects of varying sizes
 AI PERSON DETECTOR: Deep learning model for accurate people detection
   • Best for: Search &amp; Rescue, finding people in any clothing/pose
   • Limitation: Only detects people, slower processing</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona l'algoritmo di rilevamento per la tua attività di analisi delle immagini:
+
+HSV COLOR RANGE: rileva oggetti dai colori vivaci (abbigliamento, veicoli, tende)
+  • Ideale per: oggetti colorati in condizioni di illuminazione variabile
+  • Limite: richiede taratura dei colori, non adatto a oggetti mimetizzati
+
+COLOR RANGE (RGB): semplice rilevamento colore RGB, elaborazione veloce
+  • Ideale per: rilevamento base del colore in illuminazione controllata
+  • Limite: sensibile alle variazioni di luce
+
+RX ANOMALY: trova oggetti che non corrispondono allo sfondo (non serve un campione)
+  • Ideale per: soggetti mimetizzati/nascosti, target sconosciuti
+  • Limite: può rilevare anomalie naturali, più lento con molti segmenti
+
+THERMAL ANOMALY: rileva punti caldi/freddi in immagini termiche
+  • Ideale per: ricerche notturne, rilevamento di persone/animali dal calore corporeo
+  • Limite: richiede una telecamera termica, può rilevare oggetti scaldati dal sole
+
+TEMPERATURE RESIDUAL ANOMALY: rileva outlier locali di delta-T usando i residui radiometrici
+  • Ideale per: isolare rare firme termiche calde/fredde su sfondi misti
+  • Limite: richiede dati termici radiometrici, può essere sensibile alla scelta della soglia
+
+THERMAL RANGE: rilevamento basato sulla temperatura (es. 35-40°C per gli umani)
+  • Ideale per: rilevamento di persone con telecamera termica (temperatura corporea nota)
+  • Limite: richiede una telecamera termica, è necessario conoscere la temperatura target
+
+MATCHED FILTER: confronta i target con la firma cromatica di un campione
+  • Ideale per: oggetti specifici conosciuti, quando si dispone di un campione
+  • Limite: richiede un'immagine di riferimento, non adatto a target sconosciuti
+
+MR MAP: rilevamento multi-risoluzione per oggetti di dimensioni variabili
+  • Ideale per: scene complesse con dimensioni del target sconosciute
+  • Limite: elaborazione più lenta, più falsi positivi
+
+AI PERSON DETECTOR: modello di deep learning per il rilevamento accurato di persone
+  • Ideale per: ricerca e soccorso, individuazione di persone in qualsiasi abbigliamento/posa
+  • Limite: rileva solo persone, elaborazione più lenta</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/MainWindow.py" line="337"/>
@@ -7090,7 +7534,7 @@ AI PERSON DETECTOR: Deep learning model for accurate people detection
     <message>
         <location filename="../app/core/controllers/images/MainWindow.py" line="695"/>
         <source>XML Files (*.xml);;All Files (*)</source>
-        <translation type="unfinished">File XML (*.xml);;Tutti i File (*)</translation>
+        <translation>File XML (*.xml);;Tutti i File (*)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/MainWindow.py" line="716"/>
@@ -7709,7 +8153,9 @@ Usa questo per rivedere i risultati di sessioni di analisi precedenti senza riel
         <source>Scan a folder recursively for ADIAT_DATA.XML files.
 Displays all found results in a dialog for easy browsing.
 Use this to quickly find and open results from multiple analysis sessions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esegue una scansione ricorsiva di una cartella alla ricerca di file ADIAT_DATA.XML.
+Mostra tutti i risultati trovati in una finestra di dialogo per una facile consultazione.
+Usala per trovare e aprire rapidamente i risultati di più sessioni di analisi.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/MainWindow.ui" line="1162"/>
@@ -7851,13 +8297,14 @@ Fornisce informazioni dettagliate su tutte le funzionalità e gli algoritmi.</tr
     <message>
         <location filename="../resources/views/images/MainWindow.ui" line="1279"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifica Aggiornamenti</translation>
     </message>
     <message>
         <location filename="../resources/views/images/MainWindow.ui" line="1282"/>
         <source>Check the update feed for a newer ADIAT installer.
 If an update is available, you can download and launch the installer from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlla il feed degli aggiornamenti per un nuovo installer ADIAT.
+Se è disponibile un aggiornamento, puoi scaricare e avviare l'installer da qui.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/MainWindow.ui" line="1293"/>
@@ -8495,12 +8942,12 @@ Ancora mancanti:
     <message>
         <location filename="../app/core/views/streaming/components/PlaybackControlBar.py" line="54"/>
         <source>Play/Pause (Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Riproduci/Pausa (Spazio)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/PlaybackControlBar.py" line="67"/>
         <source>Seek through video</source>
-        <translation type="unfinished"></translation>
+        <translation>Naviga nel video</translation>
     </message>
 </context>
 <context>
@@ -9215,7 +9662,7 @@ Aggressivo</translation>
     <message>
         <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="204"/>
         <source>Cancel</source>
-        <translation type="unfinished">Annulla</translation>
+        <translation>Annulla</translation>
     </message>
 </context>
 <context>
@@ -9223,32 +9670,32 @@ Aggressivo</translation>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="44"/>
         <source>Shape Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni Forma</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="47"/>
         <source>Shape Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modalità Forma:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="49"/>
         <source>Box</source>
-        <translation type="unfinished"></translation>
+        <translation>Riquadro</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="50"/>
         <source>Circle</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerchio</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="51"/>
         <source>Dot</source>
-        <translation type="unfinished"></translation>
+        <translation>Punto</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="52"/>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Off</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="55"/>
@@ -9265,17 +9712,29 @@ Aggressivo</translation>
 
 • Off: No shape overlay (only thumbnails/text if enabled).
   Use for: Clean video with minimal overlays.</source>
-        <translation type="unfinished"></translation>
+        <translation>Forma da disegnare attorno ai rilevamenti:
+
+• Riquadro: rettangolo attorno al bounding box del rilevamento.
+  Da usare per: confini precisi, visualizzazione tecnica.
+
+• Cerchio: cerchio che racchiude il rilevamento (150% del raggio del contorno).
+  Da usare per: uso generale, aspetto più pulito (predefinito).
+
+• Punto: piccolo punto sul centroide del rilevamento.
+  Da usare per: overlay minimale, rendering rapido.
+
+• Off: nessun overlay di forma (solo miniature/testo se attivati).
+  Da usare per: video puliti con overlay minimali.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="70"/>
         <source>Visual Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni Visuali</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="73"/>
         <source>Show Text Labels (slower)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra Etichette di Testo (più lento)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="75"/>
@@ -9283,12 +9742,15 @@ Aggressivo</translation>
 Adds ~5-15ms processing overhead depending on detection count.
 Labels show: detection type, confidence, area.
 Recommended: OFF for speed, ON for debugging/analysis.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra etichette di testo accanto ai rilevamenti con le relative informazioni.
+Aggiunge un sovraccarico di elaborazione di ~5-15 ms in base al numero di rilevamenti.
+Le etichette mostrano: tipo di rilevamento, confidenza, area.
+Consigliato: OFF per la velocità, ON per debug/analisi.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="82"/>
         <source>Show Contours (slowest)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra Contorni (più lento di tutti)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="84"/>
@@ -9296,12 +9758,15 @@ Recommended: OFF for speed, ON for debugging/analysis.</source>
 Adds ~10-20ms processing overhead (very expensive).
 Shows exact shape detected by algorithm.
 Recommended: OFF for speed, ON only for detailed analysis.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disegna i contorni esatti dei rilevamenti (confini precisi al pixel).
+Aggiunge ~10-20 ms di sovraccarico (molto oneroso).
+Mostra la forma esatta rilevata dall'algoritmo.
+Consigliato: OFF per la velocità, ON solo per analisi dettagliate.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="92"/>
         <source>Use Detection Color (hue @ 100% sat/val for color anomalies)</source>
-        <translation type="unfinished"></translation>
+        <translation>Usa Colore di Rilevamento (tonalità a 100% sat/val per le anomalie di colore)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="95"/>
@@ -9310,17 +9775,21 @@ For color anomalies: Uses the detected hue at 100% saturation/value.
 For motion detections: Uses default color (green/blue).
 Helps visually identify what color was detected.
 Recommended: ON for color detection, OFF for motion-only.</source>
-        <translation type="unfinished"></translation>
+        <translation>Colora l'overlay del rilevamento in base al colore rilevato.
+Per le anomalie di colore: usa la tonalità rilevata al 100% di saturazione/valore.
+Per i rilevamenti di movimento: usa il colore predefinito (verde/blu).
+Aiuta a identificare visivamente quale colore è stato rilevato.
+Consigliato: ON per il rilevamento colore, OFF per il solo movimento.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="106"/>
         <source>Performance Limits</source>
-        <translation type="unfinished"></translation>
+        <translation>Limiti di Prestazione</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="109"/>
         <source>Max Detections:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamenti Massimi:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="115"/>
@@ -9329,17 +9798,21 @@ Prevents rendering slowdown when hundreds of detections occur.
 Shows highest confidence detections first.
 0 = Unlimited (may cause lag with many detections).
 Recommended: 10 for general use, 50 for complex rendering (text+contours).</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero massimo di rilevamenti da disegnare a schermo (0-1000).
+Evita rallentamenti del rendering quando si verificano centinaia di rilevamenti.
+Mostra prima i rilevamenti con maggior confidenza.
+0 = illimitato (può causare lag con molti rilevamenti).
+Consigliato: 10 per uso generale, 50 per rendering complessi (testo+contorni).</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="126"/>
         <source>Temporal Voting</source>
-        <translation type="unfinished"></translation>
+        <translation>Voto Temporale</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="129"/>
         <source>Enable Temporal Voting (reduce flicker)</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Voto Temporale (riduce lo sfarfallio)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="132"/>
@@ -9347,12 +9820,15 @@ Recommended: 10 for general use, 50 for complex rendering (text+contours).</sour
 Detections must appear in N out of M consecutive frames to be confirmed.
 Significantly reduces flickering false positives.
 Recommended: ON for all use cases (default).</source>
-        <translation type="unfinished"></translation>
+        <translation>Smussa i rilevamenti tra i frame usando la consistenza temporale.
+I rilevamenti devono comparire in N degli M frame consecutivi per essere confermati.
+Riduce notevolmente i falsi positivi intermittenti.
+Consigliato: ON in tutti i casi d'uso (predefinito).</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="142"/>
         <source>Window Frames (M):</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame Finestra (M):</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="147"/>
@@ -9361,12 +9837,16 @@ Detections must appear in N out of M consecutive frames.
 Larger values = longer memory, more stable, slower response to new objects.
 Smaller values = shorter memory, faster response, less stable.
 Recommended: 5 for 30fps (~167ms window), 7 for 60fps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dimensione della finestra di voto temporale (2-30 frame).
+I rilevamenti devono comparire in N degli M frame consecutivi.
+Valori più alti = memoria più lunga, più stabile, risposta più lenta ai nuovi oggetti.
+Valori più bassi = memoria più breve, risposta più rapida, meno stabile.
+Consigliato: 5 per 30 fps (finestra ~167 ms), 7 per 60 fps.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="155"/>
         <source>Threshold (N of M):</source>
-        <translation type="unfinished"></translation>
+        <translation>Soglia (N su M):</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="160"/>
@@ -9375,29 +9855,35 @@ Higher values = more stringent, filters transient false positives.
 Lower values = more lenient, faster response to new objects.
 Must be ≤ Window Frames.
 Recommended: 3 out of 5 (detection in 60% of frames).</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero di frame, all'interno della finestra, in cui il rilevamento deve comparire (N su M).
+Valori più alti = più rigoroso, filtra i falsi positivi transitori.
+Valori più bassi = più permissivo, risposta più rapida ai nuovi oggetti.
+Deve essere ≤ Frame Finestra.
+Consigliato: 3 su 5 (rilevamento nel 60% dei frame).</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="173"/>
         <source>Detection Cleanup</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulizia Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="177"/>
         <source>Enable Aspect Ratio Filtering</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Filtro Rapporto d'Aspetto</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="180"/>
         <source>Filter out very thin or stretched detections based on width/height.
 Useful for removing wires, long shadows, or other non-object shapes.
 Most users can leave this OFF unless you see many long skinny false detections.</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtra i rilevamenti molto sottili o allungati in base a larghezza/altezza.
+Utile per rimuovere fili, ombre allungate o altre forme non corrispondenti a oggetti.
+La maggior parte degli utenti può lasciarlo OFF, a meno di rilevare molti falsi positivi sottili e allungati.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="189"/>
         <source>Min Ratio:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto Min:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="195"/>
@@ -9405,48 +9891,57 @@ Most users can leave this OFF unless you see many long skinny false detections.<
 Lower values = allow taller, thinner detections.
 Higher values = require detections to be more square.
 Example: 0.2 ≈ reject if height is more than 5× width.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto larghezza/altezza minimo da mantenere (0,1-10,0).
+Valori più bassi = consente rilevamenti più alti e sottili.
+Valori più alti = richiede rilevamenti più simili a un quadrato.
+Esempio: 0,2 ≈ rifiuta se l'altezza è più di 5× la larghezza.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="202"/>
         <source>Max Ratio:</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto Max:</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="208"/>
         <source>Maximum width/height ratio to keep (0.1-20.0).
 Lower values = reject very wide, thin detections.
 Higher values = allow wider objects such as vehicles or long equipment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rapporto larghezza/altezza massimo da mantenere (0,1-20,0).
+Valori più bassi = rifiuta i rilevamenti molto larghi e sottili.
+Valori più alti = consente oggetti più larghi come veicoli o attrezzature lunghe.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="217"/>
         <source>Detection Clustering</source>
-        <translation type="unfinished"></translation>
+        <translation>Clustering Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="220"/>
         <source>Enable Detection Clustering</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita Clustering Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="223"/>
         <source>Optionally merge nearby detections into a single, larger detection.
 Useful when one object appears as many small adjacent detections.
 Most users can leave this OFF unless objects look fragmented.</source>
-        <translation type="unfinished"></translation>
+        <translation>Unisce facoltativamente i rilevamenti vicini in un unico rilevamento più grande.
+Utile quando un oggetto compare come molti piccoli rilevamenti adiacenti.
+La maggior parte degli utenti può lasciarlo OFF, a meno che gli oggetti non appaiano frammentati.</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="232"/>
         <source>Clustering Distance (px):</source>
-        <translation type="unfinished"></translation>
+        <translation>Distanza Clustering (px):</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/RenderingTab.py" line="237"/>
         <source>Maximum distance between detection centers to merge them (0-500 pixels).
 Lower values = only merge very close detections.
 Higher values = merge detections that are farther apart (may over-merge).</source>
-        <translation type="unfinished"></translation>
+        <translation>Distanza massima tra i centri di rilevamento per unirli (0-500 pixel).
+Valori più bassi = unisce solo rilevamenti molto vicini.
+Valori più alti = unisce rilevamenti più distanti (può unire troppo).</translation>
     </message>
 </context>
 <context>
@@ -9687,12 +10182,12 @@ Puoi cambiarlo più avanti nelle Preferenze o cliccando il nome del revisore nel
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmPage.py" line="90"/>
         <source>Are you primarily looking for a person?</source>
-        <translation type="unfinished"></translation>
+        <translation>Stai cercando principalmente una persona?</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmPage.py" line="156"/>
         <source>Do you know a distinctive target color?</source>
-        <translation type="unfinished"></translation>
+        <translation>Conosci un colore distintivo del target?</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmPage.py" line="181"/>
@@ -9707,7 +10202,7 @@ Puoi cambiarlo più avanti nelle Preferenze o cliccando il nome del revisore nel
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmPage.py" line="183"/>
         <source>AI Person Detector</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevatore Persone AI</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmPage.py" line="186"/>
@@ -9718,7 +10213,8 @@ Puoi cambiarlo più avanti nelle Preferenze o cliccando il nome del revisore nel
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmPage.py" line="191"/>
         <source>{result}
 Secondary Recommendation: {secondary}</source>
-        <translation type="unfinished"></translation>
+        <translation>{result}
+Raccomandazione secondaria: {secondary}</translation>
     </message>
 </context>
 <context>
@@ -9736,7 +10232,7 @@ Secondary Recommendation: {secondary}</source>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmParametersPage.py" line="183"/>
         <source>AI Person Detector</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevatore Persone AI</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamAlgorithmParametersPage.py" line="190"/>
@@ -9794,43 +10290,43 @@ Secondary Recommendation: {secondary}</source>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="269"/>
         <source>Click Scan to detect available capture devices, then select one from the dropdown.</source>
-        <translation type="unfinished"></translation>
+        <translation>Clicca su Scansiona per rilevare i dispositivi di acquisizione disponibili e seleziona quello desiderato dal menu a discesa.</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="271"/>
         <source>Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo:</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="272"/>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="292"/>
         <source>OpenCV not available</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenCV non disponibile</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="298"/>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="301"/>
         <source>Scanning...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scansione in corso...</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="325"/>
         <source>Scan</source>
-        <translation type="unfinished"></translation>
+        <translation>Scansiona</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="331"/>
         <source>No capture devices found</source>
-        <translation type="unfinished">Nessun dispositivo di acquisizione trovato</translation>
+        <translation>Nessun dispositivo di acquisizione trovato</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="338"/>
         <source>Device {index} ({backend})</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo {index} ({backend})</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamConnectionPage.py" line="278"/>
@@ -10017,12 +10513,12 @@ Formati supportati: MP4, AVI, MOV, MKV, FLV, WMV, M4V, 3GP, WebM</translation>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="918"/>
         <source>Source FPS: --</source>
-        <translation type="unfinished"></translation>
+        <translation>FPS Sorgente: --</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="919"/>
         <source>Source frame rate and the applied processing cadence</source>
-        <translation type="unfinished"></translation>
+        <translation>Frame rate della sorgente e cadenza di elaborazione applicata</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="920"/>
@@ -10191,27 +10687,27 @@ Formati supportati: MP4, AVI, MOV, MKV, FLV, WMV, M4V, 3GP, WebM</translation>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1205"/>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1208"/>
         <source>Scanning...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scansione in corso...</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1232"/>
         <source>Scan</source>
-        <translation type="unfinished"></translation>
+        <translation>Scansiona</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1245"/>
         <source>Device {index} ({backend})</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo {index} ({backend})</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1298"/>
         <source>Source FPS: {source:.1f} (Applied {applied:.1f})</source>
-        <translation type="unfinished"></translation>
+        <translation>FPS Sorgente: {source:.1f} (Applicati {applied:.1f})</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1305"/>
         <source>Source FPS: {fps:.1f}</source>
-        <translation type="unfinished"></translation>
+        <translation>FPS Sorgente: {fps:.1f}</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1238"/>
@@ -10277,62 +10773,62 @@ Formati supportati: MP4, AVI, MOV, MKV, FLV, WMV, M4V, 3GP, WebM</translation>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="66"/>
         <source>Select Drone/Camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona Drone/Fotocamera</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="70"/>
         <source>No drones available</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun drone disponibile</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="112"/>
         <source>Other</source>
-        <translation type="unfinished"></translation>
+        <translation>Altro</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="148"/>
         <source>Error loading drone data</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore nel caricamento dei dati del drone</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="222"/>
         <source>-- (Invalid camera data)</source>
-        <translation type="unfinished"></translation>
+        <translation>-- (Dati fotocamera non validi)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="423"/>
         <source>{sensor_name}: Sensor dimensions not available</source>
-        <translation type="unfinished"></translation>
+        <translation>{sensor_name}: dimensioni del sensore non disponibili</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="430"/>
         <source>-- (Missing camera data)</source>
-        <translation type="unfinished"></translation>
+        <translation>-- (Dati fotocamera mancanti)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="431"/>
         <source>Unable to calculate GSD. Sensor dimensions are required.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile calcolare il GSD. Sono richieste le dimensioni del sensore.</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="437"/>
         <source>-- (Error)</source>
-        <translation type="unfinished"></translation>
+        <translation>-- (Errore)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="468"/>
         <source>Sensor {n}</source>
-        <translation type="unfinished"></translation>
+        <translation>Sensore {n}</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="470"/>
         <source>Primary</source>
-        <translation type="unfinished"></translation>
+        <translation>Principale</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/guidePages/StreamImageCapturePage.py" line="472"/>
         <source>Sensor</source>
-        <translation type="unfinished"></translation>
+        <translation>Sensore</translation>
     </message>
 </context>
 <context>
@@ -10433,7 +10929,7 @@ Formati supportati: MP4, AVI, MOV, MKV, FLV, WMV, M4V, 3GP, WebM</translation>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="245"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifica Aggiornamenti</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="246"/>
@@ -10563,7 +11059,7 @@ i falsi positivi ma ritardano la comparsa del rilevamento.</translation>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="498"/>
         <source>Device {index}</source>
-        <translation type="unfinished">Dispositivo {index}</translation>
+        <translation>Dispositivo {index}</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="687"/>
@@ -10641,7 +11137,7 @@ i falsi positivi ma ritardano la comparsa del rilevamento.</translation>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="1435"/>
         <source>No Stream Connected</source>
-        <translation type="unfinished">Nessuno Stream Connesso</translation>
+        <translation>Nessuno Stream Connesso</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="1445"/>
@@ -10711,7 +11207,7 @@ i falsi positivi ma ritardano la comparsa del rilevamento.</translation>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="1796"/>
         <source>Duration: {duration:.1f}s | FPS: {fps:.1f} | Frames: {frames} | Queue: {queue}</source>
-        <translation type="unfinished"></translation>
+        <translation>Durata: {duration:.1f}s | FPS: {fps:.1f} | Frame: {frames} | Coda: {queue}</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/streaming/StreamViewerWindow.py" line="1814"/>
@@ -11587,18 +12083,18 @@ Aggressivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="97"/>
         <source>No histogram data available</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun dato istogramma disponibile</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="435"/>
         <source>All Pixels</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutti i Pixel</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="446"/>
         <location filename="../app/core/views/images/viewer/widgets/ThermalHistogramChart.py" line="457"/>
         <source>AOI Pixels</source>
-        <translation type="unfinished"></translation>
+        <translation>Pixel AOI</translation>
     </message>
 </context>
 <context>
@@ -11606,12 +12102,12 @@ Aggressivo</translation>
     <message>
         <location filename="../app/core/controllers/images/viewer/ThermalHistogramController.py" line="32"/>
         <source>Thermal Histogram Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Istogramma Termico Non Disponibile</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/viewer/ThermalHistogramController.py" line="33"/>
         <source>No thermal temperature data is available for the current image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Per l'immagine corrente non sono disponibili dati di temperatura termica.</translation>
     </message>
 </context>
 <context>
@@ -11619,51 +12115,51 @@ Aggressivo</translation>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="14"/>
         <source>Thermal Histogram</source>
-        <translation type="unfinished"></translation>
+        <translation>Istogramma Termico</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="23"/>
         <source>Gray bars show the full temperature distribution, orange bars mark AOI/anomaly bins, and hovering the chart highlights matching pixels in the image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le barre grigie mostrano la distribuzione completa delle temperature, quelle arancioni indicano i bin di AOI/anomalie e passando il mouse sul grafico vengono evidenziati i pixel corrispondenti nell'immagine.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="32"/>
         <source>Drag on the histogram to zoom. Double-click or use Reset Zoom to return to the full range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Trascina sull'istogramma per fare zoom. Doppio clic o "Reimposta zoom" per tornare all'intervallo completo.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="52"/>
         <source>Reset Zoom</source>
-        <translation type="unfinished">Reimposta zoom</translation>
+        <translation>Reimposta zoom</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="64"/>
         <source>Visible Temperature Range</source>
-        <translation type="unfinished"></translation>
+        <translation>Intervallo Temperature Visibile</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="75"/>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="59"/>
         <source>Minimum: --</source>
-        <translation type="unfinished">Minimo: --</translation>
+        <translation>Minimo: --</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="82"/>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="60"/>
         <source>Maximum: --</source>
-        <translation type="unfinished">Massimo: --</translation>
+        <translation>Massimo: --</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="105"/>
         <source>Reset Range</source>
-        <translation type="unfinished">Reimposta intervallo</translation>
+        <translation>Reimposta intervallo</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/ThermalHistogramDialog.ui" line="117"/>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="61"/>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="126"/>
         <source>Hover over the histogram to inspect a temperature band.</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa il mouse sull'istogramma per ispezionare una banda di temperatura.</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="30"/>
@@ -11673,17 +12169,17 @@ Aggressivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="131"/>
         <source>Hover band: {lower:.1f} to {upper:.1f} °{unit}</source>
-        <translation type="unfinished"></translation>
+        <translation>Banda evidenziata: da {lower:.1f} a {upper:.1f} °{unit}</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="141"/>
         <source>Minimum: {minimum:.1f} °{unit}</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimo: {minimum:.1f} °{unit}</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/ThermalHistogramDialog.py" line="147"/>
         <source>Maximum: {maximum:.1f} °{unit}</source>
-        <translation type="unfinished"></translation>
+        <translation>Massimo: {maximum:.1f} °{unit}</translation>
     </message>
 </context>
 <context>
@@ -11802,18 +12298,19 @@ Il rilevamento avviene per i pixel compresi tra la temperatura minima e massima 
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="14"/>
         <source>Form</source>
-        <translation type="unfinished">Modulo</translation>
+        <translation>Modulo</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="29"/>
         <source>Type of local thermal residual anomaly to detect in radiometric imagery.
 Determines whether to find warm anomalies, cool anomalies, or both.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di anomalia termica residua locale da rilevare nelle immagini radiometriche.
+Determina se cercare anomalie calde, fredde o entrambe.</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="33"/>
         <source>Anomaly Type:</source>
-        <translation type="unfinished">Tipo di Anomalia:</translation>
+        <translation>Tipo di Anomalia:</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="45"/>
@@ -11822,22 +12319,26 @@ Determines whether to find warm anomalies, cool anomalies, or both.</source>
 • Above Mean: Only detects hot spots (temperatures above average)
 • Below Mean: Only detects cold spots (temperatures below average)
 The algorithm compares each pixel&apos;s temperature to its local background estimate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona il tipo di anomalia termica residua da rilevare:
+• Sopra o Sotto la Media: rileva sia anomalie calde che fredde (predefinito)
+• Sopra la Media: rileva solo punti caldi (temperature superiori alla media)
+• Sotto la Media: rileva solo punti freddi (temperature inferiori alla media)
+L'algoritmo confronta la temperatura di ogni pixel con la stima locale del fondo.</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="53"/>
         <source>Above or Below Mean</source>
-        <translation type="unfinished">Sopra o Sotto la Media</translation>
+        <translation>Sopra o Sotto la Media</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="58"/>
         <source>Above Mean</source>
-        <translation type="unfinished">Sopra la Media</translation>
+        <translation>Sopra la Media</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="63"/>
         <source>Below Mean</source>
-        <translation type="unfinished">Sotto la Media</translation>
+        <translation>Sotto la Media</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="92"/>
@@ -11846,12 +12347,16 @@ The algorithm compares each pixel&apos;s temperature to its local background est
 • Default: 5
 Lower values are more conservative (fewer detections).
 Higher values are more aggressive (more detections).</source>
-        <translation type="unfinished"></translation>
+        <translation>Sensibilità di rilevamento per le anomalie termiche residue.
+• Intervallo: da 1 a 10
+• Predefinito: 5
+Valori più bassi sono più conservativi (meno rilevamenti).
+Valori più alti sono più aggressivi (più rilevamenti).</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="99"/>
         <source>Sensitivity:</source>
-        <translation type="unfinished">Sensibilità:</translation>
+        <translation>Sensibilità:</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="112"/>
@@ -11859,17 +12364,20 @@ Higher values are more aggressive (more detections).</source>
 • 1-3: Conservative
 • 4-6: Moderate
 • 7-10: Aggressive</source>
-        <translation type="unfinished"></translation>
+        <translation>Regola la sensibilità di rilevamento per le anomalie termiche residue locali.
+• 1-3: conservativo
+• 4-6: moderato
+• 7-10: aggressivo</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="153"/>
         <source>Current sensitivity level for residual anomaly detection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Livello di sensibilità attuale per il rilevamento delle anomalie residue.</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomaly.ui" line="156"/>
         <source>5</source>
-        <translation type="unfinished">5</translation>
+        <translation>5</translation>
     </message>
 </context>
 <context>
@@ -11877,32 +12385,32 @@ Higher values are more aggressive (more detections).</source>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomalyWizard.ui" line="37"/>
         <source>What type of anomalies are you looking for?</source>
-        <translation type="unfinished">Che tipo di anomalie stai cercando?</translation>
+        <translation>Che tipo di anomalie stai cercando?</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomalyWizard.ui" line="54"/>
         <source>Warmer than surroundings</source>
-        <translation type="unfinished">Più caldo dell&apos;ambiente circostante</translation>
+        <translation>Più caldo dell&apos;ambiente circostante</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomalyWizard.ui" line="66"/>
         <source>Cooler than surroundings</source>
-        <translation type="unfinished">Più freddo dell&apos;ambiente circostante</translation>
+        <translation>Più freddo dell&apos;ambiente circostante</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomalyWizard.ui" line="78"/>
         <source>Both</source>
-        <translation type="unfinished">Entrambi</translation>
+        <translation>Entrambi</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomalyWizard.ui" line="117"/>
         <source>How aggressively should ADIAT be searching for anomalies?</source>
-        <translation type="unfinished">Quanto aggressivamente dovrebbe ADIAT cercare le anomalie?</translation>
+        <translation>Quanto aggressivamente dovrebbe ADIAT cercare le anomalie?</translation>
     </message>
     <message>
         <location filename="../resources/views/algorithms/ThermalResidualAnomalyWizard.ui" line="130"/>
         <source>Note: A higher setting will find more potential anomalies but may also increase false positives.</source>
-        <translation type="unfinished">Nota: un&apos;impostazione più alta troverà più potenziali anomalie ma potrebbe anche aumentare i falsi positivi.</translation>
+        <translation>Nota: un&apos;impostazione più alta troverà più potenziali anomalie ma potrebbe anche aumentare i falsi positivi.</translation>
     </message>
 </context>
 <context>
@@ -11911,29 +12419,29 @@ Higher values are more aggressive (more detections).</source>
         <location filename="../app/algorithms/images/ThermalResidualAnomaly/controllers/ThermalResidualAnomalyWizardController.py" line="33"/>
         <source>Very 
 Conservative</source>
-        <translation type="unfinished">Molto 
+        <translation>Molto 
 Conservativo</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/ThermalResidualAnomaly/controllers/ThermalResidualAnomalyWizardController.py" line="34"/>
         <source>Conservative</source>
-        <translation type="unfinished">Conservativo</translation>
+        <translation>Conservativo</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/ThermalResidualAnomaly/controllers/ThermalResidualAnomalyWizardController.py" line="35"/>
         <source>Moderate</source>
-        <translation type="unfinished">Moderato</translation>
+        <translation>Moderato</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/ThermalResidualAnomaly/controllers/ThermalResidualAnomalyWizardController.py" line="36"/>
         <source>Aggressive</source>
-        <translation type="unfinished">Aggressivo</translation>
+        <translation>Aggressivo</translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/ThermalResidualAnomaly/controllers/ThermalResidualAnomalyWizardController.py" line="37"/>
         <source>Very 
 Aggressive</source>
-        <translation type="unfinished">Molto 
+        <translation>Molto 
 Aggressivo</translation>
     </message>
 </context>
@@ -11942,12 +12450,12 @@ Aggressivo</translation>
     <message>
         <location filename="../app/core/views/streaming/components/TrackGalleryWidget.py" line="41"/>
         <source>Detection Gallery</source>
-        <translation type="unfinished"></translation>
+        <translation>Galleria Rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/TrackGalleryWidget.py" line="82"/>
         <source>0 detections</source>
-        <translation type="unfinished"></translation>
+        <translation>0 rilevamenti</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/TrackGalleryWidget.py" line="149"/>
@@ -12179,17 +12687,17 @@ Aggressivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/UpscaleDialog.py" line="233"/>
         <source>Auto (Recommended)</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatico (Consigliato)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/UpscaleDialog.py" line="234"/>
         <source>Fast (Lanczos)</source>
-        <translation type="unfinished"></translation>
+        <translation>Veloce (Lanczos)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/UpscaleDialog.py" line="236"/>
         <source>Balanced (OpenCV EDSR)</source>
-        <translation type="unfinished"></translation>
+        <translation>Bilanciato (OpenCV EDSR)</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/UpscaleDialog.py" line="264"/>
@@ -12214,7 +12722,7 @@ Aggressivo</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/UpscaleDialog.py" line="302"/>
         <source>Resolution: {width} × {height} pixels | Original: {orig_w} × {orig_h} pixels | Upscale: {level}x | Use mouse wheel to zoom, right-click to pan</source>
-        <translation type="unfinished"></translation>
+        <translation>Risoluzione: {width} × {height} pixel | Originale: {orig_w} × {orig_h} pixel | Upscale: {level}x | Usa la rotella del mouse per lo zoom, tasto destro per spostare</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/UpscaleDialog.py" line="375"/>
@@ -12358,17 +12866,20 @@ Clicca il pulsante Seleziona per cercare un file video.</translation>
 Supports DJI SRT subtitle files and Skydio CSV flight logs.
 Optional: Provides location information for extracted frames.
 Without a metadata file, frames will have no GPS data.</source>
-        <translation type="unfinished"></translation>
+        <translation>File di metadati contenente i dati di telemetria GPS.
+Supporta file di sottotitoli SRT DJI e log di volo CSV Skydio.
+Opzionale: fornisce informazioni di localizzazione per i frame estratti.
+Senza un file di metadati, i frame non avranno dati GPS.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/VideoParser.ui" line="68"/>
         <source>The metadata file contains timestamped GPS information for the video.  It is optional, but without it output images won&apos;t include location information.  Supports SRT (DJI) and CSV (Skydio) formats.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file di metadati contiene informazioni GPS con timestamp per il video. È opzionale, ma senza di esso le immagini in uscita non includeranno informazioni di localizzazione. Supporta i formati SRT (DJI) e CSV (Skydio).</translation>
     </message>
     <message>
         <location filename="../resources/views/images/VideoParser.ui" line="71"/>
         <source>Metadata File (optional): </source>
-        <translation type="unfinished"></translation>
+        <translation>File di Metadati (opzionale): </translation>
     </message>
     <message>
         <location filename="../resources/views/images/VideoParser.ui" line="83"/>
@@ -12435,14 +12946,19 @@ Apre una finestra di selezione file per video (MP4, AVI, MOV, ecc.).</translatio
 Supports DJI SRT subtitle files and Skydio CSV flight logs.
 If provided, extracted frames will include GPS metadata (latitude, longitude, altitude).
 Can be left empty if location data is not needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorso del file di metadati opzionale con dati di telemetria GPS.
+Supporta file di sottotitoli SRT DJI e log di volo CSV Skydio.
+Se fornito, i frame estratti includeranno metadati GPS (latitudine, longitudine, altitudine).
+Può essere lasciato vuoto se i dati di localizzazione non sono necessari.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/VideoParser.ui" line="195"/>
         <source>Browse for optional metadata file containing GPS telemetry.
 Supports DJI SRT subtitle files and Skydio CSV flight logs.
 Opens a file selection dialog for SRT and CSV files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sfoglia per scegliere un file di metadati opzionale contenente la telemetria GPS.
+Supporta file di sottotitoli SRT DJI e log di volo CSV Skydio.
+Apre una finestra di dialogo per la selezione di file SRT e CSV.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/VideoParser.ui" line="301"/>
@@ -12453,7 +12969,13 @@ Requirements:
 • Time interval must be set (default: 5 seconds)
 The process will extract frames at the specified interval and save them as images.
 If a metadata file (SRT or CSV) is provided, GPS metadata will be embedded in the extracted frames.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia l'estrazione dei frame dal file video.
+Requisiti:
+• Il file video deve essere selezionato
+• La cartella di output deve essere selezionata
+• L'intervallo di tempo deve essere impostato (predefinito: 5 secondi)
+Il processo estrarrà i frame all'intervallo specificato e li salverà come immagini.
+Se viene fornito un file di metadati (SRT o CSV), i metadati GPS verranno incorporati nei frame estratti.</translation>
     </message>
     <message>
         <location filename="../resources/views/images/VideoParser.ui" line="219"/>
@@ -12537,12 +13059,12 @@ Mostra il totale dei fotogrammi estratti al termine.</translation>
     <message>
         <location filename="../app/core/controllers/images/VideoParser.py" line="72"/>
         <source>Select a Metadata File</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona un File di Metadati</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/VideoParser.py" line="73"/>
         <source>Metadata Files (*.srt *.csv);;SRT Files (*.srt);;CSV Flight Logs (*.csv)</source>
-        <translation type="unfinished"></translation>
+        <translation>File di metadati (*.srt *.csv);;File SRT (*.srt);;Log di volo CSV (*.csv)</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/VideoParser.py" line="90"/>
@@ -12590,22 +13112,22 @@ Mostra il totale dei fotogrammi estratti al termine.</translation>
     <message>
         <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="46"/>
         <source>Play/Pause (Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Riproduci/Pausa (Spazio)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="59"/>
         <source>Drag to seek through video</source>
-        <translation type="unfinished"></translation>
+        <translation>Trascina per navigare nel video</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="100"/>
         <source>Pause (Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pausa (Spazio)</translation>
     </message>
     <message>
         <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="100"/>
         <source>Play (Space)</source>
-        <translation type="unfinished"></translation>
+        <translation>Riproduci (Spazio)</translation>
     </message>
 </context>
 <context>
@@ -12667,7 +13189,7 @@ Mostra tutte le AOI di tutte le immagini in una vista a griglia</translation>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="299"/>
         <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1023"/>
         <source>Open Histogram</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri Istogramma</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="322"/>
@@ -12753,7 +13275,7 @@ Mostra tutte le AOI di tutte le immagini in una vista a griglia</translation>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="565"/>
         <source>Plan Verification (T)</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifica del Piano (T)</translation>
     </message>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="613"/>
@@ -13010,14 +13532,16 @@ Per selezionare questa AOI, cancella o regola i tuoi filtri.</translation>
     <message>
         <location filename="../app/core/controllers/images/viewer/Viewer.py" line="894"/>
         <source>Update Image Dimensions</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna Dimensioni Immagini</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/viewer/Viewer.py" line="896"/>
         <source>This dataset is missing image dimensions needed for heatmap filtering ({count} images).
 
 Would you like to read dimensions from the image files and update the results file?</source>
-        <translation type="unfinished"></translation>
+        <translation>In questo dataset mancano le dimensioni delle immagini necessarie per il filtraggio tramite heatmap ({count} immagini).
+
+Vuoi leggere le dimensioni dai file immagine e aggiornare il file dei risultati?</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1014"/>
@@ -13069,42 +13593,42 @@ Installalo usando: pip install qimage2ndarray</translation>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="44"/>
         <source>Wingtra Data Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importazione Dati Wingtra</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="54"/>
         <source>Import Summary</source>
-        <translation type="unfinished"></translation>
+        <translation>Riepilogo Importazione</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="58"/>
         <source>&lt;b&gt;Matched images:&lt;/b&gt; {matched}&lt;br&gt;&lt;b&gt;CSV entries without match:&lt;/b&gt; {unmatched_csv}&lt;br&gt;&lt;b&gt;Result images without CSV data:&lt;/b&gt; {unmatched_images}</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Immagini abbinate:&lt;/b&gt; {matched}&lt;br&gt;&lt;b&gt;Voci CSV senza corrispondenza:&lt;/b&gt; {unmatched_csv}&lt;br&gt;&lt;b&gt;Immagini di risultato senza dati CSV:&lt;/b&gt; {unmatched_images}</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="73"/>
         <source>Altitude &amp; GSD</source>
-        <translation type="unfinished"></translation>
+        <translation>Altitudine &amp; GSD</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="78"/>
         <source>&lt;b&gt;AGL computed from terrain:&lt;/b&gt; {agl_count} of {matched_count} images&lt;br&gt;&lt;br&gt;Per-image AGL is derived from the CSV altitude (ASL) minus terrain elevation at each GPS location. GSD will be calculated automatically using the camera sensor data and focal length.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;AGL calcolata dal terreno:&lt;/b&gt; {agl_count} di {matched_count} immagini&lt;br&gt;&lt;br&gt;L'AGL per immagine è derivata dall'altitudine CSV (ASL) meno la quota del terreno in corrispondenza di ciascuna posizione GPS. Il GSD verrà calcolato automaticamente usando i dati del sensore della fotocamera e la lunghezza focale.</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="89"/>
         <source>&lt;b&gt;Terrain data unavailable&lt;/b&gt; - AGL could not be computed.&lt;br&gt;&lt;br&gt;Orientation (yaw/pitch/roll) will still be applied from the CSV. GSD and altitude displays require terrain data or a manual altitude override (Shift+O) after import.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Dati del terreno non disponibili&lt;/b&gt; - impossibile calcolare l'AGL.&lt;br&gt;&lt;br&gt;L'orientamento (yaw/pitch/roll) verrà comunque applicato dal CSV. Le visualizzazioni di GSD e altitudine richiedono i dati del terreno o un override manuale dell'altitudine (Maiusc+O) dopo l'importazione.</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="106"/>
         <source>Cancel</source>
-        <translation type="unfinished">Annulla</translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/WingtraDataDialog.py" line="110"/>
         <source>Apply Wingtra Data</source>
-        <translation type="unfinished"></translation>
+        <translation>Applica Dati Wingtra</translation>
     </message>
 </context>
 <context>
