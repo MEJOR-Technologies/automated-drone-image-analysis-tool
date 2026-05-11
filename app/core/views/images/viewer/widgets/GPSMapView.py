@@ -601,9 +601,14 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             is_hidden = data.get('hidden', False)
             aoi_count = data.get('aoi_count', 0)
             has_flagged = data.get('has_flagged', False)
+            is_source_only = data.get('is_source_only', False)
 
             if is_current:
                 size, color, border_color, border_width, z_value = 12, self.aoi_color, QColor(0, 0, 0), 2, 20
+            elif is_source_only:
+                # Non-AOI source captures: small grey dots beneath AOI markers,
+                # no border, no click target. Just enough to trace the flight path.
+                size, color, border_color, border_width, z_value = 4, QColor(140, 140, 140), QColor(140, 140, 140), 0, 6
             elif is_hidden:
                 size, color, border_color, border_width, z_value = 6, QColor(200, 200, 200), QColor(150, 150, 150), 1, 8
             elif has_flagged:
@@ -620,18 +625,25 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             point_item.setPen(QPen(border_color, border_width))
             point_item.setZValue(z_value)
             point_item.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
-            point_item.setData(0, data['index'])
-            point_item.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsSelectable)
-            point_item.setCursor(Qt.CursorShape.PointingHandCursor)
+            # Source-only entries store None — mousePressEvent skips clicks with index=None.
+            point_item.setData(0, data.get('index'))
+            if not is_source_only:
+                point_item.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsSelectable)
+                point_item.setCursor(Qt.CursorShape.PointingHandCursor)
 
             # Tooltip
-            tooltip = f"{data['name']}\nImage {data['index'] + 1}\n"
-            if is_hidden:
-                tooltip += "Status: Hidden\n"
-            if has_flagged:
-                tooltip += "🚩 Has flagged AOIs\n"
-            tooltip += f"AOIs: {aoi_count}\nLat: {data['latitude']:.6f}\nLon: {data['longitude']:.6f}"
-            point_item.setToolTip(tooltip)
+            if is_source_only:
+                point_item.setToolTip(
+                    f"{data['name']}\nLat: {data['latitude']:.6f}\nLon: {data['longitude']:.6f}"
+                )
+            else:
+                tooltip = f"{data['name']}\nImage {data['index'] + 1}\n"
+                if is_hidden:
+                    tooltip += "Status: Hidden\n"
+                if has_flagged:
+                    tooltip += "🚩 Has flagged AOIs\n"
+                tooltip += f"AOIs: {aoi_count}\nLat: {data['latitude']:.6f}\nLon: {data['longitude']:.6f}"
+                point_item.setToolTip(tooltip)
 
             self.scene.addItem(point_item)
             self.point_items.append(point_item)
@@ -693,13 +705,17 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                 is_hidden = data.get('hidden', False)
                 aoi_count = data.get('aoi_count', 0)
                 has_flagged = data.get('has_flagged', False)
+                is_source_only = data.get('is_source_only', False)
             else:
                 is_hidden = False
                 aoi_count = 0
                 has_flagged = False
+                is_source_only = False
 
-            if is_current:
+            if is_current and not is_source_only:
                 size, color, border_color, border_width, z_value = 12, self.aoi_color, QColor(0, 0, 0), 2, 20
+            elif is_source_only:
+                size, color, border_color, border_width, z_value = 4, QColor(140, 140, 140), QColor(140, 140, 140), 0, 6
             elif is_hidden:
                 size, color, border_color, border_width, z_value = 6, QColor(200, 200, 200), QColor(150, 150, 150), 1, 8
             elif has_flagged:
@@ -1376,6 +1392,12 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             yaw = image_service.get_camera_yaw()
             if yaw is None:
                 yaw = bearing
+            # Pull gimbal roll for fixed-wing rigs (WALDO ±22.5°). Skip the
+            # DJI "inverted gimbal" >90° pattern; get_camera_yaw already
+            # compensates that by flipping yaw 180°.
+            roll = image_service.get_gimbal_roll() or 0.0
+            if abs(roll) > 90.0:
+                roll = 0.0
 
             # Match AOIService.estimate_aoi_gps altitude determination exactly
             if custom_alt and custom_alt > 0:
@@ -1449,7 +1471,7 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                     result = AOIService._calculate_ground_position(
                         image_lat, image_lon, u, v, cx, cy,
                         width, height, focal_mm, sensor_w_mm, sensor_h_mm,
-                        effective_agl, pitch, yaw
+                        effective_agl, pitch, yaw, roll
                     )
                     if result is None:
                         raycast_ok = False
@@ -1472,7 +1494,7 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                                 refined = AOIService._calculate_ground_position(
                                     image_lat, image_lon, u, v, cx, cy,
                                     width, height, focal_mm, sensor_w_mm, sensor_h_mm,
-                                    pt_agl, pitch, yaw
+                                    pt_agl, pitch, yaw, roll
                                 )
                                 if refined is None:
                                     break
@@ -1499,6 +1521,7 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                         'cy': cy,
                         'pitch': pitch,
                         'yaw': yaw,
+                        'roll': roll,
                         'effective_agl': effective_agl,
                         'drone_absolute_elev': drone_absolute_elev,
                         'terrain_res_m': terrain_res_m,
@@ -1601,13 +1624,15 @@ class GPSMapView(TranslationMixin, QGraphicsView):
 
                 edge_gps = []
                 raycast_ok = True
+                roll_cached = cache.get('roll', 0.0)
                 for u, v in edge_pixels:
                     result = AOIService._calculate_ground_position(
                         image_lat, image_lon, u, v,
                         cache['cx'], cache['cy'],
                         imgWidth, imgHeight,
                         cache['focal_mm'], cache['sensor_w_mm'], cache['sensor_h_mm'],
-                        cache['effective_agl'], cache['pitch'], cache['yaw']
+                        cache['effective_agl'], cache['pitch'], cache['yaw'],
+                        roll_cached
                     )
                     if result is None:
                         raycast_ok = False
@@ -1634,7 +1659,8 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                                             cache['cx'], cache['cy'],
                                             imgWidth, imgHeight,
                                             cache['focal_mm'], cache['sensor_w_mm'], cache['sensor_h_mm'],
-                                            pt_agl, cache['pitch'], cache['yaw']
+                                            pt_agl, cache['pitch'], cache['yaw'],
+                                            roll_cached
                                         )
                                         if refined is None:
                                             break

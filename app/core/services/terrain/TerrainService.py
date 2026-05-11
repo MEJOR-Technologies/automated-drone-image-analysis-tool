@@ -17,6 +17,7 @@ from core.services.LoggerService import LoggerService
 from .TerrainCacheService import TerrainCacheService
 from .GeoidService import GeoidService
 from .ElevationProvider import TerrariumProvider
+from .TerrainProviderFactory import TerrainProviderFactory, DEFAULT_PROVIDER_ID
 
 
 @dataclass
@@ -69,31 +70,88 @@ class TerrainService:
         14: 9.5,  # ~9.5m
     }
 
-    def __init__(self, cache_dir: Optional[str] = None, enable_geoid: bool = True):
+    def __init__(self, cache_dir: Optional[str] = None, enable_geoid: bool = True,
+                 provider_id: Optional[str] = None, settings_service=None):
         """
         Initialize the TerrainService.
 
         Args:
             cache_dir: Custom cache directory
             enable_geoid: Whether to load geoid data for height conversions
+            provider_id: Provider identifier (e.g. 'terrarium', 'usgs_3dep_local').
+                If None, reads 'TerrainProviderId' from settings_service or
+                defaults to Terrarium.
+            settings_service: SettingsService used to load provider-specific
+                config (e.g. 3DEP manifest/tiles paths). Lazy-imported when None.
         """
         self.logger = LoggerService()
         self.zoom = self.DEFAULT_ZOOM
+        self._cache_dir = cache_dir
+        self._enable_geoid = enable_geoid
 
-        # Initialize sub-services
-        self.provider = TerrariumProvider()
-        self.cache = TerrainCacheService(cache_dir=cache_dir, provider=self.provider)
+        if settings_service is None:
+            try:
+                from core.services.SettingsService import SettingsService
+                settings_service = SettingsService()
+            except Exception:
+                settings_service = None
+        self._settings_service = settings_service
+
+        if provider_id is None and settings_service is not None:
+            provider_id = settings_service.get_setting(
+                'TerrainProviderId', DEFAULT_PROVIDER_ID
+            ) or DEFAULT_PROVIDER_ID
+
+        # Build provider + cache (cache only relevant for tiled_web providers)
+        self.provider = TerrainProviderFactory.create(provider_id, settings_service)
+        self.cache = self._build_cache()
 
         self._geoid: Optional[GeoidService] = None
         if enable_geoid:
             try:
+                cache_root = self.cache.cache_dir if self.cache is not None else None
                 self._geoid = GeoidService(
-                    cache_dir=str(self.cache.cache_dir / 'geoid') if cache_dir else None
+                    cache_dir=str(cache_root / 'geoid') if (cache_root and cache_dir) else None
                 )
             except Exception as e:
                 self.logger.warning(f"Failed to initialize geoid service: {e}")
 
         self._enabled = True
+
+    def _build_cache(self) -> Optional[TerrainCacheService]:
+        """Construct a tile cache only for tiled_web providers."""
+        if self.provider.get_provider_kind() != 'tiled_web':
+            return None
+        return TerrainCacheService(cache_dir=self._cache_dir, provider=self.provider)
+
+    def set_provider(self, provider_id: str):
+        """Swap the active provider at runtime."""
+        # Close any datasets the previous local-geotiff provider holds open
+        prior_close = getattr(self.provider, 'close', None)
+        if callable(prior_close):
+            try:
+                prior_close()
+            except Exception:
+                pass
+        self.provider = TerrainProviderFactory.create(provider_id, self._settings_service)
+        self.cache = self._build_cache()
+
+    def warmup(self) -> None:
+        """Eagerly load the geoid grid and any provider-specific indices.
+
+        Called by long-running batch jobs (e.g. the WALDO pre-pass) so the
+        first elevation sample doesn't pay a multi-second stall while the
+        EGM96 grid loads from disk. Safe to call repeatedly.
+        """
+        if self._geoid is not None:
+            try:
+                self._geoid.is_available()
+            except Exception as e:
+                self.logger.warning(f"Geoid warmup failed: {e}")
+        try:
+            self.provider.warmup()
+        except Exception as e:
+            self.logger.warning(f"Provider warmup failed: {e}")
 
     @property
     def enabled(self) -> bool:
@@ -124,6 +182,25 @@ class TerrainService:
         if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
             self.logger.warning(f"Invalid coordinates: {lat}, {lon}")
             return self._create_error_result("Invalid coordinates")
+
+        # Local-GeoTIFF providers (e.g. USGS 3DEP) bypass the tile cache.
+        if self.provider.get_provider_kind() == 'local_geotiff':
+            elevation = self.provider.sample_elevation(lat, lon)
+            if elevation is None:
+                return self._create_flat_result(lat, lon)
+            geoid_undulation = None
+            if self._geoid:
+                geoid_undulation = self._geoid.get_undulation(lat, lon)
+            datum = self.provider.get_datum_info()
+            return ElevationResult(
+                elevation_m=elevation,
+                source='terrain',
+                geoid_undulation_m=geoid_undulation,
+                provider=self.provider.get_provider_name(),
+                zoom_level=None,
+                resolution_m=datum.get('resolution_m'),
+                from_cache=True,
+            )
 
         # Get tile coordinates
         tile_x, tile_y = self.provider.lat_lon_to_tile(lat, lon, self.zoom)
@@ -299,22 +376,30 @@ class TerrainService:
             radius_km: Radius in kilometers
 
         Returns:
-            Number of tiles downloaded
+            Number of tiles downloaded (0 for local-only providers).
         """
+        if self.cache is None:
+            return 0
         return self.cache.prefetch_tiles(lat, lon, radius_km, self.zoom)
 
     def is_terrain_available(self, lat: float, lon: float) -> bool:
-        """Check if terrain data is available for a location (from cache)."""
+        """Check if terrain data is available for a location (from cache or local index)."""
+        if self.provider.get_provider_kind() == 'local_geotiff':
+            return self.provider.lookup_tile(lat, lon) is not None
+        if self.cache is None:
+            return False
         tile_x, tile_y = self.provider.lat_lon_to_tile(lat, lon, self.zoom)
         return self.cache.is_tile_cached(self.zoom, tile_x, tile_y)
 
     def is_online(self) -> bool:
-        """Check if the terrain service is accessible online."""
+        """Check if the terrain service is accessible online (or local data is reachable)."""
+        if self.cache is None:
+            return self.provider.get_provider_kind() == 'local_geotiff'
         return self.cache.is_online()
 
     def get_service_info(self) -> Dict[str, Any]:
         """Get information about the terrain service."""
-        cache_info = self.cache.get_cache_info()
+        cache_info = self.cache.get_cache_info() if self.cache is not None else None
         geoid_info = self._geoid.get_cache_info() if self._geoid else None
 
         return {
@@ -328,7 +413,9 @@ class TerrainService:
         }
 
     def clear_cache(self) -> int:
-        """Clear all cached terrain data."""
+        """Clear all cached terrain data (no-op for local-only providers)."""
+        if self.cache is None:
+            return 0
         return self.cache.clear_cache()
 
     def set_zoom_level(self, zoom: int):

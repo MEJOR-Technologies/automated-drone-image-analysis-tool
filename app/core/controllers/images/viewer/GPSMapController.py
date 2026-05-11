@@ -12,6 +12,7 @@ from core.services.LoggerService import LoggerService
 from core.services.image.ImageService import ImageService
 from core.services.image.AOIService import AOIService, _get_terrain_service
 from core.services.image.AOINeighborService import AOINeighborService
+from core.services.waldo import WaldoMetadataService
 from core.views.images.viewer.dialogs.GPSMapDialog import GPSMapDialog
 import piexif
 from datetime import datetime
@@ -104,64 +105,87 @@ class GPSMapController(QObject):
 
     def extract_gps_data(self):
         """
-        Extract GPS coordinates and timestamps from all images.
+        Extract GPS coordinates and timestamps from all source-folder images.
 
-        Populates self.gps_data with a list of dictionaries containing:
-        - index: Image index in the viewer
-        - latitude: GPS latitude
-        - longitude: GPS longitude
-        - timestamp: Image capture time
-        - name: Image filename
-        - has_aoi: Whether image has areas of interest
+        AOI-subset images keep their viewer index so clicks on the map jump to
+        the corresponding viewer slot. Source-only captures (in the original
+        flight folder but not in the result XML) are appended with index=None
+        and is_source_only=True so the renderer can paint them as small grey
+        dots and the click handler ignores them.
         """
         self.gps_data = []
 
-        for idx, image in enumerate(self.parent.images):
+        # Index AOI subset by path so we can look up the viewer position for any
+        # source-folder entry that did produce a detection.
+        aoi_by_path = {img['path']: (idx, img) for idx, img in enumerate(self.parent.images) if img.get('path')}
+
+        # Fall back to AOI-only iteration if source_images wasn't populated
+        # (e.g. on legacy code paths or if Viewer.__init__ short-circuited).
+        source_iterable = getattr(self.parent, 'source_images', None) or [
+            {'path': img['path'], 'name': img.get('name', ''), 'has_aoi': True}
+            for img in self.parent.images if img.get('path')
+        ]
+
+        for src_entry in source_iterable:
+            path = src_entry.get('path')
+            if not path:
+                continue
             try:
-                # Get EXIF data first, then extract GPS
-                # This bypasses the JPEG-only restriction in LocationInfo.get_gps()
-                exif_data = MetaDataHelper.get_exif_data_piexif(image['path'])
+                exif_data = MetaDataHelper.get_exif_data_piexif(path)
                 gps_coords = LocationInfo.get_gps(exif_data=exif_data)
+                if not gps_coords:
+                    continue
 
-                if gps_coords:
-                    # Extract timestamp from EXIF if available
-                    timestamp = self.get_image_timestamp_from_exif(exif_data)
+                timestamp = self.get_image_timestamp_from_exif(exif_data)
+                aoi_match = aoi_by_path.get(path)
 
-                    # Check if image has AOIs and count them
-                    has_aoi = 'areas_of_interest' in image and len(image['areas_of_interest']) > 0
+                if aoi_match is not None:
+                    idx, image = aoi_match
                     aoi_count = len(image.get('areas_of_interest', [])) if 'areas_of_interest' in image else 0
-
-                    # Check if image is hidden
-                    is_hidden = image.get('hidden', False)
-
-                    # Check if image has any flagged AOIs
-                    has_flagged = False
-                    if 'areas_of_interest' in image:
-                        for aoi in image['areas_of_interest']:
-                            if aoi.get('flagged', False):
-                                has_flagged = True
-                                break
-
-                    # Preserve bearing and AGL from image dict (e.g. injected by WingtraDataController)
-                    # rather than always defaulting to None which wipes out injected values.
+                    has_aoi = aoi_count > 0
+                    has_flagged = any(aoi.get('flagged', False) for aoi in image.get('areas_of_interest', []))
+                    # WALDO images: the XML's cached bearing was computed by
+                    # BearingRecoveryController before WALDO synthesised the XMP,
+                    # so it's stale. Force GPSMapView's lazy lookup to read the
+                    # authoritative Gimbal Yaw from the now-present XMP.
+                    is_waldo = WaldoMetadataService.is_waldo_image(path) is not None
+                    cached_bearing = None if is_waldo else image.get('bearing')
                     self.gps_data.append({
                         'index': idx,
                         'latitude': gps_coords['latitude'],
                         'longitude': gps_coords['longitude'],
                         'timestamp': timestamp,
-                        'name': image.get('name', f'Image {idx + 1}'),
+                        'name': image.get('name', src_entry.get('name', f'Image {idx + 1}')),
                         'has_aoi': has_aoi,
                         'aoi_count': aoi_count,
-                        'hidden': is_hidden,
+                        'hidden': image.get('hidden', False),
                         'has_flagged': has_flagged,
-                        'bearing': image.get('bearing'),
+                        'bearing': cached_bearing,
                         'wingtra_agl_ft': image.get('wingtra_agl_ft'),
-                        'image_path': image['path']
+                        'image_path': path,
+                        'is_source_only': False,
+                    })
+                else:
+                    # Source-only capture: display-only marker, no click target.
+                    self.gps_data.append({
+                        'index': None,
+                        'latitude': gps_coords['latitude'],
+                        'longitude': gps_coords['longitude'],
+                        'timestamp': timestamp,
+                        'name': src_entry.get('name', ''),
+                        'has_aoi': False,
+                        'aoi_count': 0,
+                        'hidden': False,
+                        'has_flagged': False,
+                        'bearing': None,
+                        'wingtra_agl_ft': None,
+                        'image_path': path,
+                        'is_source_only': True,
                     })
             except Exception as e:
-                self.logger.error(f"Could not extract GPS from image {idx}: {str(e)}")
+                self.logger.error(f"Could not extract GPS from {path}: {str(e)}")
 
-        # Sort by timestamp if available
+        # Sort by timestamp so the path line traces the actual flight order.
         self.gps_data.sort(key=lambda x: x['timestamp'] if x['timestamp'] else datetime.min)
 
     def get_image_timestamp_from_exif(self, exif_data):
@@ -295,7 +319,8 @@ class GPSMapController(QObject):
             other_indices = []
             for data in self.gps_data:
                 idx = data['index']
-                if idx == current_idx:
+                # Skip source-only entries (no AOI subset slot, so no image to open).
+                if idx is None or idx == current_idx:
                     continue
                 dlat = (data['latitude'] - lat) * 111320
                 dlon = (data['longitude'] - lon) * 111320 * math.cos(math.radians(lat))

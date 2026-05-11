@@ -141,10 +141,11 @@ def initialize_default_settings():
 
 
 def check_and_update_pickle_files(app_version):
-    """Check pickle file versions and update if necessary.
+    """Ensure the bundled drones.csv / xmp.csv lookup tables are present and current.
 
-    This function runs at application startup to ensure that pickle files
-    (drones.pkl and xmp.pkl) are up-to-date with the current app version.
+    Runs at startup. Re-copies the bundled file when the stored app version
+    advances; PickleHelper itself also auto-refreshes when the bundled
+    file's version header advertises a newer revision.
 
     Args:
         app_version (str): The current application version string.
@@ -155,27 +156,24 @@ def check_and_update_pickle_files(app_version):
     try:
         current_version = settings_service.get_setting('app_version')
 
-        # Copy drones.pkl if:
+        # Copy drones.csv if:
         # 1. No app version is stored (first run)
         # 2. No drone sensor file exists in AppData
         # 3. New app version is greater than stored version
         if current_version is None or PickleHelper.get_drone_sensor_file_version() is None:
-            PickleHelper.copy_pickle('drones.pkl')
-            # logger.info("Copied drones.pkl to AppData (first run or missing file)")
+            PickleHelper.copy_pickle('drones.csv')
         else:
             current_version_int = PickleHelper.version_to_int(current_version)
             new_version_int = PickleHelper.version_to_int(app_version)
             if new_version_int > current_version_int:
-                PickleHelper.copy_pickle('drones.pkl')
-                # logger.info(f"Updated drones.pkl to AppData (version upgrade: {current_version} -> {app_version})")
+                PickleHelper.copy_pickle('drones.csv')
 
-        # Ensure xmp.pkl exists
+        # Ensure xmp.csv exists
         if PickleHelper.get_xmp_mapping() is None:
-            PickleHelper.copy_pickle('xmp.pkl')
-            # logger.info("Copied xmp.pkl to AppData")
+            PickleHelper.copy_pickle('xmp.csv')
 
     except Exception as e:
-        logger.error(f"Error checking/updating pickle files: {e}")
+        logger.error(f"Error checking/updating data files: {e}")
 
 
 def main():

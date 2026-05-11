@@ -18,35 +18,53 @@ from core.services.LoggerService import LoggerService
 
 
 class ElevationProvider(ABC):
-    """Abstract base class for elevation data providers."""
+    """Abstract base class for elevation data providers.
 
-    @abstractmethod
+    Two provider kinds are supported:
+
+    * `'tiled_web'` — implements `get_tile_url` + `decode_elevation` (the
+      existing TerrainService cache path drives this).
+    * `'local_geotiff'` — implements `sample_elevation(lat, lon)` and is
+      consulted directly by TerrainService without a tile cache.
+    """
+
+    def get_provider_kind(self) -> str:
+        """Return the provider category used by TerrainService to dispatch.
+
+        Defaults to 'tiled_web' so existing subclasses (TerrariumProvider)
+        keep their original behaviour without an explicit override.
+        """
+        return 'tiled_web'
+
+    def warmup(self) -> None:
+        """Eagerly load any heavy state (manifests, indices) that would
+        otherwise stall the first sample call. Default no-op; tile-based
+        providers don't have anything to load up-front."""
+        return None
+
+    def sample_elevation(self, lat: float, lon: float) -> Optional[float]:
+        """Return orthometric elevation in meters at lat/lon, or None if unavailable.
+
+        Default raises NotImplementedError; required for `local_geotiff` providers.
+        Tile-based providers should leave this as the default and rely on the
+        TerrainService tile-cache path.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} did not override sample_elevation; "
+            "this is required for non-tile providers."
+        )
+
     def get_tile_url(self, z: int, x: int, y: int) -> str:
-        """Get the URL for a specific tile.
+        """Get the URL for a specific tile (tile-based providers only)."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} is not a tile-based provider."
+        )
 
-        Args:
-            z: Zoom level
-            x: Tile X coordinate
-            y: Tile Y coordinate
-
-        Returns:
-            URL string for the tile
-        """
-        pass
-
-    @abstractmethod
     def decode_elevation(self, image: Image.Image, pixel_x: int, pixel_y: int) -> float:
-        """Decode elevation value from a pixel in the tile image.
-
-        Args:
-            image: PIL Image of the tile
-            pixel_x: X coordinate within the tile (0-255)
-            pixel_y: Y coordinate within the tile (0-255)
-
-        Returns:
-            Elevation in meters
-        """
-        pass
+        """Decode elevation from a pixel (tile-based providers only)."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} is not a tile-based provider."
+        )
 
     @abstractmethod
     def get_provider_name(self) -> str:

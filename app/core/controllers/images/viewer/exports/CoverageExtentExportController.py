@@ -150,11 +150,15 @@ class CoverageExtentExportController(TranslationMixin):
             if not file_name:  # User cancelled
                 return
 
+            # Cover the full flight path, not just the AOI subset, so the exported
+            # polygon represents the entire surveyed area.
+            coverage_images = getattr(self.parent, 'source_images', None) or self.parent.images
+
             # Create progress dialog
             self.progress_dialog = ExportProgressDialog(
                 self.parent,
                 title=self.tr("Generating Coverage Extent KML"),
-                total_items=len(self.parent.images)
+                total_items=len(coverage_images)
             )
             self.progress_dialog.set_title(self.tr("Calculating coverage extent..."))
 
@@ -170,7 +174,7 @@ class CoverageExtentExportController(TranslationMixin):
             self.coverage_thread = CoverageExtentGenerationThread(
                 coverage_service,
                 kml_service,
-                self.parent.images,
+                coverage_images,
                 file_name
             )
 

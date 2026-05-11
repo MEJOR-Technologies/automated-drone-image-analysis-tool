@@ -4,6 +4,7 @@ Comprehensive tests for AOIService.
 Tests AOI geospatial calculations and color extraction.
 """
 
+import math
 import pytest
 import numpy as np
 import tempfile
@@ -303,3 +304,75 @@ def test_aoi_gps_result_to_tuple(sample_image_data, sample_aoi):
             assert isinstance(tuple_result, tuple)
             assert len(tuple_result) == 2
             assert tuple_result == (result.latitude, result.longitude)
+
+
+def test_calculate_ground_position_nadir_no_roll_returns_drone_position():
+    """At pitch=-90 with center pixel and no roll, ray hits ground directly under drone."""
+    drone_lat, drone_lon = 37.0, -120.0
+    altitude = 500.0
+    img_w, img_h = 8000, 6000
+    cx, cy = img_w / 2.0, img_h / 2.0
+
+    result = AOIService._calculate_ground_position(
+        drone_lat, drone_lon,
+        cx, cy,  # center pixel
+        cx, cy,
+        img_w, img_h,
+        focal_mm=50.0, sensor_w_mm=36.0, sensor_h_mm=24.0,
+        altitude_m=altitude,
+        pitch_deg=-90.0, yaw_deg=0.0,
+    )
+    assert result is not None
+    lat, lon = result
+    assert pytest.approx(lat, abs=1e-5) == drone_lat
+    assert pytest.approx(lon, abs=1e-5) == drone_lon
+
+
+def test_calculate_ground_position_left_outward_roll_pushes_west_at_north_heading():
+    """Cam 0 (+22.5° roll, plane heading north) hits ground ~h*tan(22.5°) WEST of drone."""
+    drone_lat, drone_lon = 37.0, -120.0
+    altitude = 500.0
+    img_w, img_h = 8000, 6000
+    cx, cy = img_w / 2.0, img_h / 2.0
+
+    result = AOIService._calculate_ground_position(
+        drone_lat, drone_lon,
+        cx, cy,
+        cx, cy,
+        img_w, img_h,
+        focal_mm=50.0, sensor_w_mm=36.0, sensor_h_mm=24.0,
+        altitude_m=altitude,
+        pitch_deg=-90.0, yaw_deg=0.0,
+        roll_deg=22.5,
+    )
+    assert result is not None
+    lat, lon = result
+    expected_offset_m = altitude * math.tan(math.radians(22.5))  # ~207.1 m
+    actual_offset_m = (drone_lon - lon) * 111320 * math.cos(math.radians(drone_lat))
+    assert pytest.approx(lat, abs=1e-5) == drone_lat  # heading north → no N/S drift
+    assert pytest.approx(actual_offset_m, rel=0.01) == expected_offset_m
+
+
+def test_calculate_ground_position_right_outward_roll_pushes_east_at_north_heading():
+    """Cam 1 (-22.5° roll, plane heading north) hits ground ~h*tan(22.5°) EAST of drone."""
+    drone_lat, drone_lon = 37.0, -120.0
+    altitude = 500.0
+    img_w, img_h = 8000, 6000
+    cx, cy = img_w / 2.0, img_h / 2.0
+
+    result = AOIService._calculate_ground_position(
+        drone_lat, drone_lon,
+        cx, cy,
+        cx, cy,
+        img_w, img_h,
+        focal_mm=50.0, sensor_w_mm=36.0, sensor_h_mm=24.0,
+        altitude_m=altitude,
+        pitch_deg=-90.0, yaw_deg=0.0,
+        roll_deg=-22.5,
+    )
+    assert result is not None
+    lat, lon = result
+    expected_offset_m = altitude * math.tan(math.radians(22.5))
+    actual_offset_m = (lon - drone_lon) * 111320 * math.cos(math.radians(drone_lat))
+    assert pytest.approx(lat, abs=1e-5) == drone_lat
+    assert pytest.approx(actual_offset_m, rel=0.01) == expected_offset_m
