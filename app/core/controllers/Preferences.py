@@ -1,9 +1,17 @@
 import os
 import shutil
 
-from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox, QComboBox, QHBoxLayout, QLabel, QWidget
+from PySide6.QtWidgets import (
+    QDialog, QFileDialog, QMessageBox, QComboBox, QHBoxLayout, QVBoxLayout, QLabel, QWidget,
+    QPushButton, QLineEdit, QGroupBox
+)
 from core.views.Preferences_ui import Ui_Preferences
 from core.services.SettingsService import SettingsService
+from core.services.terrain import (
+    TerrainProviderFactory,
+    PROVIDER_USGS_3DEP_LOCAL,
+    DEFAULT_PROVIDER_ID,
+)
 from helpers.PickleHelper import PickleHelper
 from helpers.TranslationMixin import TranslationMixin
 
@@ -38,6 +46,7 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
 
         self._terrain_service = None
         self._add_language_selection()
+        self._add_terrain_provider_section()
         self._load_settings()
         self._connect_signals()
         self._update_terrain_cache_display()
@@ -64,6 +73,45 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
 
         # Insert it before the theme widget or at the top
         self.verticalLayout_2.insertWidget(0, self.languageWidget)
+
+    def _add_terrain_provider_section(self):
+        """Add a Terrain elevation source group: provider combo + 3DEP path fields."""
+        self.terrainProviderGroup = QGroupBox(self.tr("Terrain Elevation Source"), self.mainWidget)
+        layout = QVBoxLayout(self.terrainProviderGroup)
+
+        combo_row = QHBoxLayout()
+        combo_label = QLabel(self.tr("Provider:"), self.terrainProviderGroup)
+        self.terrainProviderComboBox = QComboBox(self.terrainProviderGroup)
+        for provider in TerrainProviderFactory.available_providers():
+            self.terrainProviderComboBox.addItem(provider['label'], provider['id'])
+        combo_row.addWidget(combo_label)
+        combo_row.addWidget(self.terrainProviderComboBox, 1)
+        layout.addLayout(combo_row)
+
+        # 3DEP manifest path
+        manifest_row = QHBoxLayout()
+        self.terrain3DEPManifestLabel = QLabel(self.tr("Manifest CSV:"), self.terrainProviderGroup)
+        self.terrain3DEPManifestEdit = QLineEdit(self.terrainProviderGroup)
+        self.terrain3DEPManifestEdit.setPlaceholderText(self.tr("Path to dem_manifest.csv"))
+        self.terrain3DEPManifestButton = QPushButton(self.tr("Browse..."), self.terrainProviderGroup)
+        manifest_row.addWidget(self.terrain3DEPManifestLabel)
+        manifest_row.addWidget(self.terrain3DEPManifestEdit, 1)
+        manifest_row.addWidget(self.terrain3DEPManifestButton)
+        layout.addLayout(manifest_row)
+
+        # 3DEP tiles dir
+        tiles_row = QHBoxLayout()
+        self.terrain3DEPTilesLabel = QLabel(self.tr("Tiles directory:"), self.terrainProviderGroup)
+        self.terrain3DEPTilesEdit = QLineEdit(self.terrainProviderGroup)
+        self.terrain3DEPTilesEdit.setPlaceholderText(self.tr("Folder containing the GeoTIFF tiles"))
+        self.terrain3DEPTilesButton = QPushButton(self.tr("Browse..."), self.terrainProviderGroup)
+        tiles_row.addWidget(self.terrain3DEPTilesLabel)
+        tiles_row.addWidget(self.terrain3DEPTilesEdit, 1)
+        tiles_row.addWidget(self.terrain3DEPTilesButton)
+        layout.addLayout(tiles_row)
+
+        # Insert near the top of the dialog (just below language selection)
+        self.verticalLayout_2.insertWidget(1, self.terrainProviderGroup)
 
     def _load_settings(self):
         """Loads the settings from SettingsService and updates the UI accordingly."""
@@ -96,6 +144,17 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         if hasattr(self, 'terrainElevationCheckBox'):
             self.terrainElevationCheckBox.setChecked(terrain_enabled)
 
+        # Terrain provider selection + 3DEP paths
+        provider_id = self.parent.settings_service.get_setting('TerrainProviderId', DEFAULT_PROVIDER_ID) or DEFAULT_PROVIDER_ID
+        idx = self.terrainProviderComboBox.findData(provider_id)
+        if idx >= 0:
+            self.terrainProviderComboBox.setCurrentIndex(idx)
+        manifest = self.parent.settings_service.get_setting('Terrain3DEPManifestPath', '') or ''
+        tiles_dir = self.parent.settings_service.get_setting('Terrain3DEPTilesDir', '') or ''
+        self.terrain3DEPManifestEdit.setText(manifest)
+        self.terrain3DEPTilesEdit.setText(tiles_dir)
+        self._refresh_terrain_provider_visibility()
+
         drone_sensor_version = PickleHelper.get_drone_sensor_file_version()
         self.dronSensorVersionLabel.setText(
             self.tr("{version}_{date}").format(
@@ -119,6 +178,11 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
             self.terrainElevationCheckBox.toggled.connect(self._update_terrain_elevation)
         if hasattr(self, 'clearTerrainCacheButton'):
             self.clearTerrainCacheButton.clicked.connect(self._clear_terrain_cache)
+        self.terrainProviderComboBox.currentIndexChanged.connect(self._update_terrain_provider)
+        self.terrain3DEPManifestEdit.editingFinished.connect(self._update_terrain_3dep_manifest)
+        self.terrain3DEPTilesEdit.editingFinished.connect(self._update_terrain_3dep_tiles)
+        self.terrain3DEPManifestButton.clicked.connect(self._browse_terrain_3dep_manifest)
+        self.terrain3DEPTilesButton.clicked.connect(self._browse_terrain_3dep_tiles)
         self.droneSensorButton.clicked.connect(self._droneSensorButton_clicked)
 
     def _update_max_aois(self):
@@ -150,6 +214,58 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
     def _update_offline_only(self, checked: bool):
         """Update whether the app should run without online map/CalTopo access."""
         self.parent.settings_service.set_setting('OfflineOnly', bool(checked))
+
+    def _refresh_terrain_provider_visibility(self):
+        """Show/hide the 3DEP path fields based on the active provider."""
+        is_local = self.terrainProviderComboBox.currentData() == PROVIDER_USGS_3DEP_LOCAL
+        for w in (
+            self.terrain3DEPManifestLabel, self.terrain3DEPManifestEdit, self.terrain3DEPManifestButton,
+            self.terrain3DEPTilesLabel, self.terrain3DEPTilesEdit, self.terrain3DEPTilesButton,
+        ):
+            w.setVisible(is_local)
+
+    def _update_terrain_provider(self):
+        """Persist the active terrain provider id and refresh dependent UI."""
+        provider_id = self.terrainProviderComboBox.currentData() or DEFAULT_PROVIDER_ID
+        self.parent.settings_service.set_setting('TerrainProviderId', provider_id)
+        self._refresh_terrain_provider_visibility()
+        # Force terrain service to rebuild on next access so the new provider is used.
+        self._terrain_service = None
+
+    def _update_terrain_3dep_manifest(self):
+        self.parent.settings_service.set_setting(
+            'Terrain3DEPManifestPath', self.terrain3DEPManifestEdit.text().strip()
+        )
+        self._terrain_service = None
+
+    def _update_terrain_3dep_tiles(self):
+        self.parent.settings_service.set_setting(
+            'Terrain3DEPTilesDir', self.terrain3DEPTilesEdit.text().strip()
+        )
+        self._terrain_service = None
+
+    def _browse_terrain_3dep_manifest(self):
+        start_dir = self.terrain3DEPManifestEdit.text() or os.path.expanduser("~")
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("Select 3DEP manifest CSV"),
+            start_dir,
+            self.tr("CSV files (*.csv);;All files (*)"),
+        )
+        if filename:
+            self.terrain3DEPManifestEdit.setText(filename)
+            self._update_terrain_3dep_manifest()
+
+    def _browse_terrain_3dep_tiles(self):
+        start_dir = self.terrain3DEPTilesEdit.text() or os.path.expanduser("~")
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            self.tr("Select 3DEP tiles directory"),
+            start_dir,
+        )
+        if directory:
+            self.terrain3DEPTilesEdit.setText(directory)
+            self._update_terrain_3dep_tiles()
 
     def _update_terrain_elevation(self, checked: bool):
         """Update whether terrain elevation data should be used for AOI positioning."""
@@ -231,22 +347,18 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
                 )
 
     def _droneSensorButton_clicked(self):
-        """
-        Opens a file dialog for the user to select a .pkl file and copies it to the app's destination directory.
-        """
-        # Only allow .pkl files
+        """Lets the user pick a replacement drones.csv and copies it into AppData."""
         filename, _ = QFileDialog.getOpenFileName(
             self,
             self.tr("Select a Drone Sensor File"),
             "",
-            self.tr("Pickle Files (*.pkl)")
+            self.tr("CSV Files (*.csv)")
         )
         if not filename:
-            return  # User cancelled
+            return
 
-        # Destination path (change as needed)
         dest_dir = PickleHelper._get_destination_path()
-        dest_file = os.path.join(dest_dir, 'drones.pkl')
+        dest_file = os.path.join(dest_dir, 'drones.csv')
         shutil.copy(filename, dest_file)
         PickleHelper.force_reload()
         drone_sensor_version = PickleHelper.get_drone_sensor_file_version()
