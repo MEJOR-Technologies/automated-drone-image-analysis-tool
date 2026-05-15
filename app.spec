@@ -29,8 +29,8 @@ if platform.system() == 'Windows':
                 datas=[
                     ('resources/icons/ADIAT.ico','.'),
                     ('app/algorithms.conf','.'),
-                    ('app/drones.pkl', '.'),
-                    ('app/xmp.pkl', '.'),
+                    ('app/drones.csv', '.'),
+                    ('app/xmp.csv', '.'),
                     ('app/colors.pkl', '.'),
                     ('colors.csv', '.'),
                     # AI Person Detector models
@@ -94,8 +94,8 @@ elif platform.system() == 'Darwin':
                     datas=[
                         ('resources/icons/ADIAT.ico','.'),
                         ('app/algorithms.conf','.'),
-                        ('app/drones.pkl', '.'),
-                        ('app/xmp.pkl', '.'),
+                        ('app/drones.csv', '.'),
+                        ('app/xmp.csv', '.'),
                         # Color lists used by ColorListService (expects under app/)
                         ('app/colors.pkl', 'app'),
                         ('colors.csv', 'app'),
