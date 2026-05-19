@@ -41,6 +41,13 @@ if platform.system() == 'Windows':
                 hiddenimports=[
                     'shapely',
                     'shapely.geometry',
+                    # pysolar dispatches between numeric_numpy / numeric_python at runtime;
+                    # PyInstaller's static analysis misses the fallback path.
+                    'pysolar',
+                    'pysolar.solar',
+                    'pysolar.numeric',
+                    'pysolar.numeric_numpy',
+                    'pysolar.numeric_python',
                     # Image algorithm services (dynamically loaded via importlib in AnalyzeService)
                     'algorithms.images.ColorRange.services.ColorRangeService',
                     'algorithms.images.HSVColorRange.services.HSVColorRangeService',
@@ -106,6 +113,13 @@ elif platform.system() == 'Darwin':
                     hiddenimports=[
                         'shapely',
                         'shapely.geometry',
+                        # pysolar dispatches between numeric_numpy / numeric_python at runtime;
+                        # PyInstaller's static analysis misses the fallback path.
+                        'pysolar',
+                        'pysolar.solar',
+                        'pysolar.numeric',
+                        'pysolar.numeric_numpy',
+                        'pysolar.numeric_python',
                         # Image algorithm services (dynamically loaded via importlib in AnalyzeService)
                         'algorithms.images.ColorRange.services.ColorRangeService',
                         'algorithms.images.HSVColorRange.services.HSVColorRangeService',
