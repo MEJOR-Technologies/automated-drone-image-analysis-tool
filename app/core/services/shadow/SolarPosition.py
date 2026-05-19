@@ -46,12 +46,18 @@ def get_solar_position(lat: float, lon: float, utc_dt: datetime) -> Tuple[float,
     return elev, az
 
 
-def resolve_capture_utc(exif_data: dict) -> Tuple[datetime, str]:
+def resolve_capture_utc(
+    exif_data: dict,
+    xmp_data: Optional[dict] = None,
+) -> Tuple[datetime, str]:
     """Resolve image capture time to a tz-aware UTC datetime.
 
-    Resolution order (matches design §8.1):
+    Resolution order:
         1. EXIF GPSDateStamp + GPSTimeStamp — already UTC, preferred.
-        2. EXIF DateTimeOriginal + OffsetTimeOriginal — local with explicit offset.
+        2. EXIF DateTimeOriginal + OffsetTimeOriginal — canonical local+offset.
+        3. XMP xmp:CreateDate / xmp:ModifyDate — ISO 8601 with offset.
+           DJI and most camera firmware write the capture timezone here even
+           when they skip OffsetTimeOriginal.
 
     Without timezonefinder we deliberately do NOT fall back to "assume local";
     a bare DateTimeOriginal yields an unknown offset that can shift sun
@@ -60,10 +66,12 @@ def resolve_capture_utc(exif_data: dict) -> Tuple[datetime, str]:
 
     Args:
         exif_data: piexif-format dict ({'0th': ..., 'Exif': ..., 'GPS': ...}).
+        xmp_data: optional parsed XMP dict (keys without namespace prefix,
+            as produced by MetaDataHelper.get_xmp_data(..., parse=True)).
 
     Returns:
-        (utc_datetime, source_tag) where source_tag is 'gps' or
-        'exif_with_offset'.
+        (utc_datetime, source_tag) where source_tag is one of
+        'gps', 'exif_with_offset', 'xmp_create_date', 'xmp_modify_date'.
 
     Raises:
         SolarTimeUnresolvable: no resolvable timestamp present.
@@ -86,10 +94,20 @@ def resolve_capture_utc(exif_data: dict) -> Tuple[datetime, str]:
         except ValueError:
             pass
 
+    if xmp_data:
+        for key, source in (('CreateDate', 'xmp_create_date'),
+                            ('ModifyDate', 'xmp_modify_date')):
+            value = xmp_data.get(key)
+            if value:
+                try:
+                    return _from_iso8601(value), source
+                except ValueError:
+                    continue
+
     raise SolarTimeUnresolvable(
-        "Cannot resolve image capture time to UTC. Need either "
-        "GPSDateStamp+GPSTimeStamp (preferred) or "
-        "DateTimeOriginal+OffsetTimeOriginal."
+        "Cannot resolve image capture time to UTC. Need GPSDateStamp+"
+        "GPSTimeStamp, DateTimeOriginal+OffsetTimeOriginal, or an XMP "
+        "CreateDate/ModifyDate with timezone offset."
     )
 
 
@@ -129,6 +147,26 @@ def _from_local_with_offset(dt_orig, offset) -> datetime:
     tz = timezone(timedelta(minutes=offset_minutes))
     local_dt = datetime(year, month, day, hour, minute, second, 0, tzinfo=tz)
     return local_dt.astimezone(timezone.utc)
+
+
+def _from_iso8601(value) -> datetime:
+    """Parse an ISO 8601 datetime string with a timezone offset.
+
+    Accepts the XMP form 'YYYY-MM-DDTHH:MM:SS±HH:MM' and a few common
+    variants ('Z' suffix, space separator instead of 'T'). Raises
+    ValueError if no offset is present — a naive timestamp here would
+    silently corrupt the sun azimuth.
+    """
+    if isinstance(value, bytes):
+        value = value.decode('ascii', errors='ignore')
+    value = str(value).strip().replace(' ', 'T')
+    # Python 3.11 handles 'Z' natively; on 3.10 we have to swap it.
+    if value.endswith('Z'):
+        value = value[:-1] + '+00:00'
+    dt = datetime.fromisoformat(value)
+    if dt.tzinfo is None:
+        raise ValueError(f"ISO 8601 timestamp lacks timezone: {value!r}")
+    return dt.astimezone(timezone.utc)
 
 
 def _to_str(value) -> str:

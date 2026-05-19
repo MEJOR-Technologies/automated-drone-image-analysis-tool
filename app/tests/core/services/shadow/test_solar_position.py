@@ -95,6 +95,52 @@ def test_resolve_utc_rejects_when_nothing_present():
         resolve_capture_utc({'0th': {}, 'GPS': {}, 'Exif': {}})
 
 
+def test_resolve_utc_from_xmp_create_date():
+    """DJI puts the timezone offset in XMP, not in OffsetTimeOriginal."""
+    exif = {'0th': {}, 'GPS': {}, 'Exif': {}}
+    xmp = {'CreateDate': '2026-01-18T12:15:08-08:00'}
+    utc, source = resolve_capture_utc(exif, xmp)
+    assert source == 'xmp_create_date'
+    assert utc == datetime(2026, 1, 18, 20, 15, 8, tzinfo=timezone.utc)
+
+
+def test_resolve_utc_xmp_modify_date_fallback():
+    """If CreateDate is missing, fall through to ModifyDate."""
+    exif = {'0th': {}, 'GPS': {}, 'Exif': {}}
+    xmp = {'ModifyDate': '2026-01-18T12:15:08-08:00'}
+    utc, source = resolve_capture_utc(exif, xmp)
+    assert source == 'xmp_modify_date'
+    assert utc == datetime(2026, 1, 18, 20, 15, 8, tzinfo=timezone.utc)
+
+
+def test_resolve_utc_xmp_z_suffix_works():
+    """ISO 8601 'Z' should be accepted as UTC."""
+    exif = {'0th': {}, 'GPS': {}, 'Exif': {}}
+    utc, _ = resolve_capture_utc(exif, {'CreateDate': '2026-01-18T20:15:08Z'})
+    assert utc == datetime(2026, 1, 18, 20, 15, 8, tzinfo=timezone.utc)
+
+
+def test_resolve_utc_xmp_naive_rejected():
+    """An XMP timestamp without an offset must NOT be silently accepted."""
+    exif = {'0th': {}, 'GPS': {}, 'Exif': {}}
+    with pytest.raises(SolarTimeUnresolvable):
+        resolve_capture_utc(exif, {'CreateDate': '2026-01-18T12:15:08'})
+
+
+def test_resolve_utc_gps_still_wins_over_xmp():
+    exif = {
+        '0th': {},
+        'GPS': {
+            piexif.GPSIFD.GPSDateStamp: b'2025:06:15',
+            piexif.GPSIFD.GPSTimeStamp: ((19, 1), (30, 1), (0, 1)),
+        },
+        'Exif': {},
+    }
+    xmp = {'CreateDate': '2026-01-18T12:15:08-08:00'}
+    _, source = resolve_capture_utc(exif, xmp)
+    assert source == 'gps'
+
+
 def test_get_solar_position_requires_aware_datetime():
     with pytest.raises(ValueError):
         get_solar_position(38.685, -121.082, datetime(2025, 6, 15, 19, 30))

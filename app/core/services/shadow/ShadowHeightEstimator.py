@@ -125,8 +125,16 @@ class ShadowHeightEstimator:
         except Exception as exc:
             return _reject(result, f"Could not read EXIF: {exc}")
 
+        # XMP carries the capture-time offset that DJI (and most modern
+        # cameras) omit from OffsetTimeOriginal. Read it lazily here so the
+        # resolver can fall back to it without re-parsing the file.
         try:
-            utc_dt, time_source = resolve_capture_utc(exif_data)
+            xmp_data = MetaDataHelper.get_xmp_data(image['path'], parse=True)
+        except Exception:
+            xmp_data = None
+
+        try:
+            utc_dt, time_source = resolve_capture_utc(exif_data, xmp_data)
         except SolarTimeUnresolvable as exc:
             return _reject(result, str(exc))
         result.utc_used = utc_dt
