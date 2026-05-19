@@ -150,14 +150,13 @@ class ShadowHeightEstimator:
         if base_gps is None:
             return _reject(
                 result,
-                "Could not project the base click onto terrain. "
-                "Check that the click is on the ground and metadata is complete."
+                _diagnose_projection_failure(aoi_service, exif_data, "base"),
             )
         tip_gps = aoi_service.estimate_aoi_gps(image, {'center': tuple(tip_px)})
         if tip_gps is None:
             return _reject(
                 result,
-                "Could not project the shadow-tip click onto terrain."
+                _diagnose_projection_failure(aoi_service, exif_data, "shadow-tip"),
             )
 
         result.base_lat_lon = (base_gps.latitude, base_gps.longitude)
@@ -280,6 +279,102 @@ def _reject(result: ShadowHeightResult, reason: str) -> ShadowHeightResult:
     result.rejection_reason = reason
     result.warnings.append(reason)
     return result
+
+
+def _diagnose_projection_failure(aoi_service, exif_data, which: str) -> str:
+    """Translate a generic AOIService rejection into a specific user message.
+
+    AOIService logs the precise reason but only returns None to callers, so
+    we re-derive the failure mode from the metadata to surface something
+    actionable in the dialog.
+    """
+    image_service = getattr(aoi_service, 'image_service', None)
+
+    # GPS is the cheapest precondition to verify.
+    gps = (exif_data or {}).get('GPS') or {}
+    if not gps:
+        return (
+            f"Could not project the {which} click: image has no GPS "
+            "coordinates in EXIF."
+        )
+
+    # Camera intrinsics — typically missing when the drone/camera isn't in
+    # drones.csv.
+    intrinsics = None
+    if image_service is not None:
+        try:
+            intrinsics = image_service.get_camera_intrinsics()
+        except Exception:
+            intrinsics = None
+    if not intrinsics:
+        make = _decode(exif_data.get('0th', {}).get(_PIEXIF_MAKE_TAG))
+        model = _decode(exif_data.get('0th', {}).get(_PIEXIF_MODEL_TAG))
+        descriptor = " / ".join(filter(None, [make, model])) or "this camera"
+        return (
+            f"Could not project the {which} click: no camera profile for "
+            f"{descriptor} in drones.csv (need sensor + focal length)."
+        )
+
+    # AGL — DJI carries it in XMP RelativeAltitude; airframe/WALDO imagery
+    # gets it synthesized by the WALDO pre-pass.
+    agl = None
+    pitch = None
+    if image_service is not None:
+        try:
+            agl = image_service.get_relative_altitude('m')
+        except Exception:
+            agl = None
+        try:
+            pitch = image_service.get_camera_pitch()
+        except Exception:
+            pitch = None
+    if not agl or agl <= 0:
+        make = _decode(exif_data.get('0th', {}).get(_PIEXIF_MAKE_TAG)) or ''
+        if make.upper().startswith(('CANON', 'SONY', 'NIKON', 'FUJI')):
+            return (
+                f"Could not project the {which} click: airframe imagery "
+                "without AGL. Run Tools > WALDO Pre-Pass on this folder "
+                "first so per-image altitude and gimbal angles are written "
+                "into the XMP."
+            )
+        return (
+            f"Could not project the {which} click: no RelativeAltitude in "
+            "XMP and no terrain-derived AGL fallback. Verify the drone "
+            "wrote altitude metadata."
+        )
+
+    # Pitch — AOIService assumes nadir (-90°) when missing; pitch >= 0 means
+    # the optical axis is at or above the horizon, so the ray never hits ground.
+    if pitch is not None and pitch >= 0:
+        return (
+            f"Could not project the {which} click: camera pitch is "
+            f"{pitch:.1f}° (at or above horizon), so the click can't be "
+            "projected onto terrain."
+        )
+
+    # Last resort — the ray went off into space (clicked above horizon, or
+    # terrain coverage doesn't reach that far).
+    return (
+        f"Could not project the {which} click onto terrain. The ray "
+        "either missed terrain coverage or landed above the horizon. "
+        "Check that the click is on the ground."
+    )
+
+
+_PIEXIF_MAKE_TAG = 271   # piexif.ImageIFD.Make
+_PIEXIF_MODEL_TAG = 272  # piexif.ImageIFD.Model
+
+
+def _decode(value) -> Optional[str]:
+    """Best-effort bytes→str for piexif IFD0 tags."""
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        try:
+            return value.decode('utf-8', errors='ignore').strip().rstrip('\x00')
+        except Exception:
+            return None
+    return str(value).strip()
 
 
 def _propagate_sigma(
