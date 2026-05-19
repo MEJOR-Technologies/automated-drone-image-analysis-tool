@@ -92,6 +92,9 @@ class ShadowHeightResult:
     utc_used: Optional[datetime] = None
     time_source: Optional[str] = None
     rejection_reason: Optional[str] = None
+    # True when the rejection is specifically an azimuth-band failure; the
+    # dialog uses this to surface a "Use anyway" override button.
+    azimuth_override_available: bool = False
 
 
 class ShadowHeightEstimator:
@@ -105,6 +108,7 @@ class ShadowHeightEstimator:
         image: dict,
         base_px: Tuple[float, float],
         tip_px: Tuple[float, float],
+        allow_azimuth_override: bool = False,
     ) -> ShadowHeightResult:
         """Compute height of a vertical object from its shadow.
 
@@ -112,6 +116,10 @@ class ShadowHeightEstimator:
             image: ADIAT image-metadata dict (must contain 'path').
             base_px: (u, v) pixel of the object's ground base.
             tip_px:  (u, v) pixel of the shadow tip.
+            allow_azimuth_override: if True, demote an out-of-tolerance
+                shadow-azimuth mismatch from rejection to warning. The
+                dialog sets this when the user clicks "Use anyway" on a
+                previously-rejected measurement.
 
         Returns:
             ShadowHeightResult — always returned, even on rejection.
@@ -236,13 +244,22 @@ class ShadowHeightEstimator:
         result.delta_az_deg = delta_az
 
         if abs(delta_az) > AZ_WARNING_DEG:
-            return _reject(
-                result,
-                f"Drawn line is {delta_az:+.1f}° off the expected shadow "
-                f"direction (sun azimuth {sun_az:.1f}°). Click the object "
-                "base first, then the shadow tip. Override available."
-            )
-        if abs(delta_az) > AZ_OK_DEG:
+            if allow_azimuth_override:
+                result.warnings.append(
+                    f"Shadow direction is {abs(delta_az):.1f}° off the "
+                    f"expected direction; override accepted, but the "
+                    "estimate is sensitive to this mismatch."
+                )
+            else:
+                rejected = _reject(
+                    result,
+                    f"Drawn line is {delta_az:+.1f}° off the expected shadow "
+                    f"direction (sun azimuth {sun_az:.1f}°). Click the object "
+                    "base first, then the shadow tip."
+                )
+                rejected.azimuth_override_available = True
+                return rejected
+        elif abs(delta_az) > AZ_OK_DEG:
             result.warnings.append(
                 f"Shadow direction differs from expected by "
                 f"{abs(delta_az):.1f}°; result may be inaccurate."

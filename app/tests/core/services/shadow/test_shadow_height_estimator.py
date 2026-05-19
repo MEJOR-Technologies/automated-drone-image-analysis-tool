@@ -271,6 +271,46 @@ def test_azimuth_off_by_90deg_rejects(monkeypatch):
     )
     assert result.confidence == 'rejected'
     assert 'shadow direction' in (result.rejection_reason or '').lower()
+    # The dialog uses this flag to surface a "Use anyway" button.
+    assert result.azimuth_override_available is True
+
+
+def test_azimuth_override_demotes_rejection_to_warning(monkeypatch):
+    """With override on, an off-azimuth click yields a warning, not a reject."""
+    base = ('b',)
+    tip = ('t',)
+    # Same off-direction geometry as the rejection test above.
+    scene = _Scene({
+        base: (0.0, 0.0, 100.0),
+        tip:  (0.0, 2.0, 100.0),
+    })
+    _install(monkeypatch, scene, sun_elev_deg=45.0, sun_az_deg=90.0)
+
+    result = ShadowHeightEstimator().estimate(
+        {'path': '/fake'}, base_px=base, tip_px=tip,
+        allow_azimuth_override=True,
+    )
+    assert result.confidence == 'warning'
+    assert result.height_m is not None
+    assert any('override accepted' in w.lower() for w in result.warnings)
+
+
+def test_azimuth_override_only_relaxes_azimuth(monkeypatch):
+    """Override must NOT rescue a sun-too-low or other gate failure."""
+    base = ('b',)
+    tip = ('t',)
+    scene = _Scene({
+        base: (0.0, 0.0, 100.0),
+        tip:  (-2.0, 0.0, 100.0),  # aligned with expected shadow direction
+    })
+    _install(monkeypatch, scene, sun_elev_deg=3.0, sun_az_deg=90.0)
+
+    result = ShadowHeightEstimator().estimate(
+        {'path': '/fake'}, base_px=base, tip_px=tip,
+        allow_azimuth_override=True,
+    )
+    assert result.confidence == 'rejected'
+    assert 'too low' in (result.rejection_reason or '').lower()
 
 
 def test_sun_too_low_rejects(monkeypatch):

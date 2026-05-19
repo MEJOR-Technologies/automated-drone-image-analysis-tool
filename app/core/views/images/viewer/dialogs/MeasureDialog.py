@@ -131,9 +131,19 @@ class MeasureDialog(TranslationMixin, QDialog):
         self.shadow_warnings = QLabel("")
         self.shadow_warnings.setStyleSheet("QLabel { color: #b8860b; font-size: 9pt; }")
         self.shadow_warnings.setWordWrap(True)
+        # "Use anyway" override appears only on an azimuth-band rejection.
+        self.shadow_override_button = QPushButton(self.tr("Use Anyway"))
+        self.shadow_override_button.setToolTip(self.tr(
+            "Force the estimate with the current base/tip clicks even though "
+            "the drawn line doesn't match the expected shadow direction. "
+            "Use only when you're confident the geometry is correct."
+        ))
+        self.shadow_override_button.setVisible(False)
+        self.shadow_override_button.clicked.connect(self._on_shadow_override_clicked)
         shadow_layout.addWidget(self.shadow_height_display)
         shadow_layout.addWidget(self.shadow_details)
         shadow_layout.addWidget(self.shadow_warnings)
+        shadow_layout.addWidget(self.shadow_override_button)
         self.shadow_group.setLayout(shadow_layout)
         self.shadow_group.setVisible(False)
 
@@ -398,7 +408,7 @@ class MeasureDialog(TranslationMixin, QDialog):
         except (IndexError, TypeError):
             return None
 
-    def _estimate_and_render_shadow_height(self, pen_width, colour):
+    def _estimate_and_render_shadow_height(self, pen_width, colour, allow_azimuth_override=False):
         """Run the shadow-height estimator on the two clicks and update the UI."""
         image_dict = self._current_image_metadata()
         if image_dict is None or not image_dict.get('path'):
@@ -412,10 +422,41 @@ class MeasureDialog(TranslationMixin, QDialog):
 
         base_px = (self.first_point.x(), self.first_point.y())
         tip_px = (self.second_point.x(), self.second_point.y())
-        result = self.shadow_estimator.estimate(image_dict, base_px, tip_px)
+        result = self.shadow_estimator.estimate(
+            image_dict, base_px, tip_px,
+            allow_azimuth_override=allow_azimuth_override,
+        )
 
         self._render_shadow_result_in_dialog(result)
         self._render_shadow_result_on_image(result, pen_width, colour)
+
+    def _on_shadow_override_clicked(self):
+        """Re-run the most recent shadow measurement with the azimuth gate relaxed."""
+        if self.first_point is None or self.second_point is None:
+            return
+        # Drop the previously rendered (rejected) overlay before redrawing.
+        self._clear_shadow_overlays()
+        zoom = self.image_viewer.getZoom() if hasattr(self.image_viewer, 'getZoom') else 1.0
+        pen_width = self.fixed_line_width / zoom
+        colour = QColor(255, 215, 0)
+        self._estimate_and_render_shadow_height(
+            pen_width, colour, allow_azimuth_override=True
+        )
+
+    def _clear_shadow_overlays(self):
+        """Remove only the shadow-specific overlays, keep the B/T points + line."""
+        for item in self.shadow_graphics:
+            try:
+                self.image_viewer.scene.removeItem(item)
+            except Exception:
+                pass
+        self.shadow_graphics = []
+        if self.distance_text_item is not None:
+            try:
+                self.image_viewer.scene.removeItem(self.distance_text_item)
+            except Exception:
+                pass
+            self.distance_text_item = None
 
     def _render_shadow_result_in_dialog(self, result):
         """Update the sidebar group with the estimator's verdict."""
@@ -423,6 +464,7 @@ class MeasureDialog(TranslationMixin, QDialog):
             self.shadow_height_display.setText(self.tr("Rejected"))
             self.shadow_details.setText("")
             self.shadow_warnings.setText(result.rejection_reason or "")
+            self.shadow_override_button.setVisible(bool(result.azimuth_override_available))
             return
 
         height_str = self._format_length(result.height_m)
@@ -443,6 +485,7 @@ class MeasureDialog(TranslationMixin, QDialog):
 
         warnings = [w for w in result.warnings if w]
         self.shadow_warnings.setText("\n".join(warnings))
+        self.shadow_override_button.setVisible(False)
 
     def _render_shadow_result_on_image(self, result, pen_width, colour):
         """Overlay the height label (and a direction arrow) on the image."""
@@ -611,6 +654,7 @@ class MeasureDialog(TranslationMixin, QDialog):
         self.shadow_height_display.setText("--")
         self.shadow_details.setText("")
         self.shadow_warnings.setText("")
+        self.shadow_override_button.setVisible(False)
 
     def updateItemSizes(self):
         """Update the sizes of all measurement items based on current zoom."""
