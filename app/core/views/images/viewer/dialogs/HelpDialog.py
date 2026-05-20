@@ -112,6 +112,7 @@ class HelpDialog(TranslationMixin, QDialog):
             'rotate': 'rotateImageButton',
             'adjustments': 'adjustmentsButton',
             'measure': 'measureButton',
+            'person_overlay': 'personOverlayButton',
             'magnify': 'magnifyButton',
             'kml': 'kmlButton',
             'pdf': 'pdfButton',
@@ -249,6 +250,10 @@ class HelpDialog(TranslationMixin, QDialog):
                         <td>Open measure tool</td>
                     </tr>
                     <tr>
+                        <td>Ctrl + P</td>
+                        <td>Open person size reference tool (requires GSD)</td>
+                    </tr>
+                    <tr>
                         <td>Scroll Wheel</td>
                         <td>Zoom in/out on image</td>
                     </tr>
@@ -291,6 +296,12 @@ class HelpDialog(TranslationMixin, QDialog):
                     <tr>
                         <td>{icon_html('measure')} Measure</td>
                         <td>Open the measurement tool for distance/area measurements.</td>
+                    </tr>
+                    <tr>
+                        <td>{icon_html('person_overlay')} Person Size Reference</td>
+                        <td>Drop a draggable, to-scale person silhouette on the image
+                            (standing/sitting/recumbent at adult/child/infant sizes).
+                            Requires GSD; disabled when GSD is unavailable.</td>
                     </tr>
                 </table>
 

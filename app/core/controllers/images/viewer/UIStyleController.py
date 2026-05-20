@@ -142,6 +142,15 @@ class UIStyleController:
                 "dialogActive"
             )
 
+    def update_person_overlay_button_style(self):
+        """Update the person reference button styling based on dialog state."""
+        if hasattr(self.parent, 'personOverlayButton') and hasattr(self.parent, 'person_reference_dialog_open'):
+            self.update_toolbutton_style(
+                self.parent.personOverlayButton,
+                self.parent.person_reference_dialog_open,
+                "dialogActive"
+            )
+
     def update_gps_map_button_style(self):
         """Update the GPS map button styling based on map window state."""
         if hasattr(self.parent, 'GPSMapButton') and hasattr(self.parent, 'gps_map_open'):
