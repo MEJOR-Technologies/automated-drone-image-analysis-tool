@@ -599,36 +599,25 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.shadow_item.setVisible(combined is not None)
 
     def _shadow_path_for_pose(self, pose, height_cm, height_m, foot):
-        """Build the ground-shadow QPainterPath cast by one pose, or None."""
-        if pose in ('standing', 'sitting'):
-            # Upright volume: cast the 3D point cloud, hull the ground points.
-            points = PersonModel.build_points(height_m, pose)
-            ground = compute_shadow_ground_points(
-                points, foot, self.sun_elev, self.sun_az
-            )
-            return self._hull_path(self._project_ground(ground))
+        """Build the ground-shadow QPainterPath cast by one pose, or None.
 
-        # Recumbent: a low slab. Sweep the flat body outline from the ground
-        # up to its lying thickness, so the shadow is the body shape plus a
-        # thin fringe on the side away from the sun.
-        outline = self._recumbent_local_points(height_cm)
-        if not outline:
-            return None
-        thickness = RECUMBENT_THICKNESS_FRACTION * height_m
-        flat = compute_shadow_ground_points(
-            outline, foot, self.sun_elev, self.sun_az
+        Every pose is cast the same way: a cloud of 3D body points is dropped
+        along the sun ray to the ground and the convex hull of the result is
+        the shadow - one coherent dark patch. Standing and sitting use their
+        upright volumes; the recumbent body is the lying outline given a small
+        lying thickness so it casts a low shadow that hugs the body.
+        """
+        if pose == 'recumbent':
+            outline = self._recumbent_local_points(height_cm)
+            thickness = RECUMBENT_THICKNESS_FRACTION * height_m
+            points = ([(x, y, 0.0) for x, y, _z in outline]
+                      + [(x, y, thickness) for x, y, _z in outline])
+        else:
+            points = PersonModel.build_points(height_m, pose)
+        ground = compute_shadow_ground_points(
+            points, foot, self.sun_elev, self.sun_az
         )
-        raised = [(x, y, thickness) for x, y, _z in outline]
-        sheared = compute_shadow_ground_points(
-            raised, foot, self.sun_elev, self.sun_az
-        )
-        flat_path = self._polyline_path(self._project_ground(flat))
-        sheared_path = self._polyline_path(self._project_ground(sheared))
-        if flat_path is None:
-            return sheared_path
-        if sheared_path is None:
-            return flat_path
-        return flat_path.united(sheared_path)
+        return self._hull_path(self._project_ground(ground))
 
     def _project_ground(self, ground_points):
         """Project NED ground points to pixels, dropping any behind the camera."""
