@@ -131,6 +131,10 @@
     [
       "resources/views/algorithms/ColorAnomalyAndMotionDetectionWizard.ui",
       "app/algorithms/streaming/ColorAnomalyAndMotionDetection/views"
+    ],
+    [
+      "resources/views/flight/*.ui",
+      "app/core/views/flight"
     ]
   ],
     "hooks": [],

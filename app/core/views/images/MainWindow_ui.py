@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'MainWindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.2
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -53,6 +53,9 @@ class Ui_MainWindow(object):
         self.actionStreaming = QAction(MainWindow)
         self.actionStreaming.setObjectName(u"actionStreaming")
         self.actionStreaming.setFont(font)
+        self.actionFlightViewer = QAction(MainWindow)
+        self.actionFlightViewer.setObjectName(u"actionFlightViewer")
+        self.actionFlightViewer.setFont(font)
         self.actionIntegratedDetection = QAction(MainWindow)
         self.actionIntegratedDetection.setObjectName(u"actionIntegratedDetection")
         self.actionIntegratedDetection.setFont(font)
@@ -447,6 +450,7 @@ class Ui_MainWindow(object):
         self.mainBar.addAction(self.menuHelp.menuAction())
         self.menuFile.addAction(self.actionImageAnalysisGuide)
         self.menuFile.addAction(self.actionStreaming)
+        self.menuFile.addAction(self.actionFlightViewer)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionLoadFile)
         self.menuFile.addAction(self.actionLoadResultsFolder)
@@ -521,6 +525,10 @@ class Ui_MainWindow(object):
         self.actionStreaming.setText(QCoreApplication.translate("MainWindow", u"Streaming Detector", None))
 #if QT_CONFIG(tooltip)
         self.actionStreaming.setToolTip(QCoreApplication.translate("MainWindow", u"Switch to the Streaming Detector", None))
+#endif // QT_CONFIG(tooltip)
+        self.actionFlightViewer.setText(QCoreApplication.translate("MainWindow", u"Flight Viewer", None))
+#if QT_CONFIG(tooltip)
+        self.actionFlightViewer.setToolTip(QCoreApplication.translate("MainWindow", u"Open the Flight Viewer to pair with ADIAT Mobile drone tablets and watch their live feeds.", None))
 #endif // QT_CONFIG(tooltip)
         self.actionIntegratedDetection.setText(QCoreApplication.translate("MainWindow", u"Real-Time Anomaly Detection", None))
 #if QT_CONFIG(tooltip)

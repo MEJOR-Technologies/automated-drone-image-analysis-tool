@@ -120,6 +120,10 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         if hasattr(self, 'actionStreaming'):
             self.actionStreaming.triggered.connect(self._open_streaming_detector)
 
+        # Connect Flight Viewer menu item
+        if hasattr(self, 'actionFlightViewer'):
+            self.actionFlightViewer.triggered.connect(self._open_flight_viewer)
+
         # Add Coordinator functionality
         self.coordinator_window = None
         if hasattr(self, 'actionCoordinator'):
@@ -1097,6 +1101,29 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
                 self,
                 self.tr("Error"),
                 self.tr("Failed to open Streaming Detector:\n{error}").format(error=str(e))
+            )
+
+    def _open_flight_viewer(self):
+        """Open the Flight Viewer window without closing the main window."""
+        try:
+            from core.controllers.flight import FlightViewerController
+
+            app = QApplication.instance()
+            existing = getattr(app, '_flight_controller', None) if app else None
+            if existing is not None and existing.window.isVisible():
+                existing.show()
+                return
+
+            controller = FlightViewerController()
+            if app is not None:
+                app._flight_controller = controller
+            controller.show()
+        except Exception as e:
+            self.logger.error(f"Error opening Flight Viewer: {e}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to open Flight Viewer:\n{error}").format(error=str(e))
             )
 
     def _open_coordinator(self):
