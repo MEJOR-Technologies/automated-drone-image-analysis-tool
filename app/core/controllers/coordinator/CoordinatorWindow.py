@@ -1,11 +1,13 @@
 import os
+from pathlib import Path
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTableWidget, QTableWidgetItem, QFileDialog, QMessageBox,
                                QTabWidget, QGroupBox, QProgressBar, QHeaderView, QAbstractItemView,
-                               QInputDialog)
+                               QInputDialog, QApplication)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from core.services.LoggerService import LoggerService
+from core.services.SettingsService import SettingsService
 from core.services.coordinator.SearchProjectService import SearchProjectService
 
 
@@ -22,8 +24,15 @@ class CoordinatorWindow(QMainWindow):
         super().__init__()
         self.theme = theme
         self.logger = LoggerService()
+        self.settings_service = SettingsService()
         self.project_service = None
         self.project_path = None
+        # Cached batch status rows, so a double-clicked table row can be mapped
+        # back to its results file. Kept in sync by _update_batch_table().
+        self._batch_status = []
+        # Holds the most recently opened results Viewer so it is not garbage
+        # collected while this window is open.
+        self.batch_viewer = None
 
         self._setup_ui()
         self.setWindowTitle("Search Coordinator")
@@ -285,7 +294,10 @@ class CoordinatorWindow(QMainWindow):
         layout = QVBoxLayout()
 
         # Instructions
-        info_label = QLabel("Batch review status and assignments. Load reviewer XMLs to update progress.")
+        info_label = QLabel(
+            "Batch review status and assignments. Load reviewer XMLs to update "
+            "progress. Double-click a batch to open its results in the Viewer."
+        )
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
 
@@ -299,6 +311,8 @@ class CoordinatorWindow(QMainWindow):
         self.batch_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.batch_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.batch_table.setAlternatingRowColors(True)
+        self.batch_table.setToolTip("Double-click a batch to open its results in the Viewer.")
+        self.batch_table.cellDoubleClicked.connect(self._open_batch_in_viewer)
 
         layout.addWidget(self.batch_table)
 
@@ -614,6 +628,7 @@ class CoordinatorWindow(QMainWindow):
             return
 
         batch_status = self.project_service.get_batch_status()
+        self._batch_status = batch_status
         self.batch_table.setRowCount(len(batch_status))
 
         for row, batch in enumerate(batch_status):
@@ -632,6 +647,45 @@ class CoordinatorWindow(QMainWindow):
             else:
                 status_item.setForeground(QColor("#27ae60"))
             self.batch_table.setItem(row, 5, status_item)
+
+    def _open_batch_in_viewer(self, row, column):
+        """Open the double-clicked batch's results in the image Viewer.
+
+        Args:
+            row: Table row of the batch that was double-clicked.
+            column: Table column double-clicked (unused).
+        """
+        if row < 0 or row >= len(self._batch_status):
+            return
+        xml_path = self._batch_status[row].get('xml_path', '')
+        if not xml_path or not os.path.isfile(xml_path):
+            QMessageBox.warning(
+                self,
+                "Results Not Found",
+                "Could not find this batch's results file:\n"
+                f"{xml_path or '(no path recorded)'}"
+            )
+            return
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            # Imported lazily to avoid a circular import at module load time.
+            from core.controllers.images.viewer.Viewer import Viewer
+            self.batch_viewer = Viewer(
+                Path(xml_path),
+                self.settings_service.get_setting('PositionFormat'),
+                self.settings_service.get_setting('TemperatureUnit'),
+                self.settings_service.get_setting('DistanceUnit'),
+                False,
+                self.theme
+            )
+            self.batch_viewer.show()
+        except Exception as e:
+            self.logger.error(f"Error opening batch in viewer: {e}")
+            QMessageBox.critical(
+                self, "Error", f"Failed to open the results viewer:\n{str(e)}"
+            )
+        finally:
+            QApplication.restoreOverrideCursor()
 
     def _update_aoi_table(self):
         """Update the AOI analysis table."""
