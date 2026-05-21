@@ -140,3 +140,43 @@ def test_analyze_service_cancellation(analyze_service):
     assert analyze_service.cancelled is False
     analyze_service.cancelled = True
     assert analyze_service.cancelled is True
+
+
+def test_analyze_service_recursive_default(analyze_service):
+    """Recursive image collection is enabled by default."""
+    assert analyze_service.recursive is True
+
+
+def test_analyze_service_non_recursive():
+    """recursive=False scopes image collection to the input directory only."""
+    algorithm = {
+        'name': 'ColorRange',
+        'type': 'RGB',
+        'service': 'ColorRangeService'
+    }
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_dir = os.path.join(tmpdir, 'input')
+        output_dir = os.path.join(tmpdir, 'output')
+        os.makedirs(input_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
+
+        service = AnalyzeService(
+            id=1,
+            algorithm=algorithm,
+            input=input_dir,
+            output=output_dir,
+            identifier_color=(100, 150, 200),
+            min_area=10,
+            num_processes=1,
+            max_aois=100,
+            aoi_radius=5,
+            histogram_reference_path=None,
+            kmeans_clusters=None,
+            options={},
+            max_area=1000,
+            processing_resolution=1.0,
+            recursive=False
+        )
+
+        assert service.recursive is False

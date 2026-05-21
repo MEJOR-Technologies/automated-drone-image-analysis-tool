@@ -46,7 +46,7 @@ class AnalyzeService(QObject):
 
     def __init__(self, id, algorithm, input, output, identifier_color, min_area, num_processes,
                  max_aois, aoi_radius, histogram_reference_path, kmeans_clusters, options, max_area,
-                 processing_resolution=1.0):
+                 processing_resolution=1.0, recursive=True):
         """Initialize the AnalyzeService with parameters for processing images.
 
         Args:
@@ -65,6 +65,10 @@ class AnalyzeService(QObject):
             max_area: Maximum area in pixels for an object to qualify as an area of interest.
             processing_resolution: Percentage to scale images (0.1 to 1.0).
                 1.0 means process at original resolution (no scaling). Defaults to 1.0.
+            recursive: When True, images are collected from the input directory and
+                all of its subdirectories. When False, only files directly inside the
+                input directory are processed -- used by batch mode so each folder is
+                analyzed as an independent batch. Defaults to True.
         """
         self.logger = LoggerService()
         self.xmlService = XmlService()
@@ -78,6 +82,7 @@ class AnalyzeService(QObject):
         self.min_area = min_area
         self.max_area = max_area
         self.processing_resolution = processing_resolution
+        self.recursive = recursive
         self.aoi_radius = aoi_radius
         self.num_processes = num_processes
         self.max_aois = max_aois
@@ -117,7 +122,13 @@ class AnalyzeService(QObject):
             image_files = []
 
             start_time = time.time()
-            for subdir, dirs, files in os.walk(self.input):
+            # In batch mode each folder is analyzed independently, so collection
+            # can be scoped to the input directory itself (no recursion).
+            if self.recursive:
+                walker = os.walk(self.input)
+            else:
+                walker = [(self.input, [], os.listdir(self.input))]
+            for subdir, dirs, files in walker:
                 for file in files:
                     file_path = Path(file)
                     if self.is_thermal and file_path.suffix != 'irg':
