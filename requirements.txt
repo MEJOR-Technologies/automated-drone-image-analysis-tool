@@ -27,3 +27,4 @@ imagecodecs
 imageio-ffmpeg
 rasterio
 pyproj
+pysolar

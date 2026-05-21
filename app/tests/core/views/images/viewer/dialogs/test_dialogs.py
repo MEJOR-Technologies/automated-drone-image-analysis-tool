@@ -245,6 +245,57 @@ def test_measure_dialog_initialization(app):
     assert dialog is not None
 
 
+def test_measure_dialog_starts_in_length_mode(app):
+    """Shadow checkbox is off and the length-mode groups are visible by default."""
+    mock_image_viewer = MagicMock()
+    mock_image_viewer.canZoom = True
+    mock_image_viewer.canPan = True
+    mock_image_viewer.regionZoomButton = MagicMock()
+
+    dialog = MeasureDialog(None, mock_image_viewer, 5.0, 'm')
+    assert dialog.shadow_mode is False
+    assert dialog.shadow_mode_checkbox.isChecked() is False
+    assert dialog.gsd_group.isVisibleTo(dialog) is True
+    assert dialog.distance_group.isVisibleTo(dialog) is True
+    assert dialog.shadow_group.isVisibleTo(dialog) is False
+
+
+def test_measure_dialog_toggles_into_shadow_mode(app):
+    """Toggling the checkbox swaps which result groups are shown."""
+    mock_image_viewer = MagicMock()
+    mock_image_viewer.canZoom = True
+    mock_image_viewer.canPan = True
+    mock_image_viewer.regionZoomButton = MagicMock()
+
+    dialog = MeasureDialog(None, mock_image_viewer, 5.0, 'm')
+    dialog.shadow_mode_checkbox.setChecked(True)
+
+    assert dialog.shadow_mode is True
+    assert dialog.gsd_group.isVisibleTo(dialog) is False
+    assert dialog.distance_group.isVisibleTo(dialog) is False
+    assert dialog.shadow_group.isVisibleTo(dialog) is True
+    assert "Shadow" in dialog.windowTitle()
+
+
+def test_measure_dialog_toggle_clears_in_flight_measurement(app):
+    """Switching modes mid-measurement should reset state, not carry it across."""
+    mock_image_viewer = MagicMock()
+    mock_image_viewer.canZoom = True
+    mock_image_viewer.canPan = True
+    mock_image_viewer.regionZoomButton = MagicMock()
+    mock_image_viewer.scene = MagicMock()
+
+    dialog = MeasureDialog(None, mock_image_viewer, 5.0, 'm')
+    # Simulate the first click of a length measurement.
+    dialog.first_point = object()
+    dialog.measuring = True
+
+    dialog.shadow_mode_checkbox.setChecked(True)
+
+    assert dialog.first_point is None
+    assert dialog.measuring is False
+
+
 def test_pdf_export_dialog_initialization(app):
     """Test PDFExportDialog initialization."""
     dialog = PDFExportDialog(None)
