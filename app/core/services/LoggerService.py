@@ -59,7 +59,6 @@ class LoggerService:
         Args:
             message: The info message to log.
         """
-        print(message)
         self.logger.info(message)
 
     def debug(self, message):
@@ -69,7 +68,6 @@ class LoggerService:
         Args:
             message: The debug message to log.
         """
-        print(message)
         self.logger.debug(message)
 
     def warning(self, message):
@@ -79,7 +77,6 @@ class LoggerService:
         Args:
             message: The warning message to log.
         """
-        print(message)
         self.logger.warning(message)
 
     def error(self, message):
@@ -89,12 +86,10 @@ class LoggerService:
         Args:
             message: The error message to log.
         """
-        print(message)
         self.logger.error(message)
 
         # If we're inside an exception handler, also log the full traceback
         exc_type, exc_value, exc_tb = sys.exc_info()
         if exc_type is not None and exc_tb is not None:
             tb_str = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-            print(tb_str)
             self.logger.error(tb_str)

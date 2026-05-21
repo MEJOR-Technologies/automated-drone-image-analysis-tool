@@ -62,7 +62,7 @@ def test_thread_success_on_native_export():
     successes = []
     thread.success.connect(lambda: successes.append(True))
 
-    with patch("core.controllers.images.viewer.exports.ZipExportController.ZipBundleService") as MockBundle:
+    with patch("core.controllers.images.viewer.exports.ZipExportController.ZipBundleService"):
         thread.run()
 
     assert successes == [True]

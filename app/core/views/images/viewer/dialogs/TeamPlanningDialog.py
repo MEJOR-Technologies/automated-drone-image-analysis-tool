@@ -256,7 +256,6 @@ class TeamPlanningDialog(TranslationMixin, QDialog):
         row = self.team_list.currentRow()
         if row <= 0:
             return  # "Unassigned" row or nothing selected
-        team = self._teams[row - 1]
         self._teams.pop(row - 1)
         self._refresh_team_list()
         self.teams_changed.emit()

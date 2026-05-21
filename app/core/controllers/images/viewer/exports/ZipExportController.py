@@ -370,7 +370,7 @@ class ZipExportController(TranslationMixin):
 
             # Transfer metadata
             try:
-                if platform.system() == "Darwin" :
+                if platform.system() == "Darwin":
                     MetaDataHelper.transfer_exif(src_path, dst_path)
                     xmp_xml = MetaDataHelper.get_xmp_data(src_path, parse=False)
                     if xmp_xml:

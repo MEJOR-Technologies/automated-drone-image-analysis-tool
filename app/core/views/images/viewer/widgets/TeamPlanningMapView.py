@@ -347,8 +347,8 @@ class TeamPlanningMapView(TranslationMixin, QGraphicsView):
         ys = [p.y() for p in pts]
         margin = 50
         rect = QRectF(min(xs) - margin, min(ys) - margin,
-                       max(xs) - min(xs) + margin * 2,
-                       max(ys) - min(ys) + margin * 2)
+                      max(xs) - min(xs) + margin * 2,
+                      max(ys) - min(ys) + margin * 2)
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
         self.zoom_scale = self.transform().m11()
         # The fit-all scale is the minimum allowed zoom-out

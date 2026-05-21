@@ -486,8 +486,8 @@ class WaldoMetadataService:
 
     @staticmethod
     def _write_synthesised_xmp(image_path: str, angles: Dict[str, float],
-                                plane_heading_deg: float,
-                                agl_m: float, abs_orthometric_m: float):
+                               plane_heading_deg: float,
+                               agl_m: float, abs_orthometric_m: float):
         """Write the synthesised drone-dji + waldo:Processed fields in one batch.
 
         FlightYawDegree carries the plane's true heading (drone-body direction).

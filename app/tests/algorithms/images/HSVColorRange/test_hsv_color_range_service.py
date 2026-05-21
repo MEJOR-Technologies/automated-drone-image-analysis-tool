@@ -348,7 +348,13 @@ def test_create_mask_no_wraparound(hsv_color_range_service):
 
 def test_init_parses_hsv_configs_as_string():
     options = {
-        'hsv_configs': "[{'selected_color': (100, 150, 200), 'hsv_ranges': {'h': 0.5, 's': 0.5, 'v': 0.5, 'h_minus': 0.05, 'h_plus': 0.05, 's_minus': 0.1, 's_plus': 0.1, 'v_minus': 0.1, 'v_plus': 0.1}}]",
+        'hsv_configs': (
+            "[{'selected_color': (100, 150, 200), "
+            "'hsv_ranges': {'h': 0.5, 's': 0.5, 'v': 0.5, "
+            "'h_minus': 0.05, 'h_plus': 0.05, "
+            "'s_minus': 0.1, 's_plus': 0.1, "
+            "'v_minus': 0.1, 'v_plus': 0.1}}]"
+        ),
     }
     service = HSVColorRangeService(
         identifier=(100, 150, 200),

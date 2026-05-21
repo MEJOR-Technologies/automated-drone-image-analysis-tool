@@ -79,7 +79,7 @@ class TeamPdfExportService(PdfGeneratorService):
 
             # --- cover page ---
             self._add_cover(
-                title=f"Field Verification Report",
+                title="Field Verification Report",
                 subtitle=team_name,
                 extra_lines=[f"AOIs assigned: {len(aoi_entries)}"],
             )
