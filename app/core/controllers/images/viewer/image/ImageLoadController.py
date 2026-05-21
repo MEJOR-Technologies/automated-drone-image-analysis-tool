@@ -121,6 +121,10 @@ class ImageLoadController(TranslationMixin):
             # Update overlay
             self._update_overlay(image_service)
 
+            # Refresh tools that depend on GSD (e.g. person size reference)
+            if hasattr(self.parent, '_update_person_overlay_button_enabled'):
+                self.parent._update_person_overlay_button_enabled()
+
         except Exception as e:
             self._handle_load_error(e, image)
 

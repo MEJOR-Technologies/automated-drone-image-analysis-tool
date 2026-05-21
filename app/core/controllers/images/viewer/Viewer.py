@@ -42,6 +42,7 @@ from core.views.images.viewer.dialogs.UpscaleDialog import UpscaleDialog
 from core.views.images.viewer.widgets.OverlayWidget import OverlayWidget
 from core.controllers.images.viewer.MagnifyingGlass import MagnifyingGlass
 from core.views.images.viewer.dialogs.MeasureDialog import MeasureDialog
+from core.views.images.viewer.dialogs.PersonReferenceDialog import PersonReferenceDialog
 from core.views.images.viewer.dialogs.LoadingDialog import LoadingDialog
 from core.views.images.viewer.dialogs.ResultsLoadingDialog import ResultsLoadingDialog
 from core.views.images.viewer.widgets.ScaleBarWidget import ScaleBarWidget
@@ -112,6 +113,14 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.measure_dialog = None
         self.measure_dialog_open = False
         self.current_gsd = None
+
+        # Person reference overlay state
+        self.person_reference_dialog = None
+        self.person_reference_dialog_open = False
+        # GSDService for the currently loaded image (rebuilt on each image load).
+        # Used by the person-size reference tool to scale silhouettes by
+        # *local* GSD so the size accounts for camera tilt across the frame.
+        self.current_gsd_service = None
 
         self.setupUi(self)
         self.setWindowTitle(
@@ -382,6 +391,14 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         # Close help dialog if open
         if hasattr(self, 'help_dialog') and self.help_dialog:
             self.help_dialog.close()
+
+        # Close measure dialog if open
+        if hasattr(self, 'measure_dialog') and self.measure_dialog:
+            self.measure_dialog.close()
+
+        # Close person reference dialog if open
+        if hasattr(self, 'person_reference_dialog') and self.person_reference_dialog:
+            self.person_reference_dialog.close()
 
         # Clean up neighbor tracking controller
         if hasattr(self, 'neighbor_tracking_controller'):
@@ -820,6 +837,8 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self._open_image_adjustment_dialog()
         if e.key() == Qt.Key_M and e.modifiers() == Qt.ControlModifier:
             self._open_measure_dialog()
+        if e.key() == Qt.Key_P and e.modifiers() == Qt.ControlModifier:
+            self._open_person_reference_dialog()
         if e.key() == Qt.Key_I and e.modifiers() == Qt.ControlModifier:
             self.showPOIsButton.setChecked(not self.showPOIsButton.isChecked())
             self._update_show_pois_button_style()
@@ -1082,6 +1101,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.pdfButton.clicked.connect(self._pdfButton_clicked)
             self.zipButton.clicked.connect(self._zipButton_clicked)
             self.measureButton.clicked.connect(self._open_measure_dialog)
+            self.personOverlayButton.clicked.connect(self._open_person_reference_dialog)
             self.adjustmentsButton.clicked.connect(self._open_image_adjustment_dialog)
             self.magnifyButton.clicked.connect(self._magnifyButton_clicked)
             self.GPSMapButton.clicked.connect(self._gps_map_button_clicked)
@@ -1091,6 +1111,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self._update_magnify_button_style()
             self.ui_style_controller.update_adjustments_button_style()
             self.ui_style_controller.update_measure_button_style()
+            self.ui_style_controller.update_person_overlay_button_style()
             self.ui_style_controller.update_gps_map_button_style()
             self.ui_style_controller.update_rotate_image_button_style()
 
@@ -1716,6 +1737,127 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.measure_dialog = None  # Clear reference for proper lifecycle
         self.ui_style_controller.update_measure_button_style()
 
+    def _get_current_image_gsd(self):
+        """Return the current image's GSD in cm/px, or None if unavailable.
+
+        The size-reference tool requires GSD to draw silhouettes to scale, so
+        callers use this to gate the feature.
+        """
+        gsd_text = self.messages.get("Estimated Average GSD") if hasattr(self, 'messages') else None
+        if not gsd_text:
+            return None
+        try:
+            return float(str(gsd_text).replace("cm/px", "").strip())
+        except (ValueError, AttributeError):
+            return None
+
+    def _refresh_current_gsd_service(self):
+        """Rebuild the GSDService for the active image so the person-size tool
+        can query *local* GSD (varies across the frame for tilted shots)."""
+        image_service = getattr(self, 'current_image_service', None)
+        if image_service is None or not hasattr(image_service, 'get_gsd_service'):
+            self.current_gsd_service = None
+            return
+        custom_alt = None
+        if hasattr(self, 'altitude_controller'):
+            try:
+                custom_alt = self.altitude_controller.get_effective_altitude()
+            except Exception:
+                custom_alt = None
+        try:
+            self.current_gsd_service = image_service.get_gsd_service(custom_altitude_ft=custom_alt)
+        except Exception:
+            self.current_gsd_service = None
+
+    def _build_gsd_at_pixel_provider(self):
+        """Return a callable(col, row) -> GSD cm/px for the current image.
+
+        The callable uses ImageService.compute_gsd_at_pixel, which combines
+        the GSDService geometry with DEM-corrected effective AGL when the
+        terrain service is enabled (per the user's UseTerrainElevation
+        setting). Returns None when no image is loaded.
+        """
+        image_service = getattr(self, 'current_image_service', None)
+        if image_service is None or not hasattr(image_service, 'compute_gsd_at_pixel'):
+            return None
+
+        custom_alt = None
+        if hasattr(self, 'altitude_controller'):
+            try:
+                custom_alt = self.altitude_controller.get_effective_altitude()
+            except Exception:
+                custom_alt = None
+
+        use_terrain = bool(getattr(self, 'use_terrain_elevation', True))
+
+        def _provider(col, row):
+            try:
+                return image_service.compute_gsd_at_pixel(
+                    col, row,
+                    use_terrain=use_terrain,
+                    custom_altitude_ft=custom_alt,
+                )
+            except Exception:
+                return None
+
+        return _provider
+
+    def _update_person_overlay_button_enabled(self):
+        """Enable the person reference button only when GSD is available."""
+        if not hasattr(self, 'personOverlayButton'):
+            return
+        # Refresh the per-pixel GSD service alongside the average GSD readout.
+        self._refresh_current_gsd_service()
+        gsd = self._get_current_image_gsd()
+        has_gsd = gsd is not None and gsd > 0
+        self.personOverlayButton.setEnabled(has_gsd)
+        if has_gsd:
+            self.personOverlayButton.setToolTip(
+                self.tr("Person Size Reference (Ctrl+P)")
+            )
+        else:
+            self.personOverlayButton.setToolTip(
+                self.tr("Person Size Reference is unavailable: no GSD for this image")
+            )
+        # If the dialog is open, push the updated GSD/provider into it so it rescales.
+        if self.person_reference_dialog is not None and self.person_reference_dialog.isVisible():
+            self.person_reference_dialog.update_gsd(
+                gsd,
+                gsd_at_pixel=self._build_gsd_at_pixel_provider(),
+            )
+
+    def _open_person_reference_dialog(self):
+        """Opens the person-size reference overlay dialog."""
+        if self.main_image is None or not self.main_image.hasImage():
+            return
+
+        gsd = self._get_current_image_gsd()
+        if gsd is None or gsd <= 0:
+            # Tool is supposed to be disabled in this case; bail silently.
+            return
+
+        # Close help dialog if open to prevent blocking
+        self._close_help_dialog_if_open()
+
+        # Ensure the per-pixel GSD service is fresh before opening.
+        self._refresh_current_gsd_service()
+
+        if self.person_reference_dialog is None or not self.person_reference_dialog.isVisible():
+            self.person_reference_dialog = PersonReferenceDialog(
+                self, self.main_image, gsd, self.distance_unit,
+                gsd_at_pixel=self._build_gsd_at_pixel_provider(),
+            )
+            self.person_reference_dialog.finished.connect(self._on_person_reference_dialog_closed)
+            self.person_reference_dialog_open = True
+            self.ui_style_controller.update_person_overlay_button_style()
+            self.person_reference_dialog.show()
+
+    def _on_person_reference_dialog_closed(self):
+        """Handle person reference dialog close event."""
+        self.person_reference_dialog_open = False
+        self.person_reference_dialog = None
+        self.ui_style_controller.update_person_overlay_button_style()
+
     def _prompt_for_custom_agl_altitude(self):
         """Prompt user for custom AGL altitude when negative altitude is detected."""
         # Delegate to AltitudeController
@@ -1860,6 +2002,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.pdfButton.setIcon(IconHelper.create_icon('fa6s.file-pdf', self.theme))
         self.zipButton.setIcon(IconHelper.create_icon('fa5s.file-archive', self.theme))
         self.measureButton.setIcon(IconHelper.create_icon('fa6s.ruler', self.theme))
+        self.personOverlayButton.setIcon(IconHelper.create_icon('fa6s.person', self.theme))
         self.adjustmentsButton.setIcon(IconHelper.create_icon('fa6s.sliders', self.theme))
         self.previousImageButton.setIcon(IconHelper.create_icon('fa6s.arrow-left', self.theme))
         self.nextImageButton.setIcon(IconHelper.create_icon('fa6s.arrow-right', self.theme))

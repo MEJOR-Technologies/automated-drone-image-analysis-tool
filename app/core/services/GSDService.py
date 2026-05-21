@@ -42,12 +42,15 @@ class GSDService:
         else:
             self.principalPoint = (self.image[0] / 2, self.image[1] / 2)
 
-    def compute_gsd(self, row, col):
+    def compute_gsd(self, row, col, altitude_override=None):
         """Compute the Ground Sampling Distance (GSD) at a specific image pixel.
 
         Args:
             row: The row index of the pixel.
             col: The column index of the pixel.
+            altitude_override (float, optional): Effective AGL altitude in meters
+                to use instead of the service's default. Used by terrain-aware
+                callers to plug in a per-pixel AGL derived from DEM data.
 
         Returns:
             GSD at the specified pixel in centimeters.
@@ -71,12 +74,21 @@ class GSDService:
         p1_world = R_tilt @ p1_cam
         p2_world = R_tilt @ p2_cam
 
+        altitude = self.altitude if altitude_override is None else altitude_override
+
         def intersect_ground(p):
-            scale = self.altitude / -p[2]
+            if abs(p[2]) < 1e-12:
+                return None
+            scale = altitude / -p[2]
+            if scale < 0:
+                return None
             return p[:2] * scale
 
         g1 = intersect_ground(p1_world)
         g2 = intersect_ground(p2_world)
+
+        if g1 is None or g2 is None:
+            return None
 
         gsd = np.linalg.norm(g2 - g1)
         return gsd * 100  # convert to centimeters
@@ -102,7 +114,9 @@ class GSDService:
         rows = np.arange(height)
         y = (rows - cy) * self.pel_size
 
-        scale = self.altitude / (self.focal_length * cos_t - y * sin_t)
+        denom = self.focal_length * cos_t - y * sin_t
+        valid = denom > 1e-12
+        scale = np.where(valid, self.altitude / denom, 0.0)
 
         # Horizontal GSD: uniform across columns for a given row
         h_gsd = self.pel_size * scale * 100  # cm
@@ -138,7 +152,11 @@ class GSDService:
         rows = np.arange(height)
         y = (rows - cy) * self.pel_size
 
-        scale = self.altitude / (self.focal_length * cos_t - y * sin_t)
+        denom = self.focal_length * cos_t - y * sin_t
+        valid = denom > 1e-12
+        if not np.any(valid):
+            return None
+        scale = np.where(valid, self.altitude / denom, 0.0)
 
         # Horizontal GSD per row
         h_gsd = self.pel_size * scale * 100  # cm
@@ -148,7 +166,8 @@ class GSDService:
         v_gsd = np.abs(np.diff(ground_y)) * 100  # cm
         v_gsd = np.append(v_gsd, v_gsd[-1] if len(v_gsd) > 0 else h_gsd[-1])
 
-        avg_gsd = np.mean(np.sqrt(np.abs(h_gsd) * v_gsd))
+        combined = np.sqrt(np.abs(h_gsd) * v_gsd)
+        avg_gsd = np.mean(combined[valid])
         return avg_gsd
 
     def compute_average_gsd_between_points(self, row1, col1, row2, col2):
@@ -169,6 +188,8 @@ class GSDService:
         """
         gsd1 = self.compute_gsd(row1, col1)
         gsd2 = self.compute_gsd(row2, col2)
+        if gsd1 is None or gsd2 is None:
+            return None
         return (gsd1 + gsd2) / 2.0
 
     def compute_ground_distance(self, row1, col1, row2, col2):
@@ -184,12 +205,13 @@ class GSDService:
             col2: Column coordinate of second point (e.g., AOI center).
 
         Returns:
-            Tuple of (ground_distance_x, ground_distance_y) in meters, where:
-            - ground_distance_x: ground distance in the column (horizontal) direction
-            - ground_distance_y: ground distance in the row (vertical) direction
+            Tuple of (ground_distance_x, ground_distance_y) in meters, or None
+            if the GSD cannot be computed (e.g., ray does not intersect ground).
         """
         # Get average GSD between the two points
         avg_gsd_cm = self.compute_average_gsd_between_points(row1, col1, row2, col2)
+        if avg_gsd_cm is None:
+            return None
         avg_gsd_m = avg_gsd_cm / 100.0  # Convert to meters
 
         # Calculate pixel distances

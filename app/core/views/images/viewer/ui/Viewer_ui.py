@@ -208,6 +208,12 @@ class Ui_Viewer(object):
 
         self.horizontalLayout_5.addWidget(self.measureButton)
 
+        self.personOverlayButton = QToolButton(self.mainHeaderWidget)
+        self.personOverlayButton.setObjectName(u"personOverlayButton")
+        self.personOverlayButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_5.addWidget(self.personOverlayButton)
+
         self.magnifyButton = QToolButton(self.mainHeaderWidget)
         self.magnifyButton.setObjectName(u"magnifyButton")
         self.magnifyButton.setStyleSheet(u"QToolButton {\n"
@@ -624,6 +630,11 @@ class Ui_Viewer(object):
 #endif // QT_CONFIG(tooltip)
         self.measureButton.setText(QCoreApplication.translate("Viewer", u"...", None))
         self.measureButton.setProperty(u"iconName", QCoreApplication.translate("Viewer", u"ruler.png", None))
+#if QT_CONFIG(tooltip)
+        self.personOverlayButton.setToolTip(QCoreApplication.translate("Viewer", u"Person Size Reference (Ctrl+P)", None))
+#endif // QT_CONFIG(tooltip)
+        self.personOverlayButton.setText(QCoreApplication.translate("Viewer", u"...", None))
+        self.personOverlayButton.setProperty(u"iconName", QCoreApplication.translate("Viewer", u"person.png", None))
 #if QT_CONFIG(tooltip)
         self.magnifyButton.setToolTip(QCoreApplication.translate("Viewer", u"Toggle Magnifying Glass (Middle Mouse)", None))
 #endif // QT_CONFIG(tooltip)

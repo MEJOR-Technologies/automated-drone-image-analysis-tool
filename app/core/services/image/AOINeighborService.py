@@ -276,7 +276,10 @@ class AOINeighborService:
                         tilt_angle=coverage_info['tilt_angle'],
                         sensor=(coverage_info['sensor_w_mm'], coverage_info['sensor_h_mm'])
                     )
-                    avg_gsd_m = gsd_service.compute_average_gsd() / 100.0
+                    avg_gsd_cm = gsd_service.compute_average_gsd()
+                    if avg_gsd_cm is None:
+                        continue
+                    avg_gsd_m = avg_gsd_cm / 100.0
 
                     # Diagonal distance from center to corner
                     half_width = (coverage_info['width'] / 2) * avg_gsd_m

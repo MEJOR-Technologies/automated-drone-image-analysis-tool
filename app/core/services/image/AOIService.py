@@ -338,8 +338,12 @@ class AOIService:
         # Ground plane: z = 0
         # We need ray to point downward (positive Down component)
 
-        if ray_ned[2] <= 0:
-            # Ray points upward or horizontal - no ground intersection
+        if ray_ned[2] <= 1e-6:
+            # Ray points upward, horizontal, or nearly horizontal — no
+            # reliable ground intersection.  The 1e-6 threshold rejects
+            # rays shallower than ~0.00006° below the horizon, which
+            # would place the intersection >100 km away at typical UAS
+            # altitudes and produce nonsensical GPS coordinates.
             return None
 
         # t = altitude / ray_down (ray goes from -altitude to 0)
@@ -348,6 +352,12 @@ class AOIService:
         # Ground intersection in local NED (relative to drone position)
         ground_north = ray_ned[0] * t
         ground_east = ray_ned[1] * t
+
+        # Reject intersections more than 50 km from the drone — well
+        # beyond any realistic detection range for UAS imagery.
+        MAX_GROUND_DISTANCE_M = 50_000.0
+        if abs(ground_north) > MAX_GROUND_DISTANCE_M or abs(ground_east) > MAX_GROUND_DISTANCE_M:
+            return None
 
         # Step 5: Convert NED offset to GPS coordinates
         R_earth = 6378137.0
