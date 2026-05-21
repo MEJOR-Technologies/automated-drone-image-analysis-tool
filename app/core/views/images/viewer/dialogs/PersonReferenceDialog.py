@@ -58,6 +58,10 @@ SIZE_CLASSES = [
 
 CM_PER_INCH = 2.54
 
+# WGS-84 equatorial radius, for the local NED <-> lat/lon conversion used by
+# the DEM terrain lookups.
+EARTH_RADIUS_M = 6378137.0
+
 # A person lying down is a low slab; this fraction of their standing height
 # is the body thickness used to cast the recumbent shadow.
 RECUMBENT_THICKNESS_FRACTION = 0.12
@@ -232,6 +236,10 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.sun_az = None
         self.sun_error = None
 
+        # DEM terrain state for the current image.
+        self.terrain_service = None
+        self.terrain_nadir_elev = None
+
         # Overlay color (persisted so the user only sets it once).
         self._settings_service = SettingsService()
         saved = self._settings_service.get_setting(SETTING_OVERLAY_COLOR)
@@ -289,6 +297,9 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.shadow_check = QCheckBox(self.tr("Show shadows (from capture time)"))
         self.shadow_check.setChecked(True)
 
+        self.terrain_check = QCheckBox(self.tr("Use terrain elevation (DEM)"))
+        self.terrain_check.setChecked(True)
+
         # Ground rotation of the person, for lining a pose up with an object.
         self.rotation_spin = QSpinBox()
         self.rotation_spin.setRange(0, 359)
@@ -312,6 +323,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         form.addRow(self.tr("Show:"), poses_widget)
         form.addRow(self.tr("Rotation:"), self.rotation_spin)
         form.addRow("", self.shadow_check)
+        form.addRow("", self.terrain_check)
         form.addRow(self.tr("Color:"), color_widget)
         params_group.setLayout(form)
 
@@ -357,6 +369,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.recumbent_check.toggled.connect(self._on_params_changed)
         self.sitting_check.toggled.connect(self._on_params_changed)
         self.shadow_check.toggled.connect(self._on_params_changed)
+        self.terrain_check.toggled.connect(self._on_params_changed)
         self.rotation_spin.valueChanged.connect(self._on_rotation_changed)
         self.color_button.clicked.connect(self._on_color_button_clicked)
         self.recenter_button.clicked.connect(self._recenter)
@@ -380,8 +393,10 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.image_path = image_path
         self.camera = CameraModel.from_image_service(image_service, agl_override_m)
         self._resolve_sun()
+        self._resolve_terrain()
         self._build_overlay()
         self._update_sun_label()
+        self._update_terrain_check()
         self._render_all()
 
         if self.camera is None:
@@ -500,11 +515,125 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         return SIZE_CLASSES[idx][2] * CM_PER_INCH
 
     def _foot_ned(self):
-        """Ground point (NED, metres from the camera) under the anchor handle."""
+        """Ground point (NED, metres from the camera) under the anchor handle.
+
+        Casts the anchor pixel onto the DEM terrain surface when terrain use
+        is enabled and available, otherwise onto a flat plane at the AGL.
+        """
         if self.camera is None or self.anchor_item is None:
             return None
         pos = self.anchor_item.pos()
+        if self._terrain_active():
+            terrain_foot = self._terrain_foot_ned(pos.x(), pos.y())
+            if terrain_foot is not None:
+                return terrain_foot
         return self.camera.pixel_to_ground(pos.x(), pos.y())
+
+    # ---------------- DEM terrain ----------------
+    def _resolve_terrain(self):
+        """Look up the terrain service and the nadir reference elevation."""
+        self.terrain_service = None
+        self.terrain_nadir_elev = None
+        try:
+            from core.services.image.AOIService import _get_terrain_service
+            service = _get_terrain_service()
+        except Exception:
+            return
+        if service is None or not getattr(service, 'enabled', False):
+            return
+        self.terrain_service = service
+        # Reference elevation: the terrain directly under the drone (nadir).
+        self.terrain_nadir_elev = self._terrain_elevation(0.0, 0.0)
+
+    def _update_terrain_check(self):
+        """Enable the terrain checkbox only when DEM data covers this image."""
+        available = (self.terrain_service is not None
+                     and self.terrain_nadir_elev is not None)
+        self.terrain_check.setEnabled(available)
+        if available:
+            self.terrain_check.setToolTip(self.tr(
+                "Place the person and shadow on the DEM terrain surface"
+            ))
+        else:
+            self.terrain_check.setToolTip(self.tr(
+                "Terrain (DEM) data is not available for this image"
+            ))
+
+    def _terrain_active(self):
+        """Whether terrain-aware placement is currently enabled and usable."""
+        return (self.terrain_check.isChecked() and self.terrain_check.isEnabled()
+                and self.terrain_service is not None
+                and self.terrain_nadir_elev is not None)
+
+    def _ned_to_latlon(self, north, east):
+        """Convert a camera-NED horizontal offset to a (lat, lon)."""
+        lat = self.drone_lat + math.degrees(north / EARTH_RADIUS_M)
+        lon = self.drone_lon + math.degrees(
+            east / (EARTH_RADIUS_M * math.cos(math.radians(self.drone_lat)))
+        )
+        return lat, lon
+
+    def _terrain_elevation(self, north, east):
+        """Terrain elevation (metres) at a camera-NED ground point, or None."""
+        if self.terrain_service is None or self.drone_lat is None:
+            return None
+        lat, lon = self._ned_to_latlon(north, east)
+        try:
+            result = self.terrain_service.get_elevation(lat, lon)
+        except Exception:
+            return None
+        if (result is None or getattr(result, 'source', None) != 'terrain'
+                or result.elevation_m is None):
+            return None
+        return result.elevation_m
+
+    def _terrain_foot_ned(self, u, v):
+        """Iteratively cast the pixel ray onto the DEM surface.
+
+        The camera AGL is taken as the height above the terrain at the nadir
+        point, so a point whose terrain is higher than the nadir is
+        correspondingly closer to the camera.
+        """
+        ray = self.camera.pixel_ray(u, v)
+        if ray[2] <= 1e-9:
+            return None
+        down = self.camera.agl_m
+        for _ in range(5):
+            t = down / ray[2]
+            elev = self._terrain_elevation(t * ray[0], t * ray[1])
+            if elev is None:
+                break
+            new_down = self.camera.agl_m - (elev - self.terrain_nadir_elev)
+            if new_down <= 1.0:
+                break  # implausible - keep the previous estimate
+            if abs(new_down - down) < 0.05:
+                down = new_down
+                break
+            down = new_down
+        t = down / ray[2]
+        if t <= 0:
+            return None
+        return (t * ray[0], t * ray[1], t * ray[2])
+
+    def _shadow_slope(self, foot):
+        """Terrain grade along the shadow direction (rise/run), or 0.0 if flat.
+
+        Positive means the ground rises away from the sun, which shortens
+        shadows; negative lengthens them.
+        """
+        if not self._terrain_active() or foot is None or self.sun_az is None:
+            return 0.0
+        foot_elev = self._terrain_elevation(foot[0], foot[1])
+        if foot_elev is None:
+            return 0.0
+        baseline_m = 10.0
+        anti_sun = math.radians(self.sun_az + 180.0)
+        tip_n = foot[0] + baseline_m * math.cos(anti_sun)
+        tip_e = foot[1] + baseline_m * math.sin(anti_sun)
+        tip_elev = self._terrain_elevation(tip_n, tip_e)
+        if tip_elev is None:
+            return 0.0
+        return (tip_elev - foot_elev) / baseline_m
 
     def _project_person_local(self, person_points, foot_ned):
         """Project person-local (x=right, y=forward, z=up) points to pixels."""
@@ -611,6 +740,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
                      and self.sun_elev is not None and self.sun_elev > 0)
         combined = None
         if shadow_on:
+            slope = self._shadow_slope(foot)
             enabled = {
                 'standing': self.standing_check.isChecked(),
                 'sitting': self.sitting_check.isChecked(),
@@ -619,14 +749,15 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
             for pose, is_on in enabled.items():
                 if not is_on:
                     continue
-                path = self._shadow_path_for_pose(pose, height_cm, height_m, foot)
+                path = self._shadow_path_for_pose(
+                    pose, height_cm, height_m, foot, slope)
                 if path is None or path.isEmpty():
                     continue
                 combined = path if combined is None else combined.united(path)
         self.shadow_item.setPath(combined or QPainterPath())
         self.shadow_item.setVisible(combined is not None)
 
-    def _shadow_path_for_pose(self, pose, height_cm, height_m, foot):
+    def _shadow_path_for_pose(self, pose, height_cm, height_m, foot, slope=0.0):
         """Build the ground-shadow QPainterPath cast by one pose, or None.
 
         Every pose is cast the same way: a cloud of 3D body points is dropped
@@ -643,7 +774,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         else:
             points = PersonModel.build_points(height_m, pose)
         ground = compute_shadow_ground_points(
-            self._orient(points), foot, self.sun_elev, self.sun_az
+            self._orient(points), foot, self.sun_elev, self.sun_az, slope
         )
         return self._hull_path(self._project_ground(ground))
 
