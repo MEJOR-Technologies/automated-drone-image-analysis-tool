@@ -17,6 +17,7 @@ from core.services.image.ImageService import ImageService
 from core.services.image.AOIService import AOIService, _get_terrain_service
 from core.services.LoggerService import LoggerService
 from helpers.TranslationMixin import TranslationMixin
+from helpers.PhotogrammetryHelper import FovHomography, validate_alignment
 
 
 class GPSMapView(TranslationMixin, QGraphicsView):
@@ -1346,6 +1347,24 @@ class GPSMapView(TranslationMixin, QGraphicsView):
 
         # Calculate FOV dimensions
         try:
+            # Manually aligned image: draw the user-placed corners directly,
+            # bypassing GSD / ray-cast / terrain entirely.
+            refinement = current_data.get('fov_alignment')
+            if (refinement and refinement.get('corners')
+                    and validate_alignment(refinement['corners'])):
+                corners_scene = [
+                    self.lat_lon_to_scene(lat, lon)
+                    for lat, lon in refinement['corners']
+                ]
+                self._fov_cache = {
+                    'mode': 'refined',
+                    'fov_alignment': refinement,
+                    'width': current_data.get('width'),
+                    'height': current_data.get('height'),
+                }
+                self._add_fov_polygon(corners_scene, "Image FOV\nProjection: User-aligned")
+                return
+
             # Get custom altitude if available
             custom_alt = None
             if hasattr(self, 'parent') and hasattr(self.parent(), 'parent'):
@@ -1537,18 +1556,7 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                     bearing, image_lat, image_lon
                 )
 
-            # Create FOV polygon
-            polygon = QPolygonF(corners_scene)
-            self.fov_box = QGraphicsPolygonItem(polygon)
-
-            pen = QPen(QColor(0, 150, 255), 2)
-            pen.setCosmetic(True)
-            self.fov_box.setPen(pen)
-
-            brush = QBrush(QColor(0, 150, 255, 30))
-            self.fov_box.setBrush(brush)
-            self.fov_box.setZValue(5)
-
+            # Build the tooltip and create the FOV polygon.
             tooltip = "Image FOV\n"
             tooltip += f"Dimensions: {width}x{height} pixels\n"
             tooltip += f"Ground Coverage: {width_m:.1f}m x {height_m:.1f}m\n"
@@ -1559,13 +1567,8 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                 tooltip += f"\nEffective AGL: {effective_agl:.1f}m"
             if has_raycast:
                 tooltip += "\nProjection: Raycast"
-            self.fov_box.setToolTip(tooltip)
 
-            self.scene.addItem(self.fov_box)
-
-            # Ensure compass stays on top after adding FOV box
-            if self.compass_container:
-                self.compass_container.raise_()
+            self._add_fov_polygon(corners_scene, tooltip)
 
         except Exception as e:
             self.logger.error(f"update_fov_box failed: {e}")
@@ -1575,6 +1578,42 @@ class GPSMapView(TranslationMixin, QGraphicsView):
         if self.fov_box and self.fov_box in self.scene.items():
             self.scene.removeItem(self.fov_box)
             self.fov_box = None
+
+    def _add_fov_polygon(self, corners_scene, tooltip):
+        """Create the FOV box from scene-space corners and add it to the scene.
+
+        Args:
+            corners_scene: List of QPointF polygon corners in scene coordinates.
+            tooltip: Tooltip text for the FOV box.
+        """
+        self.fov_box = QGraphicsPolygonItem(QPolygonF(corners_scene))
+        pen = QPen(QColor(0, 150, 255), 2)
+        pen.setCosmetic(True)
+        self.fov_box.setPen(pen)
+        self.fov_box.setBrush(QBrush(QColor(0, 150, 255, 30)))
+        self.fov_box.setZValue(5)
+        self.fov_box.setToolTip(tooltip)
+        self.scene.addItem(self.fov_box)
+        if self.compass_container:
+            self.compass_container.raise_()
+
+    def _add_zoom_fov_polygon(self, corners_scene, tooltip):
+        """Create the zoom FOV box from scene-space corners and add it.
+
+        Args:
+            corners_scene: List of QPointF polygon corners in scene coordinates.
+            tooltip: Tooltip text for the zoom FOV box.
+        """
+        self.zoom_fov_box = QGraphicsPolygonItem(QPolygonF(corners_scene))
+        pen = QPen(QColor(255, 50, 50), 2)
+        pen.setCosmetic(True)
+        self.zoom_fov_box.setPen(pen)
+        self.zoom_fov_box.setBrush(QBrush(QColor(255, 50, 50, 30)))
+        self.zoom_fov_box.setZValue(6)
+        self.zoom_fov_box.setToolTip(tooltip)
+        self.scene.addItem(self.zoom_fov_box)
+        if self.compass_container:
+            self.compass_container.raise_()
 
     def update_zoom_fov_box(self, visible_rect):
         """
@@ -1596,6 +1635,40 @@ class GPSMapView(TranslationMixin, QGraphicsView):
 
         try:
             cache = self._fov_cache
+
+            # Manually aligned image: map the visible rect through the homography.
+            if cache.get('mode') == 'refined':
+                refinement = cache.get('fov_alignment')
+                width = cache.get('width')
+                height = cache.get('height')
+                if not (refinement and width and height):
+                    return
+                # Skip when the visible rect covers the whole image.
+                if (visible_rect.left() <= 1 and visible_rect.top() <= 1
+                        and visible_rect.right() >= width - 1
+                        and visible_rect.bottom() >= height - 1):
+                    return
+                homography = FovHomography(
+                    refinement['corners'], width, height,
+                    refinement.get('tie_points')
+                )
+                # Clamp the visible rect to the image bounds. The zoom box
+                # shows a portion of the image, so it can never extend past
+                # the image edges (i.e. outside the FOV box).
+                left = max(0.0, min(visible_rect.left(), float(width)))
+                right = max(0.0, min(visible_rect.right(), float(width)))
+                top = max(0.0, min(visible_rect.top(), float(height)))
+                bottom = max(0.0, min(visible_rect.bottom(), float(height)))
+                rect_px = [
+                    (left, top), (right, top), (right, bottom), (left, bottom),
+                ]
+                corners_scene = [
+                    self.lat_lon_to_scene(*homography.pixel_to_gps(u, v))
+                    for u, v in rect_px
+                ]
+                self._add_zoom_fov_polygon(corners_scene, self.tr("Zoom FOV"))
+                return
+
             gsd_m = cache['gsd_m']
             imgWidth = cache['width']
             imgHeight = cache['height']
@@ -1691,30 +1764,13 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                     corners_m.append((x_m, y_m))
                 corners_scene = self._fov_flat_corners(corners_m, bearing, image_lat, image_lon)
 
-            # Create zoom FOV polygon
-            polygon = QPolygonF(corners_scene)
-            self.zoom_fov_box = QGraphicsPolygonItem(polygon)
-
-            pen = QPen(QColor(255, 50, 50), 2)
-            pen.setCosmetic(True)
-            self.zoom_fov_box.setPen(pen)
-
-            brush = QBrush(QColor(255, 50, 50, 30))
-            self.zoom_fov_box.setBrush(brush)
-            self.zoom_fov_box.setZValue(6)
-
+            # Create the zoom FOV polygon.
             visW_m = visible_rect.width() * gsd_m
             visH_m = visible_rect.height() * gsd_m
             tooltip = self.tr("Zoom FOV") + "\n"
             tooltip += f"{self.tr('Visible')}: {visible_rect.width():.0f}x{visible_rect.height():.0f} px\n"
             tooltip += f"{self.tr('Ground')}: {visW_m:.1f}m x {visH_m:.1f}m"
-            self.zoom_fov_box.setToolTip(tooltip)
-
-            self.scene.addItem(self.zoom_fov_box)
-
-            # Ensure compass stays on top
-            if self.compass_container:
-                self.compass_container.raise_()
+            self._add_zoom_fov_polygon(corners_scene, tooltip)
 
         except Exception:
             pass

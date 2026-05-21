@@ -14,6 +14,7 @@ from core.services.image.ImageService import ImageService
 from core.services.LoggerService import LoggerService
 from helpers.LocationInfo import LocationInfo
 from helpers.MetaDataHelper import MetaDataHelper
+from helpers.PhotogrammetryHelper import validate_alignment
 
 
 class CoverageExtentService:
@@ -149,6 +150,21 @@ class CoverageExtentService:
             'cancelled': False
         }
 
+    def get_image_fov_corners(self, image: Dict[str, Any]) -> Optional[List[tuple]]:
+        """
+        Compute the estimated FOV corner coordinates for a single image.
+
+        Public wrapper around the FOV polygon calculation, used by the Align
+        Image dialog to seed its starting overlay.
+
+        Args:
+            image: Image data dictionary.
+
+        Returns:
+            List of four (latitude, longitude) tuples (TL, TR, BR, BL), or None.
+        """
+        return self._calculate_image_fov_polygon(image)
+
     def _calculate_image_fov_polygon(self, image: Dict[str, Any]) -> Optional[List[tuple]]:
         """
         Calculate the FOV polygon for a single image.
@@ -160,6 +176,13 @@ class CoverageExtentService:
             List of (latitude, longitude) tuples for polygon corners, or None if calculation fails
         """
         try:
+            # A manually aligned image's user-placed corners are its FOV.
+            refinement = image.get('fov_alignment')
+            if refinement and refinement.get('corners'):
+                corners = refinement['corners']
+                if validate_alignment(corners):
+                    return [tuple(corner) for corner in corners]
+
             image_path = image.get('path', '')
             if not image_path:
                 return None

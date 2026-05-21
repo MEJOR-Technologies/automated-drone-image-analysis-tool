@@ -221,6 +221,11 @@ class HelpDialog(TranslationMixin, QDialog):
                         <td>Open GPS map view</td>
                     </tr>
                     <tr>
+                        <td>A</td>
+                        <td>Open the Align Image dialog to manually refine the image's
+                            FOV and GPS accuracy against satellite imagery</td>
+                    </tr>
+                    <tr>
                         <td>C</td>
                         <td>Enter AOI creation mode</td>
                     </tr>

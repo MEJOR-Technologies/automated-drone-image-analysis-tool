@@ -6,6 +6,10 @@ from typing import Optional, Tuple, Dict, Any
 from pathlib import Path
 from helpers.MetaDataHelper import MetaDataHelper
 from helpers.LocationInfo import LocationInfo
+from helpers.PhotogrammetryHelper import (
+    FovHomography, validate_alignment, build_camera_matrix, recover_camera_pose,
+    camera_center_world, project_pixel_to_plane, gps_to_local_enu, local_enu_to_gps
+)
 from core.services.image.ImageService import ImageService
 from core.services.LoggerService import LoggerService
 
@@ -31,7 +35,7 @@ class AOIGPSResult:
     """Result of AOI GPS calculation with metadata."""
     latitude: float
     longitude: float
-    elevation_source: str  # 'terrain', 'flat', or 'error'
+    elevation_source: str  # 'terrain', 'flat', 'refined', 'refined_terrain', or 'error'
     terrain_elevation_m: Optional[float] = None
     effective_agl_m: Optional[float] = None
     geoid_correction_m: Optional[float] = None
@@ -94,6 +98,17 @@ class AOIService:
             AOIGPSResult or None: Result with coordinates and metadata, or None if not calculable.
         """
         try:
+            # --- Refined path: user-aligned FOV corners bypass the metadata ---
+            # When the user has manually aligned the image to satellite imagery,
+            # the alignment is independent of the (possibly wrong) gimbal/GPS
+            # metadata, so it takes precedence over ray-casting.
+            refinement = image.get('fov_alignment')
+            if refinement and refinement.get('corners'):
+                refined_result = self._estimate_aoi_gps_from_alignment(image, aoi, refinement)
+                if refined_result is not None:
+                    return refined_result
+                # Fall through to ray-cast when the alignment is unusable.
+
             # --- Step 1: Load EXIF and orientation ---
             exif_data = MetaDataHelper.get_exif_data_piexif(image['path'])
             gps_coords = LocationInfo.get_gps(exif_data=exif_data)
@@ -226,6 +241,177 @@ class AOIService:
             if self.logger:
                 self.logger.error(f"AOIService: Failed to calculate AOI GPS - {e}")
             return None
+
+    def _estimate_aoi_gps_from_alignment(self, image, aoi, alignment):
+        """Estimate AOI GPS from manual FOV alignment control points.
+
+        The user-placed corners (and optional tie points) are independent of the
+        drone's orientation metadata, so this path is used in preference to
+        ray-casting whenever an alignment exists.
+
+        When terrain (DEM) data is available the camera pose is recovered from
+        the control points and the AOI pixel is ray-cast through the terrain
+        surface (the accurate path). Otherwise a planar homography over the same
+        control points is used as a fallback.
+
+        Args:
+            image (dict): Image metadata dict (carries 'fov_alignment').
+            aoi (dict): AOI with 'center' as (x, y) pixel coordinates.
+            alignment (dict): {'corners', 'tie_points', 'rotation'}.
+
+        Returns:
+            AOIGPSResult or None. None signals the caller to fall back to the
+            ray-cast path (e.g. the alignment quad is degenerate).
+        """
+        try:
+            corners = alignment.get('corners')
+            if not validate_alignment(corners):
+                if self.logger:
+                    self.logger.warning("AOIService: FOV alignment rejected - degenerate corners")
+                return None
+
+            width = image.get('width')
+            height = image.get('height')
+            if not width or not height:
+                img_array = self.image_service.img_array
+                if img_array is None:
+                    return None
+                height, width = img_array.shape[:2]
+
+            tie_points = alignment.get('tie_points') or []
+            u, v = aoi['center']
+
+            # Build the planar homography up front. Constructing it also
+            # filters out tie points that grossly disagree with the four
+            # corners (most often a tie point whose two handles were placed on
+            # the wrong layers), so one misplaced tie point cannot corrupt
+            # either compute path below.
+            homography = FovHomography(corners, width, height, tie_points)
+            if homography.rejected_tie_points and self.logger:
+                self.logger.warning(
+                    f"AOIService: ignored {len(homography.rejected_tie_points)} "
+                    f"FOV tie point(s) inconsistent with the aligned corners"
+                )
+            clean_tie_points = homography.tie_points
+
+            # Accurate path: recover the camera pose against the DEM and
+            # ray-cast the AOI pixel through the terrain surface. Any failure
+            # here is isolated so the homography fallback below still runs.
+            try:
+                dem_result = self._estimate_alignment_gps_with_dem(
+                    corners, clean_tie_points, width, height, u, v
+                )
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(f"AOIService: DEM resection failed - {e}")
+                dem_result = None
+            if dem_result is not None:
+                return dem_result
+
+            # Fallback: planar homography over the same control points.
+            lat, lon = homography.pixel_to_gps(u, v)
+            return AOIGPSResult(
+                latitude=lat,
+                longitude=lon,
+                elevation_source='refined'
+            )
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"AOIService: FOV alignment estimate failed - {e}")
+            return None
+
+    def _estimate_alignment_gps_with_dem(self, corners, tie_points, width, height, u, v):
+        """DEM-resection path for a refined image.
+
+        Recovers the camera pose from the alignment control points (and the DEM
+        elevations beneath them) with solvePnP, then ray-casts the AOI pixel
+        through the terrain surface. This recovers the orientation metadata the
+        image never had and resolves terrain relief inside the footprint.
+
+        Args:
+            corners (list): Four (lat, lon) corner coordinates, TL TR BR BL.
+            tie_points (list): Optional (u, v, lat, lon) tie points.
+            width, height (int): Drone image pixel dimensions.
+            u, v (float): AOI pixel coordinates.
+
+        Returns:
+            AOIGPSResult, or None when terrain data is unavailable / the pose
+            solve fails (so the caller falls back to the planar homography).
+        """
+        terrain_service = _get_terrain_service()
+        if terrain_service is None or not terrain_service.enabled:
+            return None
+
+        intrinsics = self.image_service.get_camera_intrinsics()
+        if intrinsics is None:
+            return None
+
+        # 2D-3D correspondences: the four image corners plus any tie points.
+        pixel_points = [(0.0, 0.0), (float(width), 0.0),
+                        (float(width), float(height)), (0.0, float(height))]
+        gps_points = [tuple(corner) for corner in corners]
+        for tie_u, tie_v, tie_lat, tie_lon in tie_points:
+            pixel_points.append((float(tie_u), float(tie_v)))
+            gps_points.append((tie_lat, tie_lon))
+
+        origin_lat = sum(p[0] for p in gps_points) / len(gps_points)
+        origin_lon = sum(p[1] for p in gps_points) / len(gps_points)
+
+        object_points = []
+        for lat, lon in gps_points:
+            elevation = terrain_service.get_elevation(lat, lon)
+            if elevation.source != 'terrain' or elevation.elevation_m is None:
+                return None  # DEM gap - fall back to the homography
+            east, north = gps_to_local_enu(lat, lon, origin_lat, origin_lon)
+            object_points.append((east, north, elevation.elevation_m))
+
+        camera_matrix = build_camera_matrix(
+            intrinsics['focal_length_mm'], intrinsics['sensor_width_mm'],
+            intrinsics['sensor_height_mm'], width, height
+        )
+        pose = recover_camera_pose(object_points, pixel_points, camera_matrix)
+        if pose is None:
+            return None
+        rvec, tvec, _error = pose
+
+        # Reject an unphysical solve (camera below the terrain).
+        mean_terrain = sum(p[2] for p in object_points) / len(object_points)
+        if camera_center_world(rvec, tvec)[2] <= mean_terrain:
+            return None
+
+        # Iteratively ray-cast the AOI pixel against the terrain surface.
+        plane_z = mean_terrain
+        terrain_elevation = mean_terrain
+        result_lat = result_lon = None
+        prev_lat = prev_lon = None
+        for _iteration in range(self.MAX_TERRAIN_ITERATIONS):
+            hit = project_pixel_to_plane(rvec, tvec, camera_matrix, u, v, plane_z)
+            if hit is None:
+                return None
+            result_lat, result_lon = local_enu_to_gps(
+                hit[0], hit[1], origin_lat, origin_lon
+            )
+            elevation = terrain_service.get_elevation(result_lat, result_lon)
+            if elevation.source != 'terrain' or elevation.elevation_m is None:
+                break
+            terrain_elevation = elevation.elevation_m
+            plane_z = elevation.elevation_m
+            if prev_lat is not None:
+                dlat_m = (result_lat - prev_lat) * 111320
+                dlon_m = ((result_lon - prev_lon) * 111320
+                          * math.cos(math.radians(result_lat)))
+                if math.hypot(dlat_m, dlon_m) < self.CONVERGENCE_THRESHOLD_M:
+                    break
+            prev_lat, prev_lon = result_lat, result_lon
+
+        if result_lat is None:
+            return None
+        return AOIGPSResult(
+            latitude=result_lat,
+            longitude=result_lon,
+            elevation_source='refined_terrain',
+            terrain_elevation_m=terrain_elevation,
+        )
 
     @staticmethod
     def _calculate_ground_position(

@@ -162,6 +162,9 @@ class GPSMapController(QObject):
                         'has_flagged': has_flagged,
                         'bearing': cached_bearing,
                         'wingtra_agl_ft': image.get('wingtra_agl_ft'),
+                        'fov_alignment': image.get('fov_alignment'),
+                        'width': image.get('width'),
+                        'height': image.get('height'),
                         'image_path': path,
                         'is_source_only': False,
                     })
