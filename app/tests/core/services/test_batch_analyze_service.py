@@ -8,6 +8,7 @@ on real imagery or the multiprocessing pool.
 """
 
 import os
+import time
 import pytest
 from unittest.mock import patch, MagicMock
 from PySide6.QtCore import QObject, Signal
@@ -22,6 +23,7 @@ class FakeAnalyzeService(QObject):
 
     sig_msg = Signal(str)
     sig_done = Signal(int, int, str)
+    sig_progress = Signal(int, int, float)
 
     def __init__(self, output_dir, behavior, images_with_aois):
         """Create a fake analysis service.
@@ -301,3 +303,79 @@ def test_cancel_stops_remaining_folders(tmp_path):
         service.process_batches()
 
     assert service.results == []
+
+
+# --- per-batch timing, resume, and ETA --------------------------------------
+
+def test_process_batches_records_elapsed(tmp_path):
+    """Each batch result records an elapsed time."""
+    parent = tmp_path / 'input'
+    _touch_image(str(parent / 'gridA'))
+
+    service = BatchAnalyzeService(str(parent), str(tmp_path / 'output'), _make_config())
+    with patch('core.services.BatchAnalyzeService.AnalyzeService',
+               side_effect=_make_analyze_factory({})):
+        service.process_batches()
+
+    assert 'elapsed' in service.results[0]
+    assert service.results[0]['elapsed'] >= 0
+
+
+def test_count_completed_batches(tmp_path):
+    """count_completed_batches counts folders that already have results."""
+    parent = tmp_path / 'input'
+    for name in ('gridA', 'gridB', 'gridC'):
+        _touch_image(str(parent / name))
+    output = tmp_path / 'output'
+
+    # Simulate gridB already finished by a previous run.
+    grid_b_results = output / 'gridB' / 'ADIAT_Results'
+    os.makedirs(str(grid_b_results), exist_ok=True)
+    open(str(grid_b_results / 'ADIAT_Data.xml'), 'w').close()
+
+    service = BatchAnalyzeService(str(parent), str(output), _make_config())
+    completed, total = service.count_completed_batches()
+
+    assert completed == 1
+    assert total == 3
+
+
+def test_resume_skips_completed_batches(tmp_path):
+    """resume=True skips folders that already have results and runs the rest."""
+    parent = tmp_path / 'input'
+    for name in ('gridA', 'gridB', 'gridC'):
+        _touch_image(str(parent / name))
+    output = tmp_path / 'output'
+
+    # Simulate gridA already finished by a previous run.
+    grid_a_results = output / 'gridA' / 'ADIAT_Results'
+    os.makedirs(str(grid_a_results), exist_ok=True)
+    open(str(grid_a_results / 'ADIAT_Data.xml'), 'w').close()
+
+    service = BatchAnalyzeService(str(parent), str(output), _make_config(), resume=True)
+    with patch('core.services.BatchAnalyzeService.AnalyzeService',
+               side_effect=_make_analyze_factory({})):
+        service.process_batches()
+
+    by_name = {os.path.basename(r['folder']): r for r in service.results}
+    assert by_name['gridA'].get('skipped') is True
+    assert by_name['gridB'].get('skipped') is not True
+    assert by_name['gridC'].get('skipped') is not True
+    assert all(r['status'] == 'Completed' for r in service.results)
+
+
+def test_on_inner_progress_emits_batch_eta(tmp_path):
+    """_on_inner_progress emits a status line with the batch position and ETAs."""
+    service = BatchAnalyzeService(str(tmp_path / 'in'), str(tmp_path / 'out'), _make_config())
+    service._current_index = 2
+    service._current_total = 5
+    service._current_folder_name = 'gridB'
+    service._current_batch_start = time.time()
+
+    received = []
+    service.sig_progress.connect(received.append)
+    service._on_inner_progress(10, 20, 30.0)
+
+    assert received
+    assert 'Batch 2/5' in received[0]
+    assert 'gridB' in received[0]

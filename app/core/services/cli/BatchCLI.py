@@ -141,6 +141,8 @@ def _build_parser():
                         help='Algorithm-specific option; repeatable.')
     parser.add_argument('--no-coordinator', action='store_true',
                         help='Do not create a Search Coordinator project for the batches.')
+    parser.add_argument('--resume', action='store_true',
+                        help='Skip batch folders that already have finished results.')
     parser.add_argument('--project-name',
                         help='Name for the generated Search Coordinator project.')
     parser.add_argument('--coordinator-name', default='',
@@ -276,6 +278,7 @@ def run_batch_cli(argv):
         create_search_project=not args.no_coordinator,
         project_name=args.project_name,
         coordinator_name=args.coordinator_name,
+        resume=args.resume,
     )
 
     summary = {}

@@ -180,3 +180,35 @@ def test_analyze_service_non_recursive():
         )
 
         assert service.recursive is False
+
+
+def test_process_complete_handles_none_result(analyze_service):
+    """A None result must not raise.
+
+    process_file returns None on a caught error; a None reaching
+    _process_complete used to raise an AttributeError that hung the run.
+    """
+    analyze_service._completed_images = 0
+    # Must simply return without raising.
+    analyze_service._process_complete(None)
+    assert analyze_service._completed_images == 0
+
+
+def test_handle_failed_image_counts_toward_progress(analyze_service):
+    """A failed image still advances the completion counter so progress stays accurate."""
+    analyze_service.ttl_images = 4
+    analyze_service._completed_images = 0
+    analyze_service._handle_failed_image(os.path.join('imgs', 'bad.jpg'), 'Timed out')
+    assert analyze_service._completed_images == 1
+
+
+def test_emit_progress_emits_signal(analyze_service):
+    """_emit_progress emits sig_progress carrying the completed and total counts."""
+    analyze_service.ttl_images = 10
+    analyze_service._completed_images = 4
+    received = []
+    analyze_service.sig_progress.connect(lambda c, t, e: received.append((c, t, e)))
+    analyze_service._emit_progress()
+    assert received
+    assert received[0][0] == 4
+    assert received[0][1] == 10

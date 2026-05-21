@@ -31,6 +31,7 @@ import pathlib
 from core.views.components.GroupedComboBox import GroupedComboBox
 from core.controllers.images.ImageAnalysisGuide import ImageAnalysisGuide
 from helpers.IconHelper import IconHelper
+from helpers.FormatHelper import FormatHelper
 import os
 os.environ['NUMPY_EXPERIMENTAL_DTYPE_API'] = '0'
 
@@ -573,6 +574,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.analyzeService.sig_msg.connect(self._on_worker_msg)
             self.analyzeService.sig_aois.connect(self._show_aois_limit_warning)
             self.analyzeService.sig_done.connect(self._on_worker_done)
+            self.analyzeService.sig_progress.connect(self._on_analyze_progress)
 
             thread.started.connect(self.analyzeService.process_files)
             thread.start()
@@ -618,6 +620,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             analysis_config
         )
 
+        # If a previous run of this batch left some folders finished, let the
+        # user resume (skip the finished folders) instead of starting over.
+        if not self._confirm_batch_resume(self.batchService):
+            self._add_log_entry("--- Batch start cancelled ---")
+            self._set_StartButton(True)
+            self.batchService = None
+            return
+
         thread = QThread()
         self.__threads.append((thread, self.batchService))
         self.batchService.moveToThread(thread)
@@ -625,12 +635,64 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.batchService.sig_msg.connect(self._on_worker_msg)
         self.batchService.sig_batch_progress.connect(self._on_batch_progress)
         self.batchService.sig_done.connect(self._on_batch_done)
+        self.batchService.sig_progress.connect(self._on_batch_status)
 
         thread.started.connect(self.batchService.process_batches)
         self._batch_running = True
         thread.start()
 
         self._set_CancelButton(True)
+
+    def _confirm_batch_resume(self, batch_service):
+        """
+        Detect a prior incomplete batch run and ask the user how to proceed.
+
+        Sets batch_service.resume based on the user's choice.
+
+        Args:
+            batch_service (BatchAnalyzeService): The service about to run.
+
+        Returns:
+            bool: True to start the run, False if the user cancelled.
+        """
+        completed, total = batch_service.count_completed_batches()
+        if completed == 0 or total == 0:
+            return True  # nothing previously done -- a normal fresh run
+
+        if completed >= total:
+            choice = QMessageBox.question(
+                self,
+                "Batch Already Complete",
+                f"All {total} folder(s) under the input already have results "
+                f"in the output folder.\n\nRe-run all of them from scratch?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if choice != QMessageBox.Yes:
+                return False
+            batch_service.resume = False
+            return True
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Question)
+        box.setWindowTitle("Resume Batch?")
+        box.setText(
+            f"A previous batch run looks incomplete: {completed} of {total} "
+            f"folder(s) already have results.\n\n"
+            f"Resume skips the finished folders and processes the rest. "
+            f"Restart processes every folder from scratch."
+        )
+        resume_btn = box.addButton("Resume", QMessageBox.AcceptRole)
+        restart_btn = box.addButton("Restart", QMessageBox.DestructiveRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        clicked = box.clickedButton()
+        if clicked == resume_btn:
+            batch_service.resume = True
+            return True
+        if clicked == restart_btn:
+            batch_service.resume = False
+            return True
+        return False
 
     def _cancelButton_clicked(self):
         """
@@ -691,6 +753,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         self._add_log_entry(text)
 
+    @Slot(int, int, float)
+    def _on_analyze_progress(self, completed, total, eta_seconds):
+        """
+        Shows current-run progress and an ETA in the status bar.
+
+        Args:
+            completed (int): Number of images processed so far.
+            total (int): Total number of images in the run.
+            eta_seconds (float): Estimated seconds remaining.
+        """
+        if completed >= total or eta_seconds <= 0:
+            self.statusBar().showMessage(f"Processing image {completed} of {total}")
+        else:
+            self.statusBar().showMessage(
+                f"Processing image {completed} of {total} - about "
+                f"{FormatHelper.format_duration(eta_seconds)} remaining"
+            )
+
+    @Slot(str)
+    def _on_batch_status(self, text):
+        """
+        Shows batch progress and ETAs in the status bar.
+
+        Args:
+            text (str): A ready-to-display status line from BatchAnalyzeService.
+        """
+        self.statusBar().showMessage(text)
+
     @Slot(int, int, str)
     def _on_worker_done(self, id, images_with_aois, xml_path):
         """
@@ -701,6 +791,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             images_with_aois (int): Count of images with areas of interest.
         """
         self._add_log_entry("--- Image Processing Completed ---")
+        self.statusBar().showMessage("Image processing complete", 8000)
         if images_with_aois > 0:
             self._add_log_entry(f"{images_with_aois} images with areas of interest identified")
             self._set_ViewResultsButton(True)
@@ -738,6 +829,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 project, or an empty string if none was created.
         """
         self._add_log_entry("--- Batch Processing Completed ---")
+        self.statusBar().showMessage("Batch processing complete", 8000)
         self._batch_running = False
         self._set_StartButton(True)
         self._set_CancelButton(False)

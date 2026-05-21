@@ -19,6 +19,7 @@ from PySide6.QtCore import QObject, Signal, Slot, Qt
 from core.services.AnalyzeService import AnalyzeService
 from core.services.LoggerService import LoggerService
 from core.services.coordinator.SearchProjectService import SearchProjectService
+from helpers.FormatHelper import FormatHelper
 
 
 # File extensions used to decide whether a folder counts as a batch. The actual
@@ -46,9 +47,13 @@ class BatchAnalyzeService(QObject):
     sig_msg = Signal(str)
     sig_batch_progress = Signal(int, int, str)
     sig_done = Signal(int, int, str)
+    # Emitted during a batch with a ready-to-display status line carrying the
+    # current folder's ETA and the whole-batch ETA.
+    sig_progress = Signal(str)
 
     def __init__(self, input_dir, output_dir, analysis_config,
-                 create_search_project=True, project_name=None, coordinator_name=''):
+                 create_search_project=True, project_name=None, coordinator_name='',
+                 resume=False):
         """Initialize the BatchAnalyzeService.
 
         Args:
@@ -65,6 +70,8 @@ class BatchAnalyzeService(QObject):
             project_name: Name for the search project. Defaults to the input
                 directory name.
             coordinator_name: Optional name stored as the project creator.
+            resume: When True, batch folders that already have finished
+                results are skipped instead of re-processed.
         """
         super().__init__()
         self.logger = LoggerService()
@@ -74,6 +81,7 @@ class BatchAnalyzeService(QObject):
         self.create_search_project = create_search_project
         self.project_name = project_name or os.path.basename(os.path.normpath(input_dir))
         self.coordinator_name = coordinator_name
+        self.resume = resume
 
         self.cancelled = False
         self.results = []            # one result dict per batch (see _process_single_batch)
@@ -81,6 +89,11 @@ class BatchAnalyzeService(QObject):
         # The AnalyzeService for the batch currently running, so it can be
         # cancelled. None whenever no batch is in progress.
         self._current_service = None
+        # Tracking for the batch currently running, used to build ETA messages.
+        self._current_index = 0
+        self._current_total = 0
+        self._current_folder_name = ''
+        self._current_batch_start = 0.0
 
     def discover_batch_folders(self):
         """Find every folder under the input directory that is its own batch.
@@ -130,6 +143,61 @@ class BatchAnalyzeService(QObject):
             rel = os.path.basename(os.path.normpath(self.input_dir)) or 'Batch'
         return os.path.join(self.output_dir, rel)
 
+    def _batch_is_complete(self, batch_folder):
+        """Return True if this batch folder already has finished results.
+
+        A batch is considered complete when an ADIAT_Data.xml exists in its
+        mirrored output location -- AnalyzeService writes that file only after
+        a pass finishes successfully.
+
+        Args:
+            batch_folder: Absolute path to the batch's input folder.
+
+        Returns:
+            bool: True if finished results already exist for this folder.
+        """
+        xml_path = os.path.join(
+            self._batch_output_dir(batch_folder), 'ADIAT_Results', 'ADIAT_Data.xml'
+        )
+        return os.path.isfile(xml_path)
+
+    def count_completed_batches(self):
+        """Count discovered batch folders that already have finished results.
+
+        Lets a caller detect an interrupted previous run and offer to resume.
+
+        Returns:
+            tuple: (completed_count, total_count).
+        """
+        batch_folders = self.discover_batch_folders()
+        completed = sum(1 for f in batch_folders if self._batch_is_complete(f))
+        return completed, len(batch_folders)
+
+    def _skipped_result(self, batch_folder):
+        """Build a result entry for a batch skipped during a resume.
+
+        The folder is treated as already completed so it is still linked into
+        the Search Coordinator project and listed in the summary.
+
+        Args:
+            batch_folder: Absolute path to the batch's input folder.
+
+        Returns:
+            dict: A result dict with status 'Completed' and 'skipped' True.
+        """
+        xml_path = os.path.join(
+            self._batch_output_dir(batch_folder), 'ADIAT_Results', 'ADIAT_Data.xml'
+        )
+        return {
+            'folder': batch_folder,
+            'status': 'Completed',
+            'images_with_aois': 0,
+            'xml_path': xml_path,
+            'error': '',
+            'elapsed': 0.0,
+            'skipped': True,
+        }
+
     @Slot()
     def process_batches(self):
         """Analyze every batch folder sequentially.
@@ -161,7 +229,19 @@ class BatchAnalyzeService(QObject):
                     break
 
                 folder_name = os.path.relpath(batch_folder, self.input_dir)
+                self._current_index = index
+                self._current_total = total
+                self._current_folder_name = folder_name
                 self.sig_batch_progress.emit(index, total, folder_name)
+
+                if self.resume and self._batch_is_complete(batch_folder):
+                    self.sig_msg.emit(
+                        f"--- Batch {index}/{total}: {folder_name} "
+                        f"-- already complete, skipping ---"
+                    )
+                    self.results.append(self._skipped_result(batch_folder))
+                    continue
+
                 self.sig_msg.emit(f"--- Batch {index}/{total}: {folder_name} ---")
 
                 result = self._process_single_batch(batch_folder)
@@ -169,11 +249,15 @@ class BatchAnalyzeService(QObject):
 
                 if result['status'] == 'Completed':
                     self.sig_msg.emit(
-                        f"Batch {index}/{total} complete: "
+                        f"Batch {index}/{total} complete in "
+                        f"{FormatHelper.format_duration(result['elapsed'])}: "
                         f"{result['images_with_aois']} image(s) with areas of interest"
                     )
                 else:
-                    self.sig_msg.emit(f"Batch {index}/{total} FAILED: {result['error']}")
+                    self.sig_msg.emit(
+                        f"Batch {index}/{total} FAILED after "
+                        f"{FormatHelper.format_duration(result['elapsed'])}: {result['error']}"
+                    )
 
             succeeded = sum(1 for r in self.results if r['status'] == 'Completed')
             failed = sum(1 for r in self.results if r['status'] == 'Failed')
@@ -215,8 +299,11 @@ class BatchAnalyzeService(QObject):
             'status': 'Failed',
             'images_with_aois': 0,
             'xml_path': '',
-            'error': ''
+            'error': '',
+            'elapsed': 0.0
         }
+        batch_start = time.time()
+        self._current_batch_start = batch_start
         service = None
         try:
             batch_output = self._batch_output_dir(batch_folder)
@@ -247,6 +334,7 @@ class BatchAnalyzeService(QObject):
             # re-emits immediately on the pool's callback thread so messages are
             # not held up behind the blocking process_files() call.
             service.sig_msg.connect(self.sig_msg, Qt.DirectConnection)
+            service.sig_progress.connect(self._on_inner_progress, Qt.DirectConnection)
             service.sig_done.connect(
                 lambda _id, count, path: completion.update(done=True, count=count, path=path),
                 Qt.DirectConnection
@@ -269,6 +357,7 @@ class BatchAnalyzeService(QObject):
             result['error'] = str(e)
         finally:
             self._current_service = None
+            result['elapsed'] = round(time.time() - batch_start, 2)
             if service is not None:
                 # close()/join() inside process_files() already ended the
                 # workers; terminate() is a no-op there but cleans up if the
@@ -279,6 +368,35 @@ class BatchAnalyzeService(QObject):
                     pass
 
         return result
+
+    def _on_inner_progress(self, completed, total, folder_eta):
+        """Build a whole-batch ETA from the current folder's progress.
+
+        Connected to the running batch's AnalyzeService.sig_progress. Combines
+        the current folder's ETA with the average duration of finished batches
+        to estimate time remaining for the entire batch run.
+
+        Args:
+            completed: Images completed in the current folder.
+            total: Total images in the current folder.
+            folder_eta: Estimated seconds left for the current folder.
+        """
+        done_times = [r['elapsed'] for r in self.results if r.get('elapsed')]
+        if done_times:
+            avg_batch = sum(done_times) / len(done_times)
+        else:
+            # No batch has finished yet -- estimate this batch's full length
+            # from how long it has run plus its own ETA.
+            folder_elapsed = time.time() - self._current_batch_start
+            avg_batch = folder_elapsed + folder_eta
+        remaining_batches = max(0, self._current_total - self._current_index)
+        total_eta = folder_eta + remaining_batches * avg_batch
+        self.sig_progress.emit(
+            f"Batch {self._current_index}/{self._current_total} "
+            f"({self._current_folder_name}) - "
+            f"folder ~{FormatHelper.format_duration(folder_eta)} left, "
+            f"whole batch ~{FormatHelper.format_duration(total_eta)} left"
+        )
 
     def _create_search_project(self):
         """Write a Search Coordinator project linking every successful batch.
@@ -341,7 +459,10 @@ class BatchAnalyzeService(QObject):
             lines.append('-' * 40)
             for r in self.results:
                 folder = os.path.relpath(r['folder'], self.input_dir)
-                line = f"[{r['status']}] {folder}"
+                if r.get('skipped'):
+                    lines.append(f"[Completed] {folder} -- skipped, already complete")
+                    continue
+                line = f"[{r['status']}] {folder} ({FormatHelper.format_duration(r['elapsed'])})"
                 if r['status'] == 'Completed':
                     line += f" -- {r['images_with_aois']} image(s) with AOIs"
                 elif r['error']:

@@ -10,7 +10,7 @@ import traceback
 import hashlib
 
 from pathlib import Path
-from multiprocessing import Pool, pool
+from multiprocessing import Pool, pool, TimeoutError as MPTimeoutError
 from PySide6.QtCore import QObject, Signal, Slot
 
 from core.services.LoggerService import LoggerService
@@ -25,6 +25,13 @@ from algorithms.images.AIPersonDetector.services.AIPersonDetectorService import 
 from algorithms.images.HSVColorRange.services.HSVColorRangeService import HSVColorRangeService
 from algorithms.images.ThermalRange.services.ThermalRangeService import ThermalRangeService
 from algorithms.images.ThermalAnomaly.services.ThermalAnomalyService import ThermalAnomalyService
+
+
+# Maximum wall-clock time to wait for any single image's analysis result. A
+# worker process that crashes or wedges on a problematic image hits this
+# limit; that image is recorded as failed and the run continues, instead of
+# the whole analysis hanging forever.
+PROCESS_TIMEOUT_SECONDS = 300
 
 
 class AnalyzeService(QObject):
@@ -43,6 +50,8 @@ class AnalyzeService(QObject):
     sig_msg = Signal(str)
     sig_aois = Signal()
     sig_done = Signal(int, int, str)
+    # Emitted as images finish: (completed_count, total_count, eta_seconds).
+    sig_progress = Signal(int, int, float)
 
     def __init__(self, id, algorithm, input, output, identifier_color, min_area, num_processes,
                  max_aois, aoi_radius, histogram_reference_path, kmeans_clusters, options, max_area,
@@ -92,6 +101,10 @@ class AnalyzeService(QObject):
         self.__id = id
         self.images_with_aois = []
         self.cancelled = False
+        # Wall-clock start of process_files(), used for ETA calculation.
+        self._start_time = time.time()
+        self._completed_images = 0
+        self.ttl_images = 0
         self.is_thermal = (self.algorithm['type'] == 'Thermal')
         self.pool = Pool(self.num_processes)
 
@@ -121,7 +134,7 @@ class AnalyzeService(QObject):
 
             image_files = []
 
-            start_time = time.time()
+            self._start_time = time.time()
             # In batch mode each folder is analyzed independently, so collection
             # can be scoped to the input directory itself (no recursion).
             if self.recursive:
@@ -142,7 +155,9 @@ class AnalyzeService(QObject):
             self._completed_images = 0
             self._total_aois = 0
 
-            # Process each image using multiprocessing
+            # Queue each image for multiprocessing, keeping its AsyncResult so
+            # the result can later be retrieved with a timeout.
+            pending = []
             for file in image_files:
                 if os.path.isdir(file):
                     self.ttl_images -= 1
@@ -156,7 +171,7 @@ class AnalyzeService(QObject):
                         is_valid_image = False
 
                     if is_valid_image and self.pool._state == pool.RUN:
-                        self.pool.apply_async(
+                        async_result = self.pool.apply_async(
                             AnalyzeService.process_file,
                             (
                                 self.algorithm,
@@ -172,9 +187,9 @@ class AnalyzeService(QObject):
                                 self.kmeans_clusters,
                                 self.is_thermal,
                                 self.processing_resolution
-                            ),
-                            callback=self._process_complete
+                            )
                         )
+                        pending.append((file, async_result))
                     else:
                         self.ttl_images -= 1
                         self.sig_msg.emit(f"Skipping {file} :: File is not an image")
@@ -182,8 +197,38 @@ class AnalyzeService(QObject):
             # Notify that images are queued and processing has started
             self.sig_msg.emit(f"All {self.ttl_images} images queued, processing started...")
 
-            # Close the pool and ensure all processes are done
+            # No more tasks will be submitted; workers drain the queue.
             self.pool.close()
+
+            # Retrieve each result with a per-image timeout. Doing the wait
+            # here -- instead of a fire-and-forget callback plus an unbounded
+            # pool.join() -- means a single image whose worker crashes or
+            # never returns can no longer wedge the entire run. Such an image
+            # is recorded as a failure and processing continues with the rest.
+            for file, async_result in pending:
+                if self.cancelled:
+                    break
+                try:
+                    result = async_result.get(timeout=PROCESS_TIMEOUT_SECONDS)
+                except MPTimeoutError:
+                    self._handle_failed_image(
+                        file, f"Processing exceeded {PROCESS_TIMEOUT_SECONDS}s and was skipped"
+                    )
+                    continue
+                except Exception as e:
+                    if self.cancelled:
+                        break
+                    self._handle_failed_image(file, str(e))
+                    continue
+                if result is None:
+                    self._handle_failed_image(file, "No result returned (see log for details)")
+                    continue
+                self._process_complete(result)
+
+            # terminate() rather than join(): a worker still stuck on a bad
+            # image would make join() hang forever -- the exact failure being
+            # fixed here. The stuck worker is killed; finished work is kept.
+            self.pool.terminate()
             self.pool.join()
 
             # Generate the output XML with the information gathered during processing
@@ -197,7 +242,7 @@ class AnalyzeService(QObject):
                 self.xmlService.add_image_to_xml(img)
 
             self.xmlService.save_xml_file(file_path)
-            ttl_time = round(time.time() - start_time, 3)
+            ttl_time = round(time.time() - self._start_time, 3)
             self.sig_done.emit(self.__id, len(self.images_with_aois), file_path)
             self.sig_msg.emit(f"{len(self.images_with_aois)} images with {self._total_aois} areas of interest identified")
             self.sig_msg.emit(f"Total Processing Time: {ttl_time} seconds")
@@ -321,18 +366,30 @@ class AnalyzeService(QObject):
         signals for GUI updates.
 
         Args:
-            result: Result object from the process_file method containing processed image data.
+            result: Result object from the process_file method. A None result
+                is tolerated and ignored -- it previously raised here and, on
+                the pool's result thread, hung the run.
         """
-        if result.input_path is not None:
-            path = Path(result.input_path)
-            file_name = path.name
-        # Handle errors in processing
-        if result.error_message is not None:
-            self.sig_msg.emit("Unable to process " + file_name + " :: " + result.error_message)
+        # process_file returns None on a caught error. A None used to raise an
+        # AttributeError below; on the pool's result thread that killed the
+        # thread and hung pool.join() forever.
+        if result is None:
             return
-        # Update progress counters
+
+        file_name = "Unknown"
+        if result.input_path is not None:
+            file_name = Path(result.input_path).name
+
+        # Every finished image -- success or error -- counts toward progress so
+        # the reported percentage reaches 100%.
         self._completed_images += 1
-        percent_complete = int(100 * self._completed_images / self.ttl_images)
+        percent_complete = int(100 * self._completed_images / self.ttl_images) if self.ttl_images else 100
+        self._emit_progress()
+
+        # Handle errors reported by the algorithm.
+        if result.error_message is not None:
+            self.sig_msg.emit(f"Unable to process {file_name} :: {result.error_message} ({percent_complete}%)")
+            return
 
         # Add successfully processed image to results
         if result.areas_of_interest:
@@ -358,6 +415,39 @@ class AnalyzeService(QObject):
                 self.max_aois_limit_exceeded = True
         else:
             self.sig_msg.emit(f'No areas of interest identified in {file_name} ({percent_complete}%)')
+
+    def _handle_failed_image(self, file_path, reason):
+        """Record an image that could not be processed and keep the run going.
+
+        Used when a worker times out, crashes, or returns no result. The image
+        still counts toward the completion total so progress reporting reaches
+        100%; it simply contributes no areas of interest.
+
+        Args:
+            file_path: Path to the image that failed.
+            reason: Human-readable explanation, written to the log and the GUI.
+        """
+        self._completed_images += 1
+        percent_complete = int(100 * self._completed_images / self.ttl_images) if self.ttl_images else 100
+        self._emit_progress()
+        file_name = Path(file_path).name
+        message = f"Unable to process {file_name} :: {reason} ({percent_complete}%)"
+        self.sig_msg.emit(message)
+        self.logger.error(message)
+
+    def _emit_progress(self):
+        """Emit sig_progress with the current count and an ETA estimate.
+
+        The ETA assumes each remaining image takes, on average, as long as the
+        images already processed.
+        """
+        elapsed = time.time() - self._start_time
+        remaining = max(0, self.ttl_images - self._completed_images)
+        if self._completed_images > 0 and remaining > 0 and elapsed > 0:
+            eta = elapsed / self._completed_images * remaining
+        else:
+            eta = 0.0
+        self.sig_progress.emit(self._completed_images, self.ttl_images, eta)
 
     @Slot()
     def process_cancel(self):
