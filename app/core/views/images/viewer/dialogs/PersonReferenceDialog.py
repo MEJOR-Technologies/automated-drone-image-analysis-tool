@@ -17,6 +17,8 @@ Engine pieces:
 - SolarPosition     - capture-time EXIF -> sun elevation/azimuth.
 """
 
+import math
+
 import cv2
 import numpy as np
 
@@ -24,7 +26,7 @@ from PySide6.QtCore import Qt, QRectF, QPointF
 from PySide6.QtGui import QPen, QColor, QBrush, QPainterPath, QPolygonF
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QWidget,
-    QGroupBox, QComboBox, QFormLayout, QCheckBox, QGraphicsPathItem,
+    QGroupBox, QComboBox, QSpinBox, QFormLayout, QCheckBox, QGraphicsPathItem,
     QGraphicsEllipseItem, QGraphicsItem, QColorDialog,
 )
 
@@ -219,6 +221,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.distance_unit = distance_unit
 
         self.size_key = SIZE_CLASSES[1][0]  # default: Average adult
+        self.rotation_deg = 0  # ground heading of the reference person
 
         # Camera + sun state for the current image.
         self.camera = None
@@ -286,6 +289,15 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.shadow_check = QCheckBox(self.tr("Show shadows (from capture time)"))
         self.shadow_check.setChecked(True)
 
+        # Ground rotation of the person, for lining a pose up with an object.
+        self.rotation_spin = QSpinBox()
+        self.rotation_spin.setRange(0, 359)
+        self.rotation_spin.setWrapping(True)
+        self.rotation_spin.setSuffix("°")
+        self.rotation_spin.setToolTip(
+            self.tr("Rotate the person on the ground to line it up with an object")
+        )
+
         self.color_button = QPushButton()
         self.color_button.setFixedWidth(60)
         self.color_button.setToolTip(self.tr("Click to choose overlay color"))
@@ -298,6 +310,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
 
         form.addRow(self.tr("Size:"), self.size_combo)
         form.addRow(self.tr("Show:"), poses_widget)
+        form.addRow(self.tr("Rotation:"), self.rotation_spin)
         form.addRow("", self.shadow_check)
         form.addRow(self.tr("Color:"), color_widget)
         params_group.setLayout(form)
@@ -344,6 +357,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         self.recumbent_check.toggled.connect(self._on_params_changed)
         self.sitting_check.toggled.connect(self._on_params_changed)
         self.shadow_check.toggled.connect(self._on_params_changed)
+        self.rotation_spin.valueChanged.connect(self._on_rotation_changed)
         self.color_button.clicked.connect(self._on_color_button_clicked)
         self.recenter_button.clicked.connect(self._recenter)
         self.close_button.clicked.connect(self.close)
@@ -540,6 +554,20 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
             points.append((qp.x() / 100.0, -qp.y() / 100.0, 0.0))
         return points
 
+    def _orient(self, points):
+        """Rotate person-local (x, y) points by the current rotation setting."""
+        if not self.rotation_deg:
+            return list(points)
+        theta = math.radians(self.rotation_deg)
+        cos_t, sin_t = math.cos(theta), math.sin(theta)
+        return [(x * cos_t + y * sin_t, -x * sin_t + y * cos_t, z)
+                for x, y, z in points]
+
+    def _on_rotation_changed(self, value):
+        """Re-render when the user changes the person's ground rotation."""
+        self.rotation_deg = int(value)
+        self._render_all()
+
     def _render_all(self):
         """Re-project every enabled pose and the shadow at the anchor."""
         if self.camera is None:
@@ -558,7 +586,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
                 continue
             path = None
             if enabled and foot is not None:
-                points = PersonModel.build_points(height_m, pose)
+                points = self._orient(PersonModel.build_points(height_m, pose))
                 path = self._hull_path(self._project_person_local(points, foot))
             item.setPath(path or QPainterPath())
             item.setVisible(path is not None)
@@ -567,7 +595,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         if rec_item is not None:
             path = None
             if self.recumbent_check.isChecked() and foot is not None:
-                points = self._recumbent_local_points(height_cm)
+                points = self._orient(self._recumbent_local_points(height_cm))
                 path = self._polyline_path(self._project_person_local(points, foot))
             rec_item.setPath(path or QPainterPath())
             rec_item.setVisible(path is not None)
@@ -615,7 +643,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         else:
             points = PersonModel.build_points(height_m, pose)
         ground = compute_shadow_ground_points(
-            points, foot, self.sun_elev, self.sun_az
+            self._orient(points), foot, self.sun_elev, self.sun_az
         )
         return self._hull_path(self._project_ground(ground))
 
