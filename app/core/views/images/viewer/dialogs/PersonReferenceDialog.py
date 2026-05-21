@@ -56,6 +56,10 @@ SIZE_CLASSES = [
 
 CM_PER_INCH = 2.54
 
+# A person lying down is a low slab; this fraction of their standing height
+# is the body thickness used to cast the recumbent shadow.
+RECUMBENT_THICKNESS_FRACTION = 0.12
+
 
 def _build_recumbent_path(height_cm):
     """Top-down silhouette of a person lying flat.
@@ -279,7 +283,7 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
         poses_widget = QWidget()
         poses_widget.setLayout(poses_row)
 
-        self.shadow_check = QCheckBox(self.tr("Show shadow (from capture time)"))
+        self.shadow_check = QCheckBox(self.tr("Show shadows (from capture time)"))
         self.shadow_check.setChecked(True)
 
         self.color_button = QPushButton()
@@ -568,29 +572,72 @@ class PersonReferenceDialog(TranslationMixin, QDialog):
             rec_item.setPath(path or QPainterPath())
             rec_item.setVisible(path is not None)
 
-        self._render_shadow(height_m, foot)
+        self._render_shadows(height_cm, height_m, foot)
 
-    def _render_shadow(self, height_m, foot):
-        """Re-project the standing person's shadow."""
+    def _render_shadows(self, height_cm, height_m, foot):
+        """Re-project the shadow of every enabled pose into one shadow shape."""
         if self.shadow_item is None:
             return
-        draw = (self.shadow_check.isChecked() and self.shadow_check.isEnabled()
-                and self.standing_check.isChecked() and foot is not None
-                and self.sun_elev is not None and self.sun_elev > 0)
-        path = None
-        if draw:
-            points = PersonModel.build_standing_points(height_m)
+        shadow_on = (self.shadow_check.isChecked() and self.shadow_check.isEnabled()
+                     and foot is not None
+                     and self.sun_elev is not None and self.sun_elev > 0)
+        combined = None
+        if shadow_on:
+            enabled = {
+                'standing': self.standing_check.isChecked(),
+                'sitting': self.sitting_check.isChecked(),
+                'recumbent': self.recumbent_check.isChecked(),
+            }
+            for pose, is_on in enabled.items():
+                if not is_on:
+                    continue
+                path = self._shadow_path_for_pose(pose, height_cm, height_m, foot)
+                if path is None or path.isEmpty():
+                    continue
+                combined = path if combined is None else combined.united(path)
+        self.shadow_item.setPath(combined or QPainterPath())
+        self.shadow_item.setVisible(combined is not None)
+
+    def _shadow_path_for_pose(self, pose, height_cm, height_m, foot):
+        """Build the ground-shadow QPainterPath cast by one pose, or None."""
+        if pose in ('standing', 'sitting'):
+            # Upright volume: cast the 3D point cloud, hull the ground points.
+            points = PersonModel.build_points(height_m, pose)
             ground = compute_shadow_ground_points(
                 points, foot, self.sun_elev, self.sun_az
             )
-            pixels = []
-            for north, east, down in ground:
-                uv = self.camera.project(north, east, down)
-                if uv is not None:
-                    pixels.append(uv)
-            path = self._hull_path(pixels)
-        self.shadow_item.setPath(path or QPainterPath())
-        self.shadow_item.setVisible(path is not None)
+            return self._hull_path(self._project_ground(ground))
+
+        # Recumbent: a low slab. Sweep the flat body outline from the ground
+        # up to its lying thickness, so the shadow is the body shape plus a
+        # thin fringe on the side away from the sun.
+        outline = self._recumbent_local_points(height_cm)
+        if not outline:
+            return None
+        thickness = RECUMBENT_THICKNESS_FRACTION * height_m
+        flat = compute_shadow_ground_points(
+            outline, foot, self.sun_elev, self.sun_az
+        )
+        raised = [(x, y, thickness) for x, y, _z in outline]
+        sheared = compute_shadow_ground_points(
+            raised, foot, self.sun_elev, self.sun_az
+        )
+        flat_path = self._polyline_path(self._project_ground(flat))
+        sheared_path = self._polyline_path(self._project_ground(sheared))
+        if flat_path is None:
+            return sheared_path
+        if sheared_path is None:
+            return flat_path
+        return flat_path.united(sheared_path)
+
+    def _project_ground(self, ground_points):
+        """Project NED ground points to pixels, dropping any behind the camera."""
+        pixels = []
+        for north, east, down in ground_points:
+            uv = self.camera.project(north, east, down)
+            if uv is not None:
+                pixels.append(uv)
+        return pixels
 
     # ---------------- colour ----------------
     def _apply_color_button_style(self):
