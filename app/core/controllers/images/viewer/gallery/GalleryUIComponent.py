@@ -489,7 +489,7 @@ class GalleryUIComponent(TranslationMixin, QObject):
                 # QAbstractItemView's keyboard-search feature swallows letter
                 # keys before Viewer.keyPressEvent sees them.
                 global_shortcut_keys = {
-                    Qt.Key_F, Qt.Key_G, Qt.Key_Z, Qt.Key_C, Qt.Key_R,
+                    Qt.Key_A, Qt.Key_F, Qt.Key_G, Qt.Key_Z, Qt.Key_C, Qt.Key_R,
                     Qt.Key_H, Qt.Key_M, Qt.Key_E, Qt.Key_W, Qt.Key_O,
                     Qt.Key_I,
                 }

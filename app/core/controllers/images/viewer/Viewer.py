@@ -28,6 +28,7 @@ from core.controllers.images.viewer.exports.ZipExportController import ZipExport
 from core.controllers.images.viewer.exports.PDFExportController import PDFExportController
 from core.controllers.images.viewer.AltitudeController import AltitudeController
 from core.controllers.images.viewer.WingtraDataController import WingtraDataController
+from core.controllers.images.viewer.AlignImageController import AlignImageController
 from core.controllers.images.viewer.WaldoPrePassController import WaldoPrePassController
 from core.controllers.images.viewer.image.ImageLoadController import ImageLoadController
 from core.controllers.images.viewer.PixelInfoController import PixelInfoController
@@ -224,6 +225,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.image_load_controller = ImageLoadController(self)
         self.altitude_controller = AltitudeController(self)
         self.wingtra_controller = WingtraDataController(self)
+        self.align_image_controller = AlignImageController(self)
 
         # Initialize services
         self.cache_path_service = CachePathService()
@@ -939,6 +941,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if e.key() == Qt.Key_W and e.modifiers() == Qt.ShiftModifier:
             # Load Wingtra CSV flight log with 'Shift+W' key
             self.wingtra_controller.prompt_and_load_csv()
+        if e.key() == Qt.Key_A and e.modifiers() == Qt.NoModifier:
+            # Open the Align Image dialog with 'A' key
+            self.align_image_controller.open_dialog()
 
     def _build_source_images(self):
         """Enumerate every capture from the original flight folder.

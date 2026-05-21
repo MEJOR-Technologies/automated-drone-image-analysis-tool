@@ -14,6 +14,7 @@ from pathlib import Path
 from helpers.MetaDataHelper import MetaDataHelper
 from helpers.LocationInfo import LocationInfo
 from helpers.GeodesicHelper import GeodesicHelper
+from helpers.PhotogrammetryHelper import FovHomography, validate_alignment
 from core.services.image.ImageService import ImageService
 from core.services.GSDService import GSDService
 from core.services.LoggerService import LoggerService
@@ -57,13 +58,21 @@ class AOINeighborService:
             if pitch is None:
                 pitch = -90  # assume nadir
 
+            # A manually aligned image can produce coverage info even when its
+            # metadata (altitude, intrinsics) is missing or unreliable.
+            refinement = image.get('fov_alignment')
+            has_refinement = bool(
+                refinement and refinement.get('corners')
+                and validate_alignment(refinement['corners'])
+            )
+
             # Get altitude
             if agl_override_m and agl_override_m > 0:
                 altitude = agl_override_m
             else:
                 altitude = image_service.get_relative_altitude('m') or 0
 
-            if altitude <= 0:
+            if altitude <= 0 and not has_refinement:
                 return None
 
             # Get image dimensions
@@ -73,11 +82,13 @@ class AOINeighborService:
             # Get camera intrinsics
             intrinsics = image_service.get_camera_intrinsics()
             if intrinsics is None:
-                return None
-
-            focal_mm = intrinsics['focal_length_mm']
-            sensor_w_mm = intrinsics['sensor_width_mm']
-            sensor_h_mm = intrinsics['sensor_height_mm']
+                if not has_refinement:
+                    return None
+                focal_mm = sensor_w_mm = sensor_h_mm = None
+            else:
+                focal_mm = intrinsics['focal_length_mm']
+                sensor_w_mm = intrinsics['sensor_width_mm']
+                sensor_h_mm = intrinsics['sensor_height_mm']
 
             # Convert pitch to tilt angle
             tilt_angle = 90 + pitch
@@ -95,6 +106,7 @@ class AOINeighborService:
                 'focal_mm': focal_mm,
                 'sensor_w_mm': sensor_w_mm,
                 'sensor_h_mm': sensor_h_mm,
+                'fov_alignment': refinement if has_refinement else None,
                 'image_service': image_service
             }
 
@@ -119,6 +131,16 @@ class AOINeighborService:
             tuple or None: (x, y) pixel coordinates or None if not in image
         """
         try:
+            # Manually aligned image: invert the homography directly.
+            refinement = coverage_info.get('fov_alignment')
+            if refinement and refinement.get('corners'):
+                homography = FovHomography(
+                    refinement['corners'],
+                    coverage_info['width'], coverage_info['height'],
+                    refinement.get('tie_points')
+                )
+                return homography.gps_to_pixel(target_lat, target_lon)
+
             lat0 = coverage_info['center_lat']
             lon0 = coverage_info['center_lon']
             yaw = coverage_info['yaw']

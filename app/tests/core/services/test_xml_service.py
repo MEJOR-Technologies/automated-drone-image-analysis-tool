@@ -96,3 +96,84 @@ def test_save_xml_file(tmp_path):
     path = tmp_path / "output.xml"
     service.save_xml_file(path)
     assert os.path.exists(path)
+
+
+@pytest.fixture
+def fov_corners():
+    return [
+        (39.50100000, -105.50200000),
+        (39.50110000, -105.49900000),
+        (39.49980000, -105.49890000),
+        (39.49970000, -105.50210000),
+    ]
+
+
+def test_set_and_get_fov_alignment(sample_xml, fov_corners):
+    service = XmlService(sample_xml)
+    image_path = service.get_images()[0]["path"]
+    tie_points = [(1200.0, 800.0, 39.5005, -105.5005)]
+
+    assert service.set_image_fov_alignment(image_path, fov_corners, tie_points, 12.5) is True
+
+    reloaded = service.get_images()
+    alignment = reloaded[0].get("fov_alignment")
+    assert alignment is not None
+    assert len(alignment["corners"]) == 4
+    for got, expected in zip(alignment["corners"], fov_corners):
+        assert got[0] == pytest.approx(expected[0], abs=1e-7)
+        assert got[1] == pytest.approx(expected[1], abs=1e-7)
+    assert alignment["tie_points"][0] == pytest.approx((1200.0, 800.0, 39.5005, -105.5005))
+    assert alignment["rotation"] == pytest.approx(12.5)
+    # The second (unrefined) image must not gain an alignment.
+    assert "fov_alignment" not in reloaded[1]
+
+
+def test_fov_alignment_survives_save_reload(tmp_path, sample_xml, fov_corners):
+    service = XmlService(sample_xml)
+    image_path = service.get_images()[0]["path"]
+    service.set_image_fov_alignment(image_path, fov_corners, None, 0.0)
+
+    out_path = tmp_path / "saved.xml"
+    service.save_xml_file(out_path)
+
+    reloaded = XmlService(out_path).get_images()
+    # AOIs must be unaffected by the new attributes.
+    assert len(reloaded[0]["areas_of_interest"]) == 1
+    assert reloaded[0]["areas_of_interest"][0]["center"] == (50, 50)
+    alignment = reloaded[0].get("fov_alignment")
+    assert alignment is not None
+    assert alignment["tie_points"] == []
+
+
+def test_clear_fov_alignment(sample_xml, fov_corners):
+    service = XmlService(sample_xml)
+    image_path = service.get_images()[0]["path"]
+    service.set_image_fov_alignment(image_path, fov_corners)
+    assert service.get_images()[0].get("fov_alignment") is not None
+
+    assert service.clear_image_fov_alignment(image_path) is True
+    assert "fov_alignment" not in service.get_images()[0]
+
+
+def test_set_fov_alignment_unknown_image(sample_xml, fov_corners):
+    service = XmlService(sample_xml)
+    assert service.set_image_fov_alignment("nonexistent.jpg", fov_corners) is False
+
+
+def test_malformed_fov_corners_treated_as_unrefined(tmp_path):
+    xml_content = """
+    <data>
+        <images>
+            <image path="img.jpg" fov_corner_tl="garbage" fov_corner_tr="1,2" fov_corner_br="3,4" fov_corner_bl="5,6">
+                <areas_of_interest center="(10,10)" radius="5" area="20"/>
+            </image>
+        </images>
+    </data>
+    """.strip()
+    xml_path = tmp_path / "bad.xml"
+    with open(xml_path, "w") as f:
+        f.write(xml_content)
+
+    images = XmlService(xml_path).get_images()
+    assert "fov_alignment" not in images[0]
+    assert len(images[0]["areas_of_interest"]) == 1

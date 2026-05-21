@@ -1,4 +1,5 @@
 import os
+import math
 from ast import literal_eval
 from datetime import datetime
 import uuid
@@ -148,6 +149,11 @@ class XmlService:
                     image['bearing_source'] = image_xml.get('bearing_source')
                 if image_xml.get('bearing_quality'):
                     image['bearing_quality'] = image_xml.get('bearing_quality')
+
+                # Load manual FOV alignment if present
+                fov_alignment = self._parse_fov_alignment(image_xml)
+                if fov_alignment is not None:
+                    image['fov_alignment'] = fov_alignment
 
                 areas_of_interest = []
                 for area_of_interest_xml in image_xml:
@@ -449,6 +455,153 @@ class XmlService:
 
         except Exception as e:
             self.logger.error(f"Error setting image bearing: {e}")
+            return False
+
+    @staticmethod
+    def _parse_fov_alignment(image_xml):
+        """Parse manual FOV alignment attributes from an <image> element.
+
+        Args:
+            image_xml: The <image> ElementTree element.
+
+        Returns:
+            dict with 'corners' (4 (lat, lon) tuples, TL TR BR BL order),
+            'tie_points' (list of (u, v, lat, lon) tuples) and 'rotation'
+            (float degrees), or None when the image has no usable alignment.
+        """
+        corner_keys = ('fov_corner_tl', 'fov_corner_tr', 'fov_corner_br', 'fov_corner_bl')
+        raw_corners = [image_xml.get(key) for key in corner_keys]
+        if any(value is None for value in raw_corners):
+            return None
+
+        corners = []
+        try:
+            for value in raw_corners:
+                lat_str, lon_str = value.split(',')
+                lat, lon = float(lat_str), float(lon_str)
+                if not (math.isfinite(lat) and math.isfinite(lon)):
+                    return None
+                corners.append((lat, lon))
+        except (ValueError, AttributeError):
+            # Malformed corner data - treat the image as unrefined.
+            return None
+
+        tie_points = []
+        raw_tie_points = image_xml.get('fov_tie_points')
+        if raw_tie_points:
+            try:
+                for u, v, lat, lon in literal_eval(raw_tie_points):
+                    tie_points.append((float(u), float(v), float(lat), float(lon)))
+            except (ValueError, SyntaxError, TypeError):
+                # Malformed tie points - drop them but keep the corners.
+                tie_points = []
+
+        rotation = 0.0
+        raw_rotation = image_xml.get('fov_align_rotation')
+        if raw_rotation:
+            try:
+                rotation = float(raw_rotation)
+            except ValueError:
+                rotation = 0.0
+
+        return {'corners': corners, 'tie_points': tie_points, 'rotation': rotation}
+
+    def _find_image_element(self, image_path):
+        """Find the <image> element whose resolved path matches image_path.
+
+        Args:
+            image_path (str): Path to the image (matches 'path' or resolved path).
+
+        Returns:
+            The matching <image> ElementTree element, or None.
+        """
+        root = self.xml.getroot()
+        images_xml = root.find('images')
+        if images_xml is None:
+            return None
+
+        image_path_norm = os.path.normpath(image_path)
+
+        for image_xml in images_xml:
+            stored_path = image_xml.get('path')
+            if not stored_path:
+                continue
+            stored_path = stored_path.replace('/', os.sep)
+            if not os.path.isabs(stored_path) and self.xml_path:
+                xml_dir = os.path.dirname(self.xml_path)
+                stored_path = os.path.join(xml_dir, stored_path)
+            if os.path.normpath(stored_path) == image_path_norm:
+                return image_xml
+
+        return None
+
+    def set_image_fov_alignment(self, image_path, corners, tie_points=None, rotation=0.0):
+        """Store manual FOV alignment data for an image as <image> attributes.
+
+        Mirrors the bearing cache: the four user-aligned footprint corners, any
+        optional interior tie points, and the viewing rotation are written as
+        attributes on the matching <image> element.
+
+        Args:
+            image_path (str): Path to the image (matches 'path' or resolved path).
+            corners (list): Four (lat, lon) pairs in TL, TR, BR, BL order.
+            tie_points (list): Optional list of (u, v, lat, lon) tuples.
+            rotation (float): Viewing rotation in degrees (dialog restore only).
+
+        Returns:
+            bool: True if the image was found and updated, False otherwise.
+        """
+        try:
+            if corners is None or len(corners) != 4:
+                return False
+
+            image_xml = self._find_image_element(image_path)
+            if image_xml is None:
+                self.logger.warning(f"Image not found in XML for FOV alignment update: {image_path}")
+                return False
+
+            corner_keys = ('fov_corner_tl', 'fov_corner_tr', 'fov_corner_br', 'fov_corner_bl')
+            for key, (lat, lon) in zip(corner_keys, corners):
+                image_xml.set(key, f"{float(lat):.8f},{float(lon):.8f}")
+
+            if tie_points:
+                normalized = [
+                    (float(u), float(v), float(lat), float(lon))
+                    for u, v, lat, lon in tie_points
+                ]
+                image_xml.set('fov_tie_points', repr(normalized))
+            elif 'fov_tie_points' in image_xml.attrib:
+                del image_xml.attrib['fov_tie_points']
+
+            image_xml.set('fov_align_rotation', f"{float(rotation):.4f}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error setting image FOV alignment: {e}")
+            return False
+
+    def clear_image_fov_alignment(self, image_path):
+        """Remove any manual FOV alignment attributes for an image.
+
+        Args:
+            image_path (str): Path to the image.
+
+        Returns:
+            bool: True if the image was found, False otherwise.
+        """
+        try:
+            image_xml = self._find_image_element(image_path)
+            if image_xml is None:
+                return False
+
+            for attr in ('fov_corner_tl', 'fov_corner_tr', 'fov_corner_br',
+                         'fov_corner_bl', 'fov_tie_points', 'fov_align_rotation'):
+                if attr in image_xml.attrib:
+                    del image_xml.attrib[attr]
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error clearing image FOV alignment: {e}")
             return False
 
     def get_team_planning(self):
