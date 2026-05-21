@@ -1819,12 +1819,31 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.personOverlayButton.setToolTip(
                 self.tr("Person Size Reference is unavailable: no GSD for this image")
             )
-        # If the dialog is open, push the updated GSD/provider into it so it rescales.
+        # If the dialog is open, rebuild it for the current image.
         if self.person_reference_dialog is not None and self.person_reference_dialog.isVisible():
-            self.person_reference_dialog.update_gsd(
-                gsd,
-                gsd_at_pixel=self._build_gsd_at_pixel_provider(),
-            )
+            image_service, image_path = self._current_person_reference_inputs()
+            if image_service is not None and image_path:
+                self.person_reference_dialog.update_for_image(
+                    image_service, image_path,
+                    agl_override_m=self._person_reference_agl_override(),
+                )
+
+    def _current_person_reference_inputs(self):
+        """Return (ImageService, image_path) for the current image, or (None, None)."""
+        image_service = getattr(self, 'current_image_service', None)
+        image_path = None
+        images = getattr(self, 'images', None)
+        current = getattr(self, 'current_image', -1)
+        if images and 0 <= current < len(images):
+            image_path = images[current].get('path')
+        return image_service, image_path
+
+    def _person_reference_agl_override(self):
+        """Custom AGL altitude in metres for the person tool, or None."""
+        custom_ft = getattr(self, 'custom_agl_altitude_ft', None)
+        if custom_ft and custom_ft > 0:
+            return custom_ft * 0.3048
+        return None
 
     def _open_person_reference_dialog(self):
         """Opens the person-size reference overlay dialog."""
@@ -1836,16 +1855,18 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             # Tool is supposed to be disabled in this case; bail silently.
             return
 
+        image_service, image_path = self._current_person_reference_inputs()
+        if image_service is None or not image_path:
+            return
+
         # Close help dialog if open to prevent blocking
         self._close_help_dialog_if_open()
 
-        # Ensure the per-pixel GSD service is fresh before opening.
-        self._refresh_current_gsd_service()
-
         if self.person_reference_dialog is None or not self.person_reference_dialog.isVisible():
             self.person_reference_dialog = PersonReferenceDialog(
-                self, self.main_image, gsd, self.distance_unit,
-                gsd_at_pixel=self._build_gsd_at_pixel_provider(),
+                self, self.main_image, image_service, image_path,
+                self.distance_unit,
+                agl_override_m=self._person_reference_agl_override(),
             )
             self.person_reference_dialog.finished.connect(self._on_person_reference_dialog_closed)
             self.person_reference_dialog_open = True
