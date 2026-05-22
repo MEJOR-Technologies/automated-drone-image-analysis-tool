@@ -47,8 +47,17 @@ from PySide6.QtWidgets import QWidget
 # bleed across many frames.
 FRAME_WINDOW_S = 0.05
 
-# Tracks older than this without a refresh are auto-removed.
-FRESHNESS_S = 5.0
+# Tracks older than this without a refresh are auto-removed from the
+# overlay. At the publisher's typical 5 Hz detector cadence, 0.5 s is
+# 2–3 missed update cycles' worth of grace — enough to ride out a
+# single dropped frame from the detector without the operator seeing
+# box flicker, short enough that a box doesn't linger after the camera
+# pans off the target (the publisher stops sending updates the moment
+# the tracker loses the target, so freshness here IS the "lost track"
+# signal). The Mission Gallery row outlives the overlay box — the
+# detection still has a place in the per-session record even after
+# its bbox disappears from the live video.
+FRESHNESS_S = 0.5
 
 # EWMA weight for refining the publisher↔RTP offset after the initial
 # seed. Small value (5%) keeps a stale outlier from yanking the offset

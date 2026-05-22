@@ -288,8 +288,13 @@ def test_malformed_envelopes_ignored() -> None:
 
 
 def test_ewma_alpha_is_small_and_within_range() -> None:
-    # Sanity guardrails on the tuned constant; surprise here would
-    # indicate someone tweaked the convergence rate without noting it.
+    # Sanity guardrails on the tuned constants; a surprise here would
+    # mean someone tweaked the convergence rate / window without
+    # noting it in the corresponding doc comment.
     assert 0 < EWMA_ALPHA <= 0.2
     assert 0 < FRAME_WINDOW_S <= 0.2
-    assert FRESHNESS_S >= 1.0
+    # ``FRESHNESS_S`` is tuned tight so boxes drop quickly after the
+    # publisher stops updating (i.e., the target leaves the frame).
+    # Sanity-pin the range so it doesn't drift back to multi-second
+    # lingering.
+    assert 0.2 <= FRESHNESS_S <= 2.0
