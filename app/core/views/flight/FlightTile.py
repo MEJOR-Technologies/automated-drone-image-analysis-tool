@@ -83,6 +83,13 @@ class FlightTile(TranslationMixin, QFrame):
         # Per-tile recording state (created on demand from the context menu).
         self._recorder = None
         self._recording_path: Optional[str] = None
+        # Most-recent decoded source frame (BGR ndarray). Held by
+        # reference, not copied — ``WebRTCStreamService`` produces one
+        # ndarray per frame and the prior reference goes out of scope
+        # on the next emit. Snapshotting at promotion time gives the
+        # detection popout a full-resolution context image (not just
+        # the small cropped thumb that ships over the data channel).
+        self._latest_frame_bgr: Optional[np.ndarray] = None
 
         # Detection bbox overlay (plan §19.4) — transparent full-pane
         # child that draws per-track rectangles aligned to the exact
@@ -187,6 +194,11 @@ class FlightTile(TranslationMixin, QFrame):
         """
         if frame_bgr is None or frame_bgr.size == 0:
             return
+        # Stash the latest source-resolution frame for the detection
+        # popout's context image. Keep a *reference* — the publisher
+        # produces one ndarray per frame and the prior one releases
+        # naturally; no per-frame copy cost.
+        self._latest_frame_bgr = frame_bgr
         try:
             h, w = frame_bgr.shape[:2]
             # `bgr24` ndarray -> QImage via Format_BGR888 (no copy).
@@ -202,8 +214,10 @@ class FlightTile(TranslationMixin, QFrame):
             # Drive the detection overlay AFTER the pixmap update so its
             # ``paintEvent`` repaints on the same frame the operator sees.
             # ``ts`` is aiortc's RTP-derived seconds (the same value the
-            # plan §19.4 calibration expects).
-            self.detection_overlay.on_video_frame(ts, w, h)
+            # plan §19.4 calibration expects). Also hand over the raw
+            # BGR ndarray so the overlay's ``recent_frames`` ring fills
+            # for the desktop-side thumb cropper (plan §19.4.1).
+            self.detection_overlay.on_video_frame(ts, w, h, frame_bgr)
         except Exception:  # noqa: BLE001 - never crash the UI thread
             pass
 

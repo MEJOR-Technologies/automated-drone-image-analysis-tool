@@ -85,24 +85,24 @@ def test_first_meta_then_first_frame_seeds_offset() -> None:
     assert w._pending_first_meta is None
 
 
-def test_box_outside_frame_window_is_skipped() -> None:
+def test_active_track_always_drawn_after_calibration() -> None:
+    """The draw policy now renders every active (non-stale) track on
+    every frame; strict frame-window gating was dropped because tiny
+    calibration drifts were hiding boxes entirely (plan §19.4 trade-off
+    note in ``DetectionOverlayWidget._should_draw``).
+    """
     w = DetectionOverlayWidget()
     w.resize(800, 450)
-    # Calibrate with track at publisher t=5s; first frame at RTP t=2.5s.
     w.on_track_event(_meta("p|s|1", frame_ts_ns=5_000_000_000))
     w.on_video_frame(frame_time_s=2.5, src_w=1920, src_h=1080)
     assert w._publisher_offset_s == pytest.approx(2.5)
 
-    # New frame at RTP t=2.6s → publisher t=5.1s.
-    # The existing track's frame_ts_ns is 5_000_000_000 (= 5.0s pub).
-    # |5.1 - 5.0| = 0.1s > FRAME_WINDOW_S (0.05s) → don't draw.
-    w.on_video_frame(frame_time_s=2.6, src_w=1920, src_h=1080)
     only_track = next(iter(w._tracks.values()))
-    assert not w._should_draw(only_track)
-
-    # Bring the displayed frame to ~5.0s pub (RTP t=2.5s) → draw.
+    # Far away from "the current frame" by publisher timeline math.
+    w.on_video_frame(frame_time_s=10.0, src_w=1920, src_h=1080)
+    assert w._should_draw(only_track)
+    # Right on the matching frame.
     w.on_video_frame(frame_time_s=2.5, src_w=1920, src_h=1080)
-    only_track = next(iter(w._tracks.values()))
     assert w._should_draw(only_track)
 
 
@@ -131,14 +131,16 @@ def test_ewma_refines_offset_toward_drift() -> None:
     assert w._publisher_offset_s > seeded
 
 
-def test_pre_calibration_does_not_draw() -> None:
-    """Before the first frame arrives, no boxes — offset isn't seeded."""
+def test_active_track_drawn_even_before_calibration() -> None:
+    """Always-draw policy renders any track as soon as it lands —
+    pre-calibration boxes are slightly time-mismatched but still
+    actionable for the operator."""
     w = DetectionOverlayWidget()
     w.resize(800, 450)
     w.on_track_event(_meta("p|s|1"))
     only_track = next(iter(w._tracks.values()))
     assert w._publisher_offset_s is None
-    assert not w._should_draw(only_track)
+    assert w._should_draw(only_track)
 
 
 # ---------------------------------------------------------------------

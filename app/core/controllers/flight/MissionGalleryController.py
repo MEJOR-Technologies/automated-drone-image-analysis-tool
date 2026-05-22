@@ -28,6 +28,15 @@ class MissionGalleryController(QObject):
         self._dock = dock
         self._detections: List[Tuple[float, dict]] = []
         self._muted_feeds: set[str] = set()
+        # Track-key → JPEG bytes cache that survives tile close/reopen
+        # within a single viewer session. Snapshot replays (which fire on
+        # reconnect to catch the desktop up with tracks the publisher
+        # already promoted) carry meta only — the mobile-side
+        # ``snapshotJson()`` strips thumb bytes because they're too bulky
+        # to ship in a single JSON blob (publish plan §6). Without this
+        # cache, every reconnected row would render "no thumb" even
+        # though the desktop already received the thumbnail earlier.
+        self._thumb_cache: Dict[str, bytes] = {}
         self._dock.filtersChanged.connect(self._render)
         self._dock.exportRequested.connect(self._on_export_clicked)
 
@@ -59,6 +68,18 @@ class MissionGalleryController(QObject):
     # ------------------------------------------------------------------
 
     def add_detection(self, _feed_id: str, detection: dict) -> None:
+        # Thumbnail cache: remember thumbs as they arrive on live
+        # promotions; restore them on snapshot replays that carry meta
+        # only. Keyed by ``track_key`` so the cache survives tile
+        # close/reopen and snapshot dedup boundaries.
+        track_key = detection.get("track_key")
+        thumb_bytes = detection.get("thumb_bytes")
+        if isinstance(thumb_bytes, (bytes, bytearray)) and thumb_bytes:
+            if isinstance(track_key, str) and track_key:
+                self._thumb_cache[track_key] = bytes(thumb_bytes)
+        elif isinstance(track_key, str) and track_key in self._thumb_cache:
+            detection = dict(detection)
+            detection["thumb_bytes"] = self._thumb_cache[track_key]
         ts = self._timestamp(detection)
         self._detections.append((ts, dict(detection)))
         # Register the detector id (universal across publishers) rather
@@ -84,7 +105,36 @@ class MissionGalleryController(QObject):
 
     def clear(self) -> None:
         self._detections.clear()
+        self._thumb_cache.clear()
         self._dock.clear()
+
+    # ------------------------------------------------------------------
+    # desktop-side thumb cropping (plan §19.4.1)
+    # ------------------------------------------------------------------
+
+    def upsert_thumb(self, track_key: str, jpeg_bytes: bytes) -> None:
+        """Attach a freshly-cropped JPEG to an existing track's row.
+
+        Mobile no longer ships thumbnails over the DataChannel (plan
+        §19.4.1); the desktop now crops them locally from the live
+        video frame and emits ``DetectionThumbCropper.thumbReady`` per
+        track. This slot stores the bytes in the per-key thumb cache
+        AND patches every in-flight gallery row that matches the same
+        ``track_key`` so the operator sees the new thumbnail without
+        waiting for the next live promotion to re-render.
+        """
+        if not isinstance(track_key, str) or not track_key:
+            return
+        if not isinstance(jpeg_bytes, (bytes, bytearray)) or not jpeg_bytes:
+            return
+        self._thumb_cache[track_key] = bytes(jpeg_bytes)
+        changed = False
+        for _, detection in self._detections:
+            if detection.get("track_key") == track_key:
+                detection["thumb_bytes"] = bytes(jpeg_bytes)
+                changed = True
+        if changed:
+            self._render()
 
     @property
     def detections(self) -> List[dict]:
@@ -119,7 +169,11 @@ class MissionGalleryController(QObject):
         return True
 
     def _render(self) -> None:
-        rows = [d for (_, d) in sorted(self._detections, key=lambda t: t[0])]
+        # Newest first — the operator's eyes naturally land on the top
+        # of the list, so put the most recent detection there. Combined
+        # with ``MissionGalleryDock.render_rows`` preserving scroll, a
+        # user reviewing older rows isn't bumped by new arrivals.
+        rows = [d for (_, d) in sorted(self._detections, key=lambda t: t[0], reverse=True)]
         filtered = [d for d in rows if self._passes_filters(d)]
         self._dock.render_rows(filtered)
 

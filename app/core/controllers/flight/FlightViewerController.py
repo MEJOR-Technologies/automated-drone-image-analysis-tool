@@ -52,8 +52,12 @@ def _prewarm_webrtc_imports() -> None:
 # suffix lets future structural changes (additional docks, renamed
 # objectNames) invalidate stored state cleanly instead of restoring a
 # half-broken layout.
-SETTINGS_LAYOUT_KEY = "state/v1"
-SETTINGS_GEOMETRY_KEY = "geometry/v1"
+# Bumped to v2 when the right-dock vertical split was retuned (Map dock
+# default height shrunk to a sliver under earlier code). Old saved
+# state values are intentionally ignored so first-launch operators see
+# the new defaults rather than the legacy 30 px Map dock.
+SETTINGS_LAYOUT_KEY = "state/v2"
+SETTINGS_GEOMETRY_KEY = "geometry/v2"
 
 
 class FlightViewerController(QObject):
@@ -153,6 +157,12 @@ class FlightViewerController(QObject):
         controller.detectionPromoted.connect(self._on_detection_for_map)
         controller.detectionUpdated.connect(self.gallery.add_detection)
         controller.detectionUpdated.connect(self._on_detection_for_map)
+        # Desktop-side thumbnail crops (plan §19.4.1) — mobile no longer
+        # ships JPEGs over the data channel; the per-tile cropper crops
+        # them locally from the live frame buffer and emits ``thumbReady``
+        # per track. Bridge straight to the Mission Gallery's
+        # ``upsert_thumb`` so the row's image refreshes in place.
+        controller.thumbReady.connect(self._on_thumb_ready)
         # Snapshot replay is fanned out per-detection through the existing
         # detectionPromoted path (plan §18 → *Desktop residual work* item 2),
         # so the gallery picks it up automatically. The bulk
@@ -199,6 +209,17 @@ class FlightViewerController(QObject):
             (ctrl, dlg) for (ctrl, dlg) in self._dialogs if ctrl is not controller
         ]
 
+    def _on_thumb_ready(self, _feed_id: str, track_key: str, jpeg_bytes: bytes) -> None:
+        """Bridge a desktop-cropped thumbnail to the Mission Gallery.
+
+        Plan §19.4.1: the per-tile :class:`DetectionThumbCropper` emits
+        ``thumbReady(track_key, jpeg_bytes)`` after every successful
+        crop. The gallery's ``upsert_thumb`` patches the existing row's
+        image in place and caches the bytes for future snapshot replays
+        of the same track.
+        """
+        self.gallery.upsert_thumb(track_key, jpeg_bytes)
+
     def _on_mute_toggled(self, tile, muted: bool) -> None:
         code = getattr(tile, "pairing_code", None)
         if code is not None:
@@ -230,13 +251,13 @@ class FlightViewerController(QObject):
             return
         self.window.map_dock.add_detection(detection)
         if not self.window.map_dock.isVisible():
-            self.window.map_dock.setVisible(True)
+            self.window.show_map_dock()
 
     def _on_gallery_row_activated(self, detection: dict) -> None:
         """Center the map dock on a detection when the operator clicks its row."""
         self.window.map_dock.focus_detection(detection)
         if not self.window.map_dock.isVisible():
-            self.window.map_dock.setVisible(True)
+            self.window.show_map_dock()
 
     def _on_map_pin_clicked(self, track_key: str) -> None:
         """Highlight the matching Mission Gallery row when a pin is clicked.

@@ -19,6 +19,7 @@ from typing import Optional
 
 from PySide6.QtCore import QObject, Signal
 
+from core.controllers.flight.DetectionThumbCropper import DetectionThumbCropper
 from core.services.LoggerService import LoggerService
 from core.services.streaming.DetectionFeedService import DetectionFeedService
 from core.services.streaming.WebRTCStreamService import WebRTCStreamService
@@ -45,6 +46,7 @@ class FlightTileController(QObject):
     detectionUpdated = Signal(str, dict)
     detectionSnapshot = Signal(str, list)
     tileClosed = Signal(str)
+    thumbReady = Signal(str, str, bytes)  # feed_id, track_key, jpeg_bytes
 
     def __init__(
         self,
@@ -76,6 +78,10 @@ class FlightTileController(QObject):
         # → viewer.remove_tile → subwindow.close → loop). Tearing down
         # twice double-disconnects signals + double-deletes services.
         self._teardown_started: bool = False
+        # Desktop-side thumbnail cropper (plan §19.4.1). Created in
+        # ``_materialize_tile`` once the FlightTile (and its overlay,
+        # which owns the frame ring) exists.
+        self._thumb_cropper: Optional[DetectionThumbCropper] = None
 
     # ------------------------------------------------------------------
     # pairing UX
@@ -387,7 +393,20 @@ class FlightTileController(QObject):
         feed_service.detectionPromoted.connect(tile.detection_overlay.on_track_event)
         feed_service.detectionUpdated.connect(tile.detection_overlay.on_track_event)
         feed_service.detectionSnapshot.connect(tile.detection_overlay.on_snapshot)
+        # Desktop-side per-detection thumbnail cropping (plan §19.4.1).
+        # Shares ``tile.detection_overlay``'s frame ring + publisher↔RTP
+        # offset, so each crop pixel-locks to the same source frame the
+        # box renders on. Emits ``thumbReady(track_key, jpeg_bytes)``
+        # which the viewer controller bridges to the Mission Gallery's
+        # ``upsert_thumb`` so the row's image refreshes in place.
+        cropper = DetectionThumbCropper(
+            overlay=tile.detection_overlay, parent=self
+        )
+        feed_service.detectionPromoted.connect(cropper.on_track_event)
+        feed_service.detectionUpdated.connect(cropper.on_track_event)
+        cropper.thumbReady.connect(self._on_thumb_cropped)
         self._feed_service = feed_service
+        self._thumb_cropper = cropper
 
         # Telemetry feed (plan §19.3). The same ``dataChannelMessage``
         # signal feeds both services — each filters by label.
@@ -421,16 +440,68 @@ class FlightTileController(QObject):
         track_key = merged.get("track_key")
         if isinstance(track_key, str) and track_key:
             self._known_track_keys.add(track_key)
+        # Attach a JPEG-encoded snapshot of the latest video frame so
+        # the gallery's detection popout can show the full-frame context
+        # (with the bbox drawn on top) rather than just the small cropped
+        # thumb. Encoded once per promotion — the JPEG bytes live in the
+        # gallery's detection dict for the rest of the session.
+        self._attach_context_frame(merged)
         # Detections render in the shared Mission Gallery dock; per-tile
         # detection panels are gone (collapsed into the gallery to avoid
         # duplicate rows showing the same event in two places).
         if self._pairing_code:
             self.detectionPromoted.emit(self._pairing_code, merged)
 
+    def _attach_context_frame(self, envelope: dict) -> None:
+        """Snapshot the tile's latest video frame and embed it as JPEG.
+
+        Best-effort — falls through silently if no frame is available
+        yet or the encode fails. Downscales to 1280-wide max so the
+        bytes stay small for long sessions (typical encoded size is
+        80–150 KB per detection).
+        """
+        if envelope.get("context_frame_jpeg"):
+            return
+        tile = self._tile
+        if tile is None:
+            return
+        frame = getattr(tile, "_latest_frame_bgr", None)
+        if frame is None:
+            return
+        try:
+            import cv2
+            h, w = frame.shape[:2]
+            if w > 1280:
+                scale = 1280.0 / float(w)
+                new_w = 1280
+                new_h = int(round(h * scale))
+                frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                h, w = new_h, new_w
+            ok, buf = cv2.imencode(
+                ".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80]
+            )
+            if ok:
+                envelope["context_frame_jpeg"] = bytes(buf)
+                envelope["context_frame_width"] = int(w)
+                envelope["context_frame_height"] = int(h)
+        except Exception:  # noqa: BLE001 - context image is best-effort
+            return
+
     def _on_detection_updated(self, detection: dict) -> None:
         merged = self._decorate(detection)
         if self._pairing_code:
             self.detectionUpdated.emit(self._pairing_code, merged)
+
+    def _on_thumb_cropped(self, track_key: str, jpeg_bytes: bytes) -> None:
+        """Forward a freshly-cropped thumbnail up to the viewer controller.
+
+        Bridges :class:`DetectionThumbCropper` (per-tile, lives next to
+        the FlightTile's overlay) to :class:`FlightViewerController`,
+        which in turn upserts the row image into the shared Mission
+        Gallery. Plan §19.4.1 wiring.
+        """
+        if self._pairing_code:
+            self.thumbReady.emit(self._pairing_code, track_key, jpeg_bytes)
 
     def _on_detection_snapshot(self, detections: list) -> None:
         """Treat each snapshot entry as a thumb-less promotion (plan §18).
@@ -524,6 +595,9 @@ class FlightTileController(QObject):
         if self._telemetry_service is not None:
             self._telemetry_service.deleteLater()
             self._telemetry_service = None
+        if self._thumb_cropper is not None:
+            self._thumb_cropper.deleteLater()
+            self._thumb_cropper = None
         # Detach tile signals before we emit `tileClosed` — otherwise
         # `removeDockWidget` in the view can re-emit `closeRequested`,
         # which would re-enter this method via `_on_tile_close`.

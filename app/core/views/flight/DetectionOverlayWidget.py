@@ -31,9 +31,11 @@ the operator can still click through to the underlying video pane.
 from __future__ import annotations
 
 import time
+from collections import deque
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Deque, Dict, List, Optional, Tuple
 
+import numpy as np
 from PySide6.QtCore import QPoint, QRect, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import QWidget
@@ -57,6 +59,20 @@ EWMA_ALPHA = 0.05
 # calibration, fall back to drawing the latest box on the latest frame
 # (legacy publisher mode; documented in plan §19.4).
 LEGACY_THRESHOLD_METAS = 5
+
+# Ring-buffer depth for ``recent_frames``. Plan §19.4.1 suggests
+# ≈ 1 s of frames at 30 fps so the desktop-side thumb cropper can
+# look up the exact source frame for a recently-arrived meta via
+# the publisher↔RTP offset. Larger buffers cost memory (~6 MB per
+# 1080p frame, raw ndarray); 30 strikes a balance.
+RECENT_FRAMES_DEPTH = 30
+
+# How close (in seconds, publisher clock) a buffered frame's
+# timestamp must be to the requested meta's ``frame_ts_ns / 1e9``
+# to count as "the matching frame" for crop look-ups. Wider than
+# the overlay's ±50 ms time-window because the cropper is more
+# tolerant — a slightly-off frame still gives a correct crop.
+CROP_FRAME_MATCH_S = 0.075
 
 # Per-detector palette — RGB, mirrors the mobile-side
 # ``OverlayCompositor.colorForDetector`` so desktop + tablet show the
@@ -112,6 +128,14 @@ class DetectionOverlayWidget(QWidget):
         # Legacy fallback bookkeeping.
         self._metas_seen: int = 0
         self._legacy_mode: bool = False
+        # Frame ring buffer for the desktop-side thumb cropper (plan
+        # §19.4.1). Each entry is ``(frame_time_s, ndarray, local_arrival_s)``
+        # — RTP-derived seconds, the source BGR frame as ndarray, and
+        # ``time.monotonic()`` so we can age frames out independent of
+        # the publisher clock.
+        self._recent_frames: Deque[Tuple[float, np.ndarray, float]] = deque(
+            maxlen=RECENT_FRAMES_DEPTH
+        )
         # Label font is small + bold; class+confidence chip sits above the
         # box in the top-left corner.
         self._label_font = QFont()
@@ -201,6 +225,7 @@ class DetectionOverlayWidget(QWidget):
         frame_time_s: float,
         src_w: int = 0,
         src_h: int = 0,
+        frame_bgr: Optional[np.ndarray] = None,
     ) -> None:
         """Called by ``FlightTile.on_frame`` after the pixmap is set.
 
@@ -209,19 +234,27 @@ class DetectionOverlayWidget(QWidget):
         * ``src_w`` / ``src_h`` — source frame dimensions. Needed once
           to compute the letterbox/pillarbox subrect inside the widget;
           we cache the latest values.
+        * ``frame_bgr`` — the source BGR ndarray. Buffered into
+          ``_recent_frames`` so the desktop-side thumb cropper (plan
+          §19.4.1) can look up the exact source frame for an arriving
+          meta envelope via the publisher↔RTP offset.
 
         Side effects:
-        1. If we have a pending first meta, compute and seed the
+        1. Buffer ``frame_bgr`` into the recent-frames ring.
+        2. If we have a pending first meta, compute and seed the
            publisher↔RTP offset.
-        2. Map ``frame_time_s`` to publisher time for paintEvent.
-        3. EWMA-refine the offset against any track that the new frame
+        3. Map ``frame_time_s`` to publisher time for paintEvent.
+        4. EWMA-refine the offset against any track that the new frame
            falls within ``FRAME_WINDOW_S`` of.
-        4. Prune stale tracks.
-        5. ``update()`` to trigger a repaint.
+        5. Prune stale tracks.
+        6. ``update()`` to trigger a repaint.
         """
         if src_w > 0 and src_h > 0:
             self._video_w = int(src_w)
             self._video_h = int(src_h)
+
+        if frame_bgr is not None and frame_bgr.size > 0:
+            self._recent_frames.append((frame_time_s, frame_bgr, time.monotonic()))
 
         # Seed calibration: first frame to arrive after the first meta
         # with a real frame_ts_ns. Plan §19.4 calibration trick.
@@ -279,7 +312,42 @@ class DetectionOverlayWidget(QWidget):
         self._current_frame_pub_s = None
         self._metas_seen = 0
         self._legacy_mode = False
+        self._recent_frames.clear()
         self.update()
+
+    # ------------------------------------------------------------------
+    # frame buffer access (used by DetectionThumbCropper, plan §19.4.1)
+    # ------------------------------------------------------------------
+
+    def latest_frame(self) -> Optional[np.ndarray]:
+        """Return the most recently buffered source BGR frame, or ``None``."""
+        if not self._recent_frames:
+            return None
+        return self._recent_frames[-1][1]
+
+    def frame_at_publisher_ts(self, frame_ts_ns: int) -> Optional[np.ndarray]:
+        """Return the buffered frame that matches a meta's ``frame_ts_ns``.
+
+        Uses the learned publisher↔RTP offset to translate the meta's
+        publisher-clock nanoseconds into RTP seconds and scans
+        ``_recent_frames`` for the closest match within
+        ``CROP_FRAME_MATCH_S``. Returns ``None`` if no buffered frame
+        falls within that window (frame already evicted from the ring,
+        or calibration hasn't seeded yet).
+        """
+        if not self._recent_frames or frame_ts_ns <= 0:
+            return None
+        if self._publisher_offset_s is None:
+            return None
+        target_rtp_s = (frame_ts_ns / 1e9) - self._publisher_offset_s
+        best: Optional[Tuple[float, np.ndarray, float]] = None
+        best_drift = CROP_FRAME_MATCH_S
+        for entry in self._recent_frames:
+            drift = abs(entry[0] - target_rtp_s)
+            if drift <= best_drift:
+                best = entry
+                best_drift = drift
+        return best[1] if best is not None else None
 
     # ------------------------------------------------------------------
     # geometry — space-sync the bbox coords with the displayed pixmap
@@ -334,18 +402,22 @@ class DetectionOverlayWidget(QWidget):
         painter.end()
 
     def _should_draw(self, track: ActiveTrack) -> bool:
-        # Legacy fallback: nothing to gate on — draw every active track.
-        if self._legacy_mode:
-            return True
-        # Pre-calibration: don't draw boxes yet; wait until offset seeds.
-        if self._publisher_offset_s is None or self._current_frame_pub_s is None:
-            return False
-        # Legacy meta (frame_ts_ns == 0) when we ARE calibrated: also
-        # draw on every frame — we have no per-frame gating signal.
-        if track.frame_ts_ns == 0:
-            return True
-        track_pub_s = track.frame_ts_ns / 1e9
-        return abs(track_pub_s - self._current_frame_pub_s) < FRAME_WINDOW_S
+        # Active-track draw policy: any track that's still inside the
+        # ``FRESHNESS_S`` window gets rendered every paint. This is the
+        # "always show the latest known box per detection" model — the
+        # strict time-window gating that plan §19.4 specified for
+        # exact-frame matching turned out to hide boxes whenever the
+        # publisher↔RTP offset drifts even slightly, with no usable
+        # signal to the operator. The cost is that on a fast-moving
+        # drone the box can lag behind the target by the SCTP-vs-RTP
+        # transit difference (~100 ms); for the SAR speeds we ship at
+        # (≤5 m/s) that's a fraction of a meter of camera motion —
+        # acceptable, and far better than no box at all.
+        #
+        # Stale-track pruning in ``on_video_frame`` keeps the active
+        # set bounded; tracks the publisher hasn't refreshed in
+        # ``FRESHNESS_S`` are removed before this slot ever runs.
+        return True
 
     def _draw_track(
         self,

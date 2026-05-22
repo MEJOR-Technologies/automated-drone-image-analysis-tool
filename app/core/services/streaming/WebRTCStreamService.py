@@ -459,6 +459,14 @@ class WebRTCStreamService(QThread):
                 f"WebRTCStreamService: snapshot request channel open "
                 f"(code={self._pairing_code})"
             )
+            # Ask the publisher for its current set of promoted tracks
+            # immediately on attach. Without this the desktop only sees
+            # detections promoted *after* it joins — so a desktop that
+            # pairs (or re-pairs) into an in-progress flight misses
+            # everything the publisher already surfaced. The reconnect
+            # branch in ``iceconnectionstatechange`` handles blip-recovery
+            # catch-up; this handles initial-attach catch-up. Plan §19.2.
+            self._send_snapshot_request()
 
         # Open the signaling WS subscription before posting the answer so
         # the publisher's trickle ICE candidates (and any future iceRestart

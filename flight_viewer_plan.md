@@ -994,6 +994,108 @@ webrtc_stream_service.frameReady.connect(controller._on_frame_ready)
 
 **Sizing.** ~250 lines for `DetectionOverlayWidget` + ~50 lines of `FlightTileController` wiring + ~120 lines of tests covering: calibration with simulated meta+frame pairs, EWMA refinement convergence, stale pruning, render-time scaling against synthetic pane sizes, and the `frame_ts_ns == 0` legacy fallback.
 
+#### 19.4.1 Desktop-side thumbnail cropping (replaces mobile-sent JPEGs)
+
+**Why.** Today every Promote/Update fires a ~30–50 KB JPEG on the `detections.thumb` DataChannel — cropped on the publisher by `BboxCropper.cropForTrack` and re-encoded on the M4E tablet. For SAR over cellular this is the difference between "smooth video" and "video stuttering because the JPEG burst saturated the uplink": at a 5 Hz detector cadence with 2–3 active tracks, that's 300–750 KB/s on top of the video. The desktop already has the source video frame (it's literally rendering it), it has spare CPU, and with the `frame_ts_ns` calibration we just plumbed for the box overlay it can pixel-lock the crop to the exact frame the detector saw. Cropping on the desktop side is a strict architectural improvement once the frame-buffer infrastructure is in place.
+
+The mobile gallery is unaffected — `BboxCropper` continues to produce the crop locally for `AppPromotedResultPersistenceController` (Room + filesystem JPEG). The only thing going away on mobile is the JPEG encode + DataChannel send to remote viewers.
+
+**What the desktop already has from §19.4.** The overlay widget maintains `recent_frames: deque[(frame_time_s, ndarray, local_arrival_s)]` (≈ 1 s of frames at 30 fps) and learns the publisher↔RTP offset on the first matched meta. Reuse the same buffer + offset for cropping.
+
+**Component.** New `DetectionThumbCropper` (sibling of `DetectionOverlayWidget`, lives in the controller layer so its output is delivered to whichever consumer wants the row image — per-tile detection list, Mission Gallery, future export):
+
+```python
+class DetectionThumbCropper:
+    """Crop per-detection thumbnails from the live video frame buffer.
+
+    Subscribes to the same meta events as DetectionOverlayWidget. On
+    each promote/update, finds the source frame in the overlay's
+    recent_frames buffer (via the same publisher↔RTP offset), crops
+    bbox_norm * frame.shape with a padding fraction (matches mobile's
+    BboxCropper default of 20%), and emits a fully-formed gallery row
+    payload identical to what the mobile-side JPEG path used to
+    deliver.
+    """
+
+    PADDING_FRACTION = 0.20             # matches mobile BboxCropper
+    MIN_PIXEL_EDGE = 96                 # matches mobile BboxCropper
+    JPEG_QUALITY = 85                   # slightly higher than mobile's 80 — desktop has cycles
+
+    thumbReady = Signal(str, bytes)     # (track_key, jpeg_bytes)
+
+    def __init__(
+        self,
+        overlay: DetectionOverlayWidget,    # shares recent_frames + offset
+        parent: QObject | None = None,
+    ):
+        ...
+
+    def on_track_event(self, envelope: dict) -> None:
+        frame_ts_ns = envelope.get("frame_ts_ns") or 0
+        if frame_ts_ns == 0:
+            # Legacy publisher (or snapshot replay) — fall back to
+            # whatever the overlay's most recent frame is. Less accurate
+            # but it's the same fallback the box overlay uses.
+            ndarray = self._overlay.latest_frame()
+        else:
+            ndarray = self._overlay.frame_at_publisher_ts(frame_ts_ns)
+            if ndarray is None:
+                # Frame already evicted from the ring; drop this thumb.
+                # The next Update will catch up.
+                return
+        bbox = self._scale_bbox(envelope["bbox_norm"], ndarray.shape)
+        crop = self._crop_with_padding(ndarray, bbox)
+        ok, buf = cv2.imencode(".jpg", crop, [int(cv2.IMWRITE_JPEG_QUALITY), self.JPEG_QUALITY])
+        if not ok:
+            return
+        self.thumbReady.emit(envelope["track_key"], bytes(buf))
+```
+
+**Wiring.**
+
+```python
+overlay = DetectionOverlayWidget(parent=video_label)
+cropper = DetectionThumbCropper(overlay=overlay, parent=self)
+detection_feed_service.detectionPromoted.connect(overlay.on_track_event)
+detection_feed_service.detectionPromoted.connect(cropper.on_track_event)
+detection_feed_service.detectionUpdated.connect(overlay.on_track_event)
+detection_feed_service.detectionUpdated.connect(cropper.on_track_event)
+cropper.thumbReady.connect(detection_list.upsert_thumb)
+cropper.thumbReady.connect(mission_gallery_controller.upsert_thumb)
+```
+
+The detection list and Mission Gallery row-upsert APIs are unchanged from what the mobile-cropped path fed them — they get a `track_key` + `jpeg_bytes`, key by `track_key`, replace the existing JPEG on each update.
+
+**Edge cases**
+
+| Case | Handling |
+|---|---|
+| Snapshot reply on ICE recovery | Mobile snapshot replies already strip thumb descriptors (per `PromotionPublisher.snapshotJson()`). Desktop's overlay populates `_tracks`; the cropper sees the snapshot event with `frame_ts_ns` but a frame that old isn't in `recent_frames` → no thumb until the next live Update. Same UX as today. |
+| Track promoted while desktop tile is hidden / minimized | Frames still arrive; ring still updates. No regression. |
+| Multi-tile (one drone → multiple desktops, multiple drones → one desktop) | Each `FlightTileController` owns its own overlay+cropper pair. Per-tile frame buffer; no cross-tile coupling. |
+| `frame_ts_ns` calibration not yet learned | Fall back to "latest frame," same as the box overlay. |
+| Bbox extends past frame edges (after padding) | Clamp to `[0, frame.shape]`; min-pixel-edge guarantee from mobile's BboxCropper carries over. |
+
+**Mobile-side change (separate, follow-up)**
+
+Once the desktop ships §19.4.1, the mobile publisher should stop sending the JPEG. The change is small:
+
+```kotlin
+// PromotionPublisher.publish:
+//   - skip event.croppedThumbnail?.encodeToJpegOrNull(...)
+//   - omit thumb descriptor from envelope (envelope.thumb = null)
+//   - skip sink.sendThumb(thumbBytes)
+// ViewerPeerConnection.start:
+//   - keep creating the detections.thumb DataChannel for one release
+//     of backwards-compat (desktops mid-upgrade ignore it cleanly);
+//     remove the channel and the THUMB_CHANNEL_LABEL constant in the
+//     release after that.
+```
+
+Until that lands, the desktop can ignore the incoming `detections.thumb` traffic and prefer its locally-cropped version. The architectural change ships on the desktop side; the bandwidth savings activate when mobile is updated to match.
+
+**Sizing.** ~120 lines for `DetectionThumbCropper` + reuse-existing for the frame buffer + ~80 lines of tests (synthetic frames + envelopes verifying crop coordinates, padding, JPEG round-trip).
+
 ### 19.5 M3 polish — specs
 
 Each item is sized to ship independently. Names map to the M3 bullets in §15.

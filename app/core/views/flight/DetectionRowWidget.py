@@ -43,7 +43,22 @@ class DetectionRowWidget(TranslationMixin, QWidget, Ui_DetectionRowWidget):
 
         self.viewButton.clicked.connect(self._on_view_clicked)
         self.copyCoordsButton.clicked.connect(self._on_copy_clicked)
+        # Clicking the thumbnail opens the same popup as the View button
+        # — most operators reach for the image first, so wire it up.
+        self.thumbnailLabel.setCursor(Qt.PointingHandCursor)
+        self.thumbnailLabel.installEventFilter(self)
         self.update_detection(detection)
+
+    def eventFilter(self, watched, event):  # noqa: N802 - Qt name
+        from PySide6.QtCore import QEvent
+        if (
+            watched is self.thumbnailLabel
+            and event.type() == QEvent.MouseButtonRelease
+            and event.button() == Qt.LeftButton
+        ):
+            self._on_view_clicked()
+            return True
+        return super().eventFilter(watched, event)
 
     # ------------------------------------------------------------------
     # public API
@@ -166,24 +181,74 @@ class DetectionRowWidget(TranslationMixin, QWidget, Ui_DetectionRowWidget):
         self._show_full_view()
 
     def _show_full_view(self) -> None:
-        """Default behavior: open a modal QDialog with the full-size thumb + JSON dump."""
+        """Open a modal popout with the full-frame context (or the
+        cropped thumb if no context frame is available), the bbox
+        drawn on top, and the detection metadata.
+        """
+        from PySide6.QtGui import QPainter, QPen, QColor
+
         dialog = QDialog(self)
         dialog.setWindowTitle(self.tr("Detection"))
-        dialog.resize(640, 520)
+        dialog.resize(1100, 800)
         layout = QVBoxLayout(dialog)
 
-        thumb_label = QLabel(dialog)
+        # Pick the best available image source. The full-frame snapshot
+        # the tile attaches on promotion is preferred (operator sees the
+        # entire scene); fall back to the small cropped thumb if it's
+        # missing (e.g., snapshot replay after reconnect).
+        context_bytes = self._detection.get("context_frame_jpeg")
+        bbox = self._detection.get("bbox_norm") or []
+        has_context = isinstance(context_bytes, (bytes, bytearray)) and context_bytes
         thumb_bytes = self._detection.get("thumb_bytes")
-        if thumb_bytes:
-            image = QImage()
-            if image.loadFromData(thumb_bytes):
-                thumb_label.setPixmap(QPixmap.fromImage(image))
-                thumb_label.setAlignment(Qt.AlignCenter)
+
+        image_label = QLabel(dialog)
+        image_label.setAlignment(Qt.AlignCenter)
+        image_label.setMinimumHeight(500)
+        image_label.setStyleSheet("QLabel { background-color: black; }")
+
+        image = QImage()
+        if has_context and image.loadFromData(bytes(context_bytes)):
+            # Paint the bbox on top before display so the operator can
+            # see exactly which target in the scene corresponds to this
+            # gallery row.
+            if isinstance(bbox, (list, tuple)) and len(bbox) == 4:
+                try:
+                    x, y, w, h = (float(v) for v in bbox)
+                    pixmap = QPixmap.fromImage(image)
+                    painter = QPainter(pixmap)
+                    pen = QPen(QColor(251, 94, 28))  # AdiatColors.Accent orange
+                    pen.setWidth(max(3, pixmap.width() // 300))
+                    painter.setPen(pen)
+                    painter.drawRect(
+                        int(round(x * pixmap.width())),
+                        int(round(y * pixmap.height())),
+                        int(round(w * pixmap.width())),
+                        int(round(h * pixmap.height())),
+                    )
+                    painter.end()
+                    image_label.setPixmap(
+                        pixmap.scaled(
+                            1080, 720,
+                            Qt.KeepAspectRatio, Qt.SmoothTransformation,
+                        )
+                    )
+                except (TypeError, ValueError):
+                    image_label.setPixmap(QPixmap.fromImage(image))
             else:
-                thumb_label.setText(self.tr("Thumbnail could not be decoded."))
+                image_label.setPixmap(QPixmap.fromImage(image))
+        elif thumb_bytes and image.loadFromData(bytes(thumb_bytes)):
+            # Scale the cropped thumb up for visibility — the raw JPEG
+            # is only ~96 px wide, which renders as a postage stamp in
+            # an 1100×800 dialog.
+            image_label.setPixmap(
+                QPixmap.fromImage(image).scaled(
+                    800, 600,
+                    Qt.KeepAspectRatio, Qt.SmoothTransformation,
+                )
+            )
         else:
-            thumb_label.setText(self.tr("No thumbnail available."))
-        layout.addWidget(thumb_label, stretch=1)
+            image_label.setText(self.tr("No image available."))
+        layout.addWidget(image_label, stretch=1)
 
         meta_lines = []
         for key in ("class_name", "confidence", "captured_at_ms", "track_key", "feed_label"):

@@ -122,10 +122,30 @@ function __adiatInitLeaflet() {
         return;
     }
     var map = L.map('map', { worldCopyJump: true }).setView([30.0, -97.0], 4);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+
+    // Three swappable basemaps — Road / Satellite / Hybrid — exposed
+    // via Leaflet's built-in layer-control widget at the top-right of
+    // the map. Esri's World_Imagery and Reference/Boundaries layers
+    // require no API key; OSM is the road default.
+    var roadLayer = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { maxZoom: 19, attribution: '© OpenStreetMap' });
+    var satelliteLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/' +
+        'MapServer/tile/{z}/{y}/{x}',
+        { maxZoom: 19, attribution: 'Tiles © Esri' });
+    var labelsOverlay = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/' +
+        'World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        { maxZoom: 19, attribution: 'Labels © Esri' });
+    var hybridLayer = L.layerGroup([satelliteLayer, labelsOverlay]);
+
+    roadLayer.addTo(map);
+    L.control.layers(
+        { 'Road': roadLayer, 'Satellite': satelliteLayer, 'Hybrid': hybridLayer },
+        {},
+        { position: 'topright', collapsed: true }
+    ).addTo(map);
     var markers = {};
     var bounds = null;
     function pinIcon(color) {
@@ -149,10 +169,18 @@ function __adiatInitLeaflet() {
         else { bounds.extend([lat, lon]); }
     };
     window.fitAll = function() {
-        if (bounds !== null) { map.fitBounds(bounds, { padding: [30, 30] }); }
+        if (bounds !== null) {
+            // ``maxZoom: 18`` keeps multi-detection sessions from
+            // zooming to an extreme overhead view when all pins
+            // happen to land within meters of each other.
+            map.fitBounds(bounds, { padding: [30, 30], maxZoom: 18 });
+        }
     };
     window.setView = function(lat, lon, zoom) {
-        map.setView([lat, lon], zoom !== undefined ? zoom : 16);
+        // Default zoom 18 — tight enough that the operator immediately
+        // sees roof / road context around a SAR target instead of a
+        // wide regional view they have to manually zoom into.
+        map.setView([lat, lon], zoom !== undefined ? zoom : 18);
     };
     window.clearMarkers = function() {
         for (var k in markers) { map.removeLayer(markers[k]); }
@@ -406,7 +434,9 @@ class MapDock(TranslationMixin, QDockWidget):
         if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
             return
         if self._WebEngineView is not None:
-            self._run_js(f"window.setView({float(lat)}, {float(lon)}, 17);")
+            # Zoom 19 on focus — one tighter than the auto-fit / setView
+            # default so a row-click really hones in on the target.
+            self._run_js(f"window.setView({float(lat)}, {float(lon)}, 19);")
             return
         # Fallback: select the matching row
         for i in range(self._fallback_list.count()):

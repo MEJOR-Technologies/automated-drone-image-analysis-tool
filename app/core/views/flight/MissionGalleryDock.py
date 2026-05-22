@@ -112,10 +112,20 @@ class MissionGalleryDock(TranslationMixin, QDockWidget):
         self.ui.rowCountLabel.setText(self.tr("0 detections"))
 
     def render_rows(self, detections: list) -> None:
-        """Wholesale repaint with ``detections`` (a filtered, sorted list)."""
+        """Wholesale repaint with ``detections`` (a filtered, sorted list).
+
+        Preserves the operator's scroll position across re-renders. The
+        ``clear() + add`` pattern would otherwise snap the scrollbar back
+        to the top every time a new detection arrives — annoying when the
+        operator is reviewing earlier rows.
+        """
+        bar = self.ui.missionList.verticalScrollBar()
+        prev_value = bar.value() if bar is not None else 0
+        prev_at_top = (prev_value == 0)
         self.ui.missionList.clear()
         for detection in detections:
             row = DetectionRowWidget(detection, parent=self.ui.missionList)
+            row.viewRequested.connect(self._on_row_view_requested)
             item = QListWidgetItem(self.ui.missionList)
             item.setSizeHint(row.sizeHint())
             # Stash the detection on the item itself so the activated
@@ -126,6 +136,22 @@ class MissionGalleryDock(TranslationMixin, QDockWidget):
         self.ui.rowCountLabel.setText(
             self.tr("{n} detections").format(n=len(detections))
         )
+        # Restore scroll. If the operator was pinned at the top
+        # (newest-first ordering means top == latest), keep them there
+        # so they see new detections arrive. Otherwise restore the
+        # exact previous scroll value.
+        if bar is not None:
+            bar.setValue(0 if prev_at_top else min(prev_value, bar.maximum()))
+
+    def _on_row_view_requested(self, detection: dict) -> None:
+        """Bubble a ``viewRequested`` from a child row up to the dock.
+
+        The dock re-emits ``detectionActivated`` so the
+        :class:`FlightViewerController` can react (e.g. focus the map
+        widget) just like the keyboard / list-click path.
+        """
+        if isinstance(detection, dict):
+            self.detectionActivated.emit(detection)
 
     def _on_list_item_activated(self, item: QListWidgetItem) -> None:
         detection = item.data(Qt.UserRole) if item is not None else None

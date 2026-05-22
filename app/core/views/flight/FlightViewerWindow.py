@@ -82,6 +82,12 @@ class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
         # The QMdiArea is the authoritative parent; this set just gives
         # the controller a quick "do we still have any?" check.
         self._tiles: set = set()
+        # First-reveal flag for the Map dock. ``restoreState`` runs
+        # *after* ``__init__`` and may bring the map back at a tiny
+        # height from a previous session; we force-size on the first
+        # ``show_map_dock`` call of the session regardless of whether
+        # the dock is already visible.
+        self._map_dock_sized: bool = False
 
         # The main toolbar (Add Feed / Toggle Gallery / Save / Restore) is
         # part of the window chrome — only the per-feed dock tiles should
@@ -128,6 +134,10 @@ class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
         )
 
         self.mission_gallery = MissionGalleryDock(self)
+        # Detection rows pack a 96px thumbnail, ~140px of meta text, AND
+        # the View / Copy GPS buttons. Anything under ~440px cuts the
+        # buttons off the right edge.
+        self.mission_gallery.setMinimumWidth(440)
         self.addDockWidget(Qt.RightDockWidgetArea, self.mission_gallery)
         self.mission_gallery.setVisible(True)
 
@@ -139,6 +149,14 @@ class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.map_dock)
         self.splitDockWidget(self.mission_gallery, self.map_dock, Qt.Vertical)
         self.map_dock.setVisible(False)
+
+        # Initial right-dock sizing — give the gallery enough width for
+        # multi-word detection labels + thumb + buttons. The vertical
+        # split with the map dock can't be sized here because the map
+        # starts hidden and Qt ignores ``resizeDocks`` on a non-visible
+        # widget; we re-issue the call inside :meth:`show_map_dock` the
+        # first time the map is revealed.
+        self.resizeDocks([self.mission_gallery], [500], Qt.Horizontal)
 
         self.actionAddFeed.triggered.connect(self.addFeedRequested.emit)
         self.actionToggleGallery.toggled.connect(self.toggleGalleryRequested.emit)
@@ -187,6 +205,32 @@ class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
         self._mdi_area.addSubWindow(subwindow)
         subwindow.show()
         self._tiles.add(tile)
+
+    # ------------------------------------------------------------------
+    # map dock helpers — sized lazily because the dock starts hidden
+    # ------------------------------------------------------------------
+
+    def show_map_dock(self) -> None:
+        """Reveal the Map dock and split its height with the gallery.
+
+        ``resizeDocks`` is a no-op on hidden widgets, so we can't size
+        the gallery/map vertical split in ``__init__``. We also can't
+        size it during ``restoreState`` because that runs after
+        ``__init__`` and may revive the dock at a tiny height. The
+        ``_map_dock_sized`` flag guarantees we force the split exactly
+        once per session — on the first user-facing reveal. After that
+        the operator's manual splitter drags stick.
+        """
+        self.map_dock.setVisible(True)
+        if not self._map_dock_sized:
+            self._map_dock_sized = True
+            # Split ~55/45 so the map is usable at first glance instead
+            # of a 30 px sliver under the gallery.
+            self.resizeDocks(
+                [self.mission_gallery, self.map_dock],
+                [450, 350],
+                Qt.Vertical,
+            )
 
     def remove_tile(self, tile) -> None:
         """Close the sub-window wrapping ``tile`` and dispose it.

@@ -153,12 +153,13 @@ def test_aggregate_gallery_merges_in_timestamp_order(qtbot, stub_service):
     list_widget = viewer.window.mission_gallery.list_widget
     assert list_widget.count() == 3
 
-    # Rows should be timestamp-sorted ascending.
+    # Rows render newest-first (descending captured_at_ms) so the
+    # operator's eyes naturally land on the latest detection.
     timestamps = []
     for i in range(list_widget.count()):
         widget = list_widget.itemWidget(list_widget.item(i))
         timestamps.append(widget.detection["captured_at_ms"])
-    assert timestamps == sorted(timestamps)
+    assert timestamps == sorted(timestamps, reverse=True)
 
     viewer.shutdown()
 
