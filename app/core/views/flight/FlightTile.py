@@ -311,7 +311,11 @@ class FlightTile(TranslationMixin, QFrame):
     # ------------------------------------------------------------------
 
     def update_stats(self, stats: dict) -> None:
-        self.ui.iceStateLabel.setText(self.tr("Network: {state}").format(state=stats.get("ice_state", "--")))
+        self.ui.iceStateLabel.setText(
+            self.tr("Network: {state}").format(
+                state=self._friendly_ice_state(stats.get("ice_state"))
+            )
+        )
         width = stats.get("width") or 0
         height = stats.get("height") or 0
         self.ui.resolutionLabel.setText(f"{width}x{height}")
@@ -326,7 +330,32 @@ class FlightTile(TranslationMixin, QFrame):
             self.ui.latencyLabel.setText(self.tr("latency: --"))
 
     def set_ice_state(self, state: str) -> None:
-        self.ui.iceStateLabel.setText(self.tr("Network: {state}").format(state=state))
+        self.ui.iceStateLabel.setText(
+            self.tr("Network: {state}").format(state=self._friendly_ice_state(state))
+        )
+
+    def _friendly_ice_state(self, raw: Optional[str]) -> str:
+        """Map raw WebRTC ICE state names to operator-friendly labels.
+
+        ``completed`` is the ideal WebRTC state — ICE finished all its
+        checks and locked onto the best candidate pair — but reads as
+        "the session ended" to a non-WebRTC operator. Conflating it
+        with ``connected`` is fine for the status strip; both mean
+        "media is flowing." Same logic for the rest of the raw names
+        (``checking`` reads as "connecting"; ``new`` reads as
+        "initializing").
+        """
+        if not raw:
+            return "--"
+        return {
+            "new": self.tr("Initializing"),
+            "checking": self.tr("Connecting"),
+            "connected": self.tr("Connected"),
+            "completed": self.tr("Connected"),
+            "disconnected": self.tr("Disconnected"),
+            "failed": self.tr("Failed"),
+            "closed": self.tr("Closed"),
+        }.get(str(raw).lower(), str(raw))
 
     # ------------------------------------------------------------------
     # context menu (right-click on dock title; plan §4)
