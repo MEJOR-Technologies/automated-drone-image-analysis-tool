@@ -47,12 +47,14 @@ DEFAULT_DTLS_TIMEOUT = 10.0
 # the publisher to send an iceRestart re-offer via the signaling WS.
 DEFAULT_ICE_RESTART_GRACE_SECONDS = 60.0
 
-# How long to wait, after the desktop has posted its answer, for the
-# tablet operator to tap "accept" on the mobile-side SAS prompt. Mobile
-# keeps its video track disabled until that tap, so ICE on the desktop
-# can pair but media won't flow. If the operator never taps approve,
-# we surface a clean error so the dialog has something to show.
-DEFAULT_PEER_APPROVAL_TIMEOUT_SECONDS = 120.0
+# How long to wait, after the desktop has posted its answer, for ICE
+# to actually reach ``connected``. The SAS-approval flow this timer was
+# originally sized for is gone — mobile no longer prompts on a fresh
+# pair, so a healthy pair completes in well under 5 seconds. 30 seconds
+# gives ample headroom for slow cellular networks while failing fast
+# enough that a misconfigured Worker / mobile (e.g. §20 awaiting_viewer
+# logic not yet shipped) doesn't leave the dialog spinning indefinitely.
+DEFAULT_PEER_APPROVAL_TIMEOUT_SECONDS = 30.0
 
 # Label of the DataChannel the desktop opens to ask the publisher for a
 # full snapshot of currently-promoted tracks (plan §15 M3 / §6).
@@ -178,6 +180,23 @@ class WebRTCStreamService(QThread):
         # if it fires, the session emits a clean ``errorOccurred`` so the
         # pairing dialog can render something actionable.
         self._peer_approval_task: Optional[asyncio.Task] = None
+        # Resume handshake state (plan §20). When the controller calls
+        # :meth:`set_resume_context` before the snapshot channel opens,
+        # the first request sent over the channel carries the resume
+        # payload (``{kind: "resume", session_id, last_seq}``) instead
+        # of the legacy ``{type: "request_snapshot"}``.
+        self._resume_session_id: Optional[str] = None
+        self._resume_last_seq: int = 0
+        # One-shot allowance for a peer DTLS fingerprint change on the
+        # FIRST re-offer of a session-continuity reconnect. Mobile
+        # tears down the original PC when the desktop drops, then
+        # builds a fresh PC with a brand-new DTLS cert when the
+        # operator returns — the new fingerprint is *legitimate*.
+        # ``set_resume_context`` flips this on; ``_handle_reoffer``
+        # adopts the new fingerprint as the trust anchor and clears
+        # the flag, restoring the standard MitM guard for any further
+        # ICE-restart within the same session.
+        self._allow_next_fingerprint_change: bool = False
 
     # ------------------------------------------------------------------
     # public API (called from Qt thread)
@@ -208,8 +227,28 @@ class WebRTCStreamService(QThread):
             pass
 
     def request_disconnect(self) -> None:
-        """Schedule a graceful shutdown of the peer connection and loop."""
+        """Schedule a graceful shutdown that ends the publish session.
+
+        Sets ``_explicit_disconnect`` so :meth:`_tear_down` actually
+        calls ``delete_session`` on the Worker — terminal for the slot.
+        Use this only when the operator has explicitly chosen to end
+        the publish session (currently no UI path triggers this).
+
+        For accidental closes (tile X / viewer X / app exit), call
+        :meth:`cleanup` instead; that releases resources without
+        signalling teardown to the Worker, so the slot transitions to
+        ``awaiting_viewer`` via the WS orphan-close path on the Worker
+        and the desktop can reconnect on next launch (plan §20).
+        """
         self._explicit_disconnect = True
+        self._schedule_stop()
+
+    def _schedule_stop(self) -> None:
+        """Signal the asyncio loop to stop and trigger ``_tear_down``.
+
+        Whether ``_tear_down`` calls ``delete_session`` is gated by
+        ``_explicit_disconnect``; this helper just stops the loop.
+        """
         loop = self._loop
         if loop is None or not loop.is_running():
             self._stop.set()
@@ -231,24 +270,32 @@ class WebRTCStreamService(QThread):
         self._snapshot_channel = None
         self._remote_fp_initial = None
         self._connected = False
+        self._resume_session_id = None
+        self._resume_last_seq = 0
+        self._allow_next_fingerprint_change = False
 
     def cleanup(self, *, wait: bool = False) -> None:
         """Lifecycle hook (CLAUDE.md §2.2.1) — stop loop, release resources.
 
-        ``wait=False`` (default): non-blocking. Schedules the asyncio
-        teardown via :meth:`request_disconnect` and returns immediately.
-        The QThread runs to completion in the background; resources are
-        released asynchronously. This is the right choice for UI-triggered
-        teardowns (tile close, pairing cancel) because the Qt main thread
-        cannot afford to block for up to 3s while aiortc shuts down its
-        SCTP / DTLS state.
+        Does NOT set ``_explicit_disconnect``, so :meth:`_tear_down`
+        skips the ``delete_session`` call. The Worker's WS-orphan
+        handler then transitions the slot to ``awaiting_viewer`` (plan
+        §20) and the desktop can reconnect on next launch with the
+        same code. Callers who genuinely want to end the publish
+        session must call :meth:`request_disconnect` instead.
 
-        ``wait=True``: block the caller for up to 3s waiting for the
-        thread to exit, falling back to ``QThread.terminate`` if it does
-        not. Use this from app-exit paths where we *do* want the cleanup
-        to complete before the process goes away.
+        ``wait=False`` (default): non-blocking. The QThread runs to
+        completion in the background; resources release asynchronously.
+        Right for UI-triggered teardowns (tile close, pairing cancel)
+        because the Qt main thread can't afford to block for ~3 s
+        while aiortc shuts down its SCTP / DTLS state.
+
+        ``wait=True``: block the caller for up to 3 s waiting for the
+        thread to exit, falling back to ``QThread.terminate`` if it
+        doesn't. Use from app-exit paths where cleanup must complete
+        before the process goes away.
         """
-        self.request_disconnect()
+        self._schedule_stop()
         if not wait:
             return
         if self.isRunning():
@@ -358,16 +405,33 @@ class WebRTCStreamService(QThread):
         """
         from aiortc import RTCPeerConnection, RTCSessionDescription  # type: ignore
 
-        self.connectionStatusChanged.emit(False, "Looking up pairing code...")
-        try:
-            offer_sdp = await asyncio.wait_for(
-                self._signaling.get_offer(self._pairing_code),
-                timeout=self._fetch_offer_timeout,
-            )
-        except asyncio.TimeoutError as exc:
-            raise CodeNotFound(
-                f"offer fetch timed out for code {self._pairing_code}"
-            ) from exc
+        resume_mode = self._resume_session_id is not None
+
+        if resume_mode:
+            # Plan §20 session-continuity reconnect. The Worker's cached
+            # offer is stale — mobile already disposed the PC that
+            # produced it when the desktop dropped, and is poised to
+            # broadcast a *fresh* offer (new DTLS cert, fresh ICE
+            # candidates) over the WS the moment we attach. Calling
+            # ``GET /offer`` here would hand us the dead SDP, the
+            # answer we'd post against it would be rejected by mobile's
+            # new PC, and the resulting renegotiation would deadlock
+            # with our fingerprint guard. We instead build an empty
+            # PC, subscribe to the WS, and let ``_consume_signaling``
+            # route the fresh offer to ``_handle_reoffer``.
+            offer_sdp: Optional[str] = None
+            self.connectionStatusChanged.emit(False, "Reconnecting...")
+        else:
+            self.connectionStatusChanged.emit(False, "Looking up pairing code...")
+            try:
+                offer_sdp = await asyncio.wait_for(
+                    self._signaling.get_offer(self._pairing_code),
+                    timeout=self._fetch_offer_timeout,
+                )
+            except asyncio.TimeoutError as exc:
+                raise CodeNotFound(
+                    f"offer fetch timed out for code {self._pairing_code}"
+                ) from exc
 
         pc = RTCPeerConnection()
         self._pc = pc
@@ -442,9 +506,10 @@ class WebRTCStreamService(QThread):
                 payload = message if isinstance(message, (bytes, bytearray)) else str(message).encode("utf-8")
                 self.dataChannelMessage.emit(label, bytes(payload))
 
-        await pc.setRemoteDescription(
-            RTCSessionDescription(sdp=offer_sdp, type="offer")
-        )
+        if offer_sdp is not None:
+            await pc.setRemoteDescription(
+                RTCSessionDescription(sdp=offer_sdp, type="offer")
+            )
 
         # Open the desktop-side ``detections.snapshot_request`` channel
         # before our local description is finalized so SCTP includes it in
@@ -473,36 +538,42 @@ class WebRTCStreamService(QThread):
         # re-offer) are not dropped on the floor.
         self._signaling_task = asyncio.ensure_future(self._consume_signaling(pc))
 
-        answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
+        if resume_mode:
+            # No local offer to answer yet — wait for mobile's fresh
+            # iceRestart broadcast (handled by ``_handle_reoffer`` via
+            # ``_consume_signaling``). ``_handle_reoffer`` will do the
+            # setRemote → createAnswer → setLocal → post_answer round
+            # and adopt the new fingerprint via the one-shot
+            # ``_allow_next_fingerprint_change`` allowance armed by
+            # :meth:`set_resume_context`.
+            pass
+        else:
+            answer = await pc.createAnswer()
+            await pc.setLocalDescription(answer)
 
-        # Post the answer so the publisher can derive its SAS and present
-        # the tablet operator with the approval prompt. The publisher
-        # keeps its video track ``setEnabled(false)`` until the operator
-        # explicitly accepts on the tablet, so no media flows until then.
-        await self._signaling.post_answer(
-            self._pairing_code, pc.localDescription.sdp
-        )
+            # Post the answer so the publisher can derive its SAS and
+            # transition the slot into Active.
+            await self._signaling.post_answer(
+                self._pairing_code, pc.localDescription.sdp
+            )
 
-        # Capture the peer fingerprint for the ICE-restart re-offer guard
-        # in :meth:`_handle_reoffer` and emit the 4-word SAS phrase so the
-        # tile's status strip can display it.
-        peer_fp = self._extract_remote_fingerprint(offer_sdp)
-        local_fp = self._extract_local_fingerprint(pc.localDescription.sdp if pc.localDescription else "")
-        self._remote_fp_initial = peer_fp
-        if peer_fp:
-            self.peerFingerprintReceived.emit(peer_fp)
-        if peer_fp and local_fp:
-            sas = pairing.derive_sas_words(peer_fp, local_fp, count=4)
-            self._sas_words = sas
-            self.sasReady.emit(list(sas))
+            # Capture the peer fingerprint for the ICE-restart re-offer
+            # guard in :meth:`_handle_reoffer` and emit the 4-word SAS
+            # phrase so the tile's status strip can display it.
+            peer_fp = self._extract_remote_fingerprint(offer_sdp)
+            local_fp = self._extract_local_fingerprint(
+                pc.localDescription.sdp if pc.localDescription else ""
+            )
+            self._remote_fp_initial = peer_fp
+            if peer_fp:
+                self.peerFingerprintReceived.emit(peer_fp)
+            if peer_fp and local_fp:
+                sas = pairing.derive_sas_words(peer_fp, local_fp, count=4)
+                self._sas_words = sas
+                self.sasReady.emit(list(sas))
 
-        # We are NOT connected yet — only ICE pairing + the tablet
-        # operator's approval can take us there. Surface a clear status
-        # to the dialog so the operator knows to look at the tablet.
-        self.connectionStatusChanged.emit(
-            False, "Waiting for operator approval on tablet"
-        )
+            # Answer is out — we now wait for ICE to actually pair.
+            self.connectionStatusChanged.emit(False, "Connecting...")
 
         # Start a peer-approval timeout. If ICE never reaches
         # ``connected`` within :attr:`_peer_approval_timeout_seconds`,
@@ -591,10 +662,26 @@ class WebRTCStreamService(QThread):
                             f"for code={self._pairing_code}: {exc}"
                         )
                 elif msg_type == "offer":
-                    if not self._connected:
-                        # Ignore re-offers before initial handshake completes.
-                        # Mobile shouldn't be sending them anyway, and acting
-                        # on one would race the SAS gate.
+                    # §18 mid-session-restart guard: drop re-offers
+                    # arriving before initial pair completes — acting
+                    # on one would race the initial handshake.
+                    #
+                    # §20 resume_mode exception: when the desktop is
+                    # sitting on an empty PC waiting for mobile's
+                    # fresh iceRestart offer, ``_allow_next_fingerprint_change``
+                    # is armed via ``set_resume_context`` and the next
+                    # offer is exactly what we're waiting for. Letting
+                    # it through is the entire point of the resume
+                    # handshake; dropping it silently was the
+                    # observed cause of stalled reconnects (mobile
+                    # PUTs the fresh offer, Worker broadcasts it,
+                    # desktop ignored it, peer_approval_timeout
+                    # eventually killed the session).
+                    if not self._connected and not self._allow_next_fingerprint_change:
+                        self.logger.debug(
+                            f"WebRTCStreamService: dropping pre-pair offer "
+                            f"for code={self._pairing_code} (not in resume_mode)"
+                        )
                         continue
                     # Plan §18 (W4): the WS broadcast carries the SDP under
                     # ``sdp`` (new) but real Worker builds may only populate
@@ -618,23 +705,43 @@ class WebRTCStreamService(QThread):
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # noqa: BLE001 - log + exit
-            self.logger.debug(
+            # WARNING (not debug) — a silent-drop in this loop was the
+            # cause of the §20 reconnect stall that was 4 messages deep
+            # to diagnose. Future failures here should surface immediately.
+            self.logger.warning(
                 f"WebRTCStreamService._consume_signaling exited for "
                 f"code={self._pairing_code}: {exc}"
             )
 
     async def _handle_reoffer(self, pc, new_offer_sdp: str) -> None:
-        """Process an ``iceRestart=true`` re-offer from the publisher.
+        """Process an offer broadcast from the publisher over the WS.
 
-        The publisher reuses the same DTLS identity (plan §17 / mobile
-        guidance), so the fingerprint in the new offer should match the
-        one captured during the initial handshake. A mismatch means
-        somebody re-keyed mid-session — possible MitM, possible publisher
-        bug — and we close defensively because the previously-confirmed
-        SAS no longer reflects the live keys.
+        Two distinct triggers reach this slot:
+
+        * **§18 ICE-restart.** Same PC on the mobile side, same DTLS
+          cert. The fingerprint in the new offer must match the one
+          captured during the initial handshake — a mismatch means
+          someone re-keyed mid-session (MitM, publisher bug, etc.)
+          and we close defensively.
+        * **§20 session-continuity reconnect.** Mobile disposed the
+          original PC when the desktop dropped and built a fresh PC
+          with a new DTLS cert. The new fingerprint is legitimate.
+          ``_allow_next_fingerprint_change`` is armed by
+          :meth:`set_resume_context` so this single re-offer can
+          adopt the new cert as the session's trust anchor; the flag
+          clears immediately and any subsequent §18 restart within
+          the same session enforces the standard guard.
         """
         new_fp = self._extract_remote_fingerprint(new_offer_sdp)
-        if new_fp and self._remote_fp_initial and new_fp != self._remote_fp_initial:
+        if self._allow_next_fingerprint_change:
+            # Session-continuity reconnect — adopt the new cert as the
+            # going-forward trust anchor. Plan §20 fingerprint-guard
+            # allowance, consumed exactly once per resume.
+            self._allow_next_fingerprint_change = False
+            self._remote_fp_initial = new_fp
+            if new_fp:
+                self.peerFingerprintReceived.emit(new_fp)
+        elif new_fp and self._remote_fp_initial and new_fp != self._remote_fp_initial:
             self.errorOccurred.emit(
                 "Peer DTLS fingerprint changed mid-session — closing for safety."
             )
@@ -657,32 +764,32 @@ class WebRTCStreamService(QThread):
                 self._pairing_code, pc.localDescription.sdp
             )
             self.logger.debug(
-                f"WebRTCStreamService: processed iceRestart re-offer for "
+                f"WebRTCStreamService: processed re-offer for "
                 f"code={self._pairing_code}"
             )
         except Exception as exc:  # noqa: BLE001 - re-offer must not crash session
             self.errorOccurred.emit(f"Reconnect failed: {exc}")
 
     async def _peer_approval_timeout(self, pc) -> None:
-        """Time out the wait for the tablet operator's approval.
+        """Safety net for "ICE never reaches connected."
 
-        Cancelled by :func:`iceconnectionstatechange` when ICE first
-        reaches ``connected``/``completed`` — which only happens after
-        the publisher (mobile) calls ``setEnabled(true)`` on the track
-        in response to its own operator tapping accept. If the timer
-        runs out, the tablet operator likely didn't notice the prompt
-        or is unavailable; surface a clean error so the pairing dialog
-        can render something actionable.
+        Originally gated on the publisher's SAS-style approval tap;
+        that flow was removed days ago (mobile no longer prompts for
+        approval on a fresh pair). The timer survives as a generic
+        "we posted an answer and ICE never finished pairing" guard so
+        the operator gets an actionable error instead of an indefinite
+        spinner. ``iceconnectionstatechange`` cancels this the moment
+        ICE first reaches ``connected`` / ``completed``.
         """
         try:
             await asyncio.sleep(self._peer_approval_timeout_seconds)
             if self._connected:
                 return  # raced against the iceconnectionstatechange handler
             self.errorOccurred.emit(
-                f"No response from the drone operator within "
-                f"{int(self._peer_approval_timeout_seconds)}s. Ask them to look "
-                "at the tablet and accept the pairing prompt, then "
-                "retry."
+                f"Connection didn't establish within "
+                f"{int(self._peer_approval_timeout_seconds)}s. The drone may "
+                f"be offline or out of range — check the controller and try "
+                f"again."
             )
             self._stop.set()
         except asyncio.CancelledError:
@@ -708,14 +815,50 @@ class WebRTCStreamService(QThread):
         except asyncio.CancelledError:
             pass
 
-    def _send_snapshot_request(self) -> None:
-        """Send ``{type: "request_snapshot"}`` on the desktop-opened channel.
+    def set_resume_context(
+        self,
+        session_id: Optional[str],
+        last_seq: int = 0,
+    ) -> None:
+        """Arm a resume handshake for the next ``snapshot_request`` send.
 
-        Called from the ICE-recovery handler (after a `disconnected ->
-        connected` transition) so any detection promotions the publisher
-        emitted during the blackout flow back via the existing
-        ``detections.snapshot`` channel. No-op if the channel isn't open
-        yet — the recovery path runs again on subsequent recoveries.
+        Plan §20: the desktop persists the last ``session_id`` it saw
+        for a pairing code; on auto-resume the controller calls this
+        BEFORE the snapshot channel opens so the next request uses
+        ``{kind: "resume", session_id, last_seq}`` instead of the
+        legacy ``{type: "request_snapshot"}``. Mobile responds with
+        backfill events on ``detections.meta`` followed by either a
+        ``resume_complete`` or ``session_changed`` control message.
+
+        Also arms ``_allow_next_fingerprint_change`` so the *first*
+        re-offer in this session can adopt mobile's freshly-minted
+        DTLS cert without tripping the MitM guard (mobile rebuilds
+        the PC from scratch on a §20 reconnect, so the new
+        fingerprint is expected).
+        """
+        if isinstance(session_id, str) and session_id:
+            self._resume_session_id = session_id
+            self._resume_last_seq = int(last_seq) if isinstance(last_seq, (int, float)) else 0
+            self._allow_next_fingerprint_change = True
+        else:
+            self._resume_session_id = None
+            self._resume_last_seq = 0
+            self._allow_next_fingerprint_change = False
+
+    def _send_snapshot_request(self) -> None:
+        """Send the snapshot request (or resume handshake) on the desktop channel.
+
+        Two payload shapes (plan §20):
+
+        * **Resume** — when :meth:`set_resume_context` armed a known
+          ``session_id``, send ``{kind: "resume", session_id, last_seq}``
+          so mobile backfills only events newer than ``last_seq``.
+        * **Snapshot** — otherwise send the legacy
+          ``{type: "request_snapshot"}`` (full state replay; mobile
+          will dedup by ``track_key``).
+
+        No-op if the channel isn't open yet — the recovery path runs
+        again on subsequent transitions.
         """
         import json
         channel = self._snapshot_channel
@@ -723,16 +866,26 @@ class WebRTCStreamService(QThread):
             return
         if getattr(channel, "readyState", None) != "open":
             return
+        if self._resume_session_id:
+            payload = {
+                "kind": "resume",
+                "session_id": self._resume_session_id,
+                "last_seq": int(self._resume_last_seq),
+            }
+            label = "resume"
+        else:
+            payload = {"type": "request_snapshot"}
+            label = "snapshot"
         try:
-            channel.send(json.dumps({"type": "request_snapshot"}))
+            channel.send(json.dumps(payload))
             self.snapshotRequested.emit()
             self.logger.debug(
-                f"WebRTCStreamService: snapshot requested for "
+                f"WebRTCStreamService: {label} requested for "
                 f"code={self._pairing_code}"
             )
-        except Exception as exc:  # noqa: BLE001 - snapshot is best-effort
+        except Exception as exc:  # noqa: BLE001 - best-effort
             self.logger.debug(
-                f"WebRTCStreamService: snapshot request failed for "
+                f"WebRTCStreamService: {label} request failed for "
                 f"code={self._pairing_code}: {exc}"
             )
 
@@ -836,7 +989,18 @@ class WebRTCStreamService(QThread):
 
         # Best-effort: tell the Worker the session is over so the Durable
         # Object self-destructs immediately rather than waiting on its TTL.
-        if self._pairing_code is not None:
+        #
+        # GATED on ``_explicit_disconnect`` (plan §20). Calling DELETE
+        # transitions the Worker's slot to ``ended`` and broadcasts
+        # ``{type:"closed"}`` to mobile — terminal. We only want that
+        # when the operator explicitly chose to drop the feed
+        # (the tile's X button → ``request_disconnect``). For an
+        # accidental close (process exit, viewer-window X), we let
+        # the WS simply drop; the Worker's ``onWatcherGone`` orphan
+        # handler then transitions the slot to ``awaiting_viewer`` and
+        # broadcasts ``viewer_left`` to mobile — which is what enables
+        # the §20 reconnect-with-same-code flow on the next launch.
+        if self._pairing_code is not None and self._explicit_disconnect:
             try:
                 await self._signaling.delete_session(self._pairing_code)
             except Exception:  # pragma: no cover - best effort

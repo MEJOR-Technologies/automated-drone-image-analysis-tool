@@ -528,7 +528,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.actionFlightViewer.setText(QCoreApplication.translate("MainWindow", u"Flight Viewer", None))
 #if QT_CONFIG(tooltip)
-        self.actionFlightViewer.setToolTip(QCoreApplication.translate("MainWindow", u"Open the Flight Viewer to pair with ADIAT Mobile drone tablets and watch their live feeds.", None))
+        self.actionFlightViewer.setToolTip(QCoreApplication.translate("MainWindow", u"Open the Flight Viewer to pair with ADIAT Mobile drone controllers and watch their live feeds.", None))
 #endif // QT_CONFIG(tooltip)
         self.actionIntegratedDetection.setText(QCoreApplication.translate("MainWindow", u"Real-Time Anomaly Detection", None))
 #if QT_CONFIG(tooltip)

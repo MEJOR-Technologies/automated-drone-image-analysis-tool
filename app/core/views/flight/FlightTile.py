@@ -50,6 +50,12 @@ class FlightTile(TranslationMixin, QFrame):
     reconnectRequested = Signal(object)
     fullscreenRequested = Signal(object)
     muteGalleryToggled = Signal(object, bool)
+    # Fires whenever the tile's operator-facing display name changes —
+    # nickname rename, ``aircraft_name`` arriving from telemetry, or
+    # the operator clearing a nickname. Carries the pairing code and
+    # the resolved label so the gallery / map / filter dropdowns can
+    # update in lock-step without reaching into the tile state.
+    displayNameChanged = Signal(str, str)
 
     def __init__(
         self,
@@ -60,9 +66,26 @@ class FlightTile(TranslationMixin, QFrame):
     ):
         super().__init__(parent)
         self.pairing_code = pairing_code
+        # Latest aircraft identity from the publisher's telemetry stream
+        # (plan §19.3 ``aircraft_name`` + ``aircraft_serial``). Updated
+        # in ``apply_telemetry`` on every envelope; drives the tile
+        # title via :meth:`_resolve_title`. Both are ``None`` until the
+        # publisher's DJI ``ProductState`` populates — typical first
+        # second of any session.
+        self._aircraft_name: Optional[str] = None
+        self._aircraft_serial: Optional[str] = None
         # Display title — surfaces on the QMdiSubWindow wrapper's title bar
         # (the viewer's ``dock_tile`` reads ``windowTitle()`` from us).
-        display_title = title or self.tr("Feed {code}").format(code=pairing_code)
+        # Title precedence (highest first):
+        #   1. Operator nickname (persisted by ``aircraft_serial`` in
+        #      QSettings — survives new pairing codes since the desktop
+        #      gets a fresh code every session).
+        #   2. ``aircraft_name`` from telemetry, with code as suffix.
+        #   3. Pairing-code-keyed nickname (rename happened before
+        #      serial was known; migrated to serial-keyed once it
+        #      arrives).
+        #   4. ``Feed <code>``.
+        display_title = title or self._resolve_title()
         self.setWindowTitle(display_title)
         # Unique objectName lets QMdiArea's own state save / restore round-trip.
         self.setObjectName(f"flightTile-{pairing_code}")
@@ -116,11 +139,37 @@ class FlightTile(TranslationMixin, QFrame):
     # ------------------------------------------------------------------
 
     def apply_telemetry(self, envelope: dict) -> None:
-        """Push a parsed telemetry envelope into the bottom-of-video HUD."""
+        """Push a parsed telemetry envelope into the bottom-of-video HUD.
+
+        Also absorbs ``aircraft_name`` / ``aircraft_serial`` for the
+        tile title and the status-strip tooltip (plan §19.3). Title
+        and tooltip refresh whenever either field's value changes,
+        which typically happens once per session (the first envelope
+        after DJI's ``ProductState`` populates).
+        """
         self.telemetry_hud.apply_envelope(envelope)
         if not self.telemetry_hud.isVisible():
             self.telemetry_hud.setVisible(True)
         self._reposition_hud()
+        if isinstance(envelope, dict):
+            name = envelope.get("aircraft_name")
+            serial = envelope.get("aircraft_serial")
+            name_str = name.strip() if isinstance(name, str) and name.strip() else None
+            serial_str = serial.strip() if isinstance(serial, str) and serial.strip() else None
+            changed = False
+            if name_str != self._aircraft_name:
+                self._aircraft_name = name_str
+                changed = True
+            if serial_str != self._aircraft_serial:
+                self._aircraft_serial = serial_str
+                # First-time arrival of a serial: migrate any pairing-code-keyed
+                # nickname (set before telemetry arrived) into the serial slot
+                # so the rename sticks across future sessions.
+                if serial_str is not None:
+                    self._migrate_pairing_code_nickname_to_serial(serial_str)
+                changed = True
+            if changed:
+                self._refresh_title_and_tooltip()
 
     def _reposition_hud(self) -> None:
         """Anchor the HUD to the bottom of the video pane."""
@@ -334,6 +383,160 @@ class FlightTile(TranslationMixin, QFrame):
             self.tr("Network: {state}").format(state=self._friendly_ice_state(state))
         )
 
+    # ------------------------------------------------------------------
+    # rename — operator nicknames persisted by aircraft serial (preferred)
+    # or pairing code (transitional, before telemetry arrives)
+    # ------------------------------------------------------------------
+
+    _RENAME_GROUP = "FlightTileNicknamesBySerial"
+    _LEGACY_RENAME_GROUP = "FlightTileNames"  # pre-serial-keyed; pairing_code
+
+    @classmethod
+    def _read_setting(cls, group: str, key: str) -> Optional[str]:
+        if not key:
+            return None
+        from PySide6.QtCore import QSettings
+        settings = QSettings("ADIAT", "FlightViewer")
+        settings.beginGroup(group)
+        try:
+            value = settings.value(key)
+        finally:
+            settings.endGroup()
+        return value if isinstance(value, str) and value.strip() else None
+
+    @classmethod
+    def _write_setting(cls, group: str, key: str, value: Optional[str]) -> None:
+        if not key:
+            return
+        from PySide6.QtCore import QSettings
+        settings = QSettings("ADIAT", "FlightViewer")
+        settings.beginGroup(group)
+        try:
+            if value and value.strip():
+                settings.setValue(key, value.strip())
+            else:
+                settings.remove(key)
+        finally:
+            settings.endGroup()
+        settings.sync()
+
+    def _persisted_nickname(self) -> Optional[str]:
+        """Look up the operator's nickname using the best key we have.
+
+        Preference: serial > pairing code. The serial entry takes
+        priority because it follows the drone across new pairing
+        sessions (each session gets a fresh code).
+        """
+        if self._aircraft_serial:
+            value = self._read_setting(self._RENAME_GROUP, self._aircraft_serial)
+            if value:
+                return value
+        return self._read_setting(self._LEGACY_RENAME_GROUP, self.pairing_code)
+
+    def _migrate_pairing_code_nickname_to_serial(self, serial: str) -> None:
+        """Move a pre-telemetry rename from pairing-code-keyed to serial-keyed.
+
+        Handles the case where the operator renamed the feed before
+        the publisher's ``aircraft_serial`` arrived; the nickname
+        wouldn't otherwise survive a new pairing session.
+        """
+        legacy = self._read_setting(self._LEGACY_RENAME_GROUP, self.pairing_code)
+        if not legacy:
+            return
+        existing = self._read_setting(self._RENAME_GROUP, serial)
+        if not existing:
+            self._write_setting(self._RENAME_GROUP, serial, legacy)
+        self._write_setting(self._LEGACY_RENAME_GROUP, self.pairing_code, None)
+
+    def _resolve_title(self) -> str:
+        """Compute the title using the precedence chain (see ``__init__``)."""
+        nickname = self._persisted_nickname()
+        if nickname:
+            return nickname
+        if self._aircraft_name:
+            return self.tr("{name} · {code}").format(
+                name=self._aircraft_name, code=self.pairing_code
+            )
+        return self.tr("Feed {code}").format(code=self.pairing_code)
+
+    def _refresh_title_and_tooltip(self) -> None:
+        """Re-resolve the title + tooltip after identity/nickname changes.
+
+        Emits ``displayNameChanged`` when the resolved title actually
+        changed so downstream consumers (gallery row labels, feed
+        filter dropdown, map dock if it ever shows names) update in
+        lock-step without polling.
+        """
+        title = self._resolve_title()
+        prev_title = self.windowTitle()
+        if prev_title != title:
+            self.setWindowTitle(title)
+            self.displayNameChanged.emit(self.pairing_code, title)
+        sw = self._subwindow()
+        if sw is not None and sw.windowTitle() != title:
+            sw.setWindowTitle(title)
+        # Status-strip tooltip surfaces the serial so the operator can
+        # disambiguate two identically-nicknamed drones (plan §19.3).
+        if self._aircraft_serial:
+            self.ui.statusStrip.setToolTip(
+                self.tr("Aircraft serial: {sn}").format(sn=self._aircraft_serial)
+            )
+        else:
+            self.ui.statusStrip.setToolTip("")
+
+    def display_name(self) -> str:
+        """Return the current operator-facing label (nickname/aircraft/code)."""
+        return self.windowTitle()
+
+    def nickname(self) -> Optional[str]:
+        """Return the operator-set nickname, if any."""
+        return self._persisted_nickname()
+
+    def rename(self, new_name: str) -> None:
+        """Persist a new nickname and refresh the title.
+
+        Keys by ``aircraft_serial`` when telemetry has populated it,
+        otherwise by ``pairing_code`` (the value migrates to a
+        serial-keyed entry once telemetry arrives — see
+        :meth:`_migrate_pairing_code_nickname_to_serial`).
+        """
+        cleaned = (new_name or "").strip()
+        if not cleaned:
+            return
+        if self._aircraft_serial:
+            self._write_setting(self._RENAME_GROUP, self._aircraft_serial, cleaned)
+        else:
+            self._write_setting(self._LEGACY_RENAME_GROUP, self.pairing_code, cleaned)
+        self._refresh_title_and_tooltip()
+
+    def _prompt_rename(self) -> None:
+        """Pop a QInputDialog asking the operator for a new feed name."""
+        from PySide6.QtWidgets import QInputDialog
+        # Pre-fill with the operator's existing nickname (if any), not the
+        # auto-derived title — so renames feel like edits, not retyping.
+        current_nickname = self._persisted_nickname() or ""
+        new_name, ok = QInputDialog.getText(
+            self,
+            self.tr("Rename Feed"),
+            self.tr(
+                "Nickname for this drone (persists across new pairing codes "
+                "via the aircraft serial number). Leave blank to clear."
+            ),
+            text=current_nickname,
+        )
+        if not ok:
+            return
+        cleaned = (new_name or "").strip()
+        if cleaned:
+            self.rename(cleaned)
+            return
+        # Clear: drop both keys so the title falls through to the
+        # telemetry-derived label.
+        if self._aircraft_serial:
+            self._write_setting(self._RENAME_GROUP, self._aircraft_serial, None)
+        self._write_setting(self._LEGACY_RENAME_GROUP, self.pairing_code, None)
+        self._refresh_title_and_tooltip()
+
     def _friendly_ice_state(self, raw: Optional[str]) -> str:
         """Map raw WebRTC ICE state names to operator-friendly labels.
 
@@ -367,6 +570,12 @@ class FlightTile(TranslationMixin, QFrame):
 
     def _on_context_menu(self, pos) -> None:
         menu = QMenu(self)
+
+        rename = QAction(self.tr("Rename Feed..."), menu)
+        rename.triggered.connect(self._prompt_rename)
+        menu.addAction(rename)
+
+        menu.addSeparator()
 
         full_screen = QAction(self.tr("Full Screen"), menu)
         full_screen.triggered.connect(lambda: self.fullscreenRequested.emit(self))

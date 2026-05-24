@@ -143,14 +143,14 @@ class Ui_MediaSelector(object):
 
     def retranslateUi(self, MediaSelector):
         MediaSelector.setWindowTitle(QCoreApplication.translate("MediaSelector", u"Automated Drone Image Analysis Tool (ADIAT)", None))
-        self.label.setText(QCoreApplication.translate("MediaSelector", u"What type of media are you working with?", None))
-        self.imageButton.setText(QCoreApplication.translate("MediaSelector", u"Images", None))
+        self.label.setText(QCoreApplication.translate("MediaSelector", u"What would you like to do?", None))
+        self.imageButton.setText(QCoreApplication.translate("MediaSelector", u"Image Analysis", None))
 #if QT_CONFIG(tooltip)
         self.streamButton.setToolTip(QCoreApplication.translate("MediaSelector", u"RTMP, Video Files, HDMI Capture", None))
 #endif // QT_CONFIG(tooltip)
-        self.streamButton.setText(QCoreApplication.translate("MediaSelector", u"Streaming", None))
+        self.streamButton.setText(QCoreApplication.translate("MediaSelector", u"Stream Analysis", None))
 #if QT_CONFIG(tooltip)
-        self.flightButton.setToolTip(QCoreApplication.translate("MediaSelector", u"Pair with ADIAT Mobile drone tablets to receive their live camera feeds with detections.", None))
+        self.flightButton.setToolTip(QCoreApplication.translate("MediaSelector", u"Pair with ADIAT Mobile drone controllers to receive their live camera feeds with detections.", None))
 #endif // QT_CONFIG(tooltip)
         self.flightButton.setText(QCoreApplication.translate("MediaSelector", u"Flight Viewer", None))
     # retranslateUi

@@ -8,13 +8,16 @@ described in plan §15 / M3.
 
 from __future__ import annotations
 
+import json
 import threading
+import time
 from typing import Dict, List, Optional
 
-from PySide6.QtCore import QObject, QSettings, Qt, QByteArray
+from PySide6.QtCore import QObject, QSettings, Qt, QByteArray, Slot
 
 from core.services.LoggerService import LoggerService
 from core.services.streaming.FingerprintStore import FingerprintStore, PeerRecord
+from core.services.streaming.FlightSessionStore import FlightSessionStore
 from core.services.streaming.signaling import (
     DEFAULT_WORKER_URL,
     HttpSignalingChannel,
@@ -58,6 +61,10 @@ def _prewarm_webrtc_imports() -> None:
 # the new defaults rather than the legacy 30 px Map dock.
 SETTINGS_LAYOUT_KEY = "state/v2"
 SETTINGS_GEOMETRY_KEY = "geometry/v2"
+# Plan §20: last-active pairing(s) — JSON-encoded list of entries
+# ``{code, session_id, worker_url, connected_at}`` so an accidental
+# close can auto-resume on the next launch.
+SETTINGS_LAST_SESSIONS_KEY = "lastSessions/v1"
 
 
 class FlightViewerController(QObject):
@@ -76,8 +83,12 @@ class FlightViewerController(QObject):
         self.window = FlightViewerWindow()
         self.window.addFeedRequested.connect(self.open_pairing_dialog)
         self.window.toggleGalleryRequested.connect(self._toggle_gallery)
+        self.window.toggleMapRequested.connect(self._toggle_map)
         self.window.saveLayoutRequested.connect(self.save_layout)
         self.window.restoreLayoutRequested.connect(self.restore_layout)
+        self.window.openImageAnalysisRequested.connect(self._open_image_analysis)
+        self.window.openStreamingDetectorRequested.connect(self._open_streaming_detector)
+        self.window.helpRequested.connect(self._open_help)
         self.window.closeViewerRequested.connect(self.shutdown)
 
         self.gallery = MissionGalleryController(self.window.mission_gallery, parent=self)
@@ -100,6 +111,17 @@ class FlightViewerController(QObject):
         # SQLite-backed TOFU store (plan §19.4.3). Lazy-instantiated so
         # tests that don't touch TOFU don't have to mock the filesystem.
         self._fingerprint_store: Optional[FingerprintStore] = None
+        # SQLite-backed per-session detection store (plan §20). Same
+        # lazy pattern — tests that don't touch session continuity
+        # don't need the file on disk.
+        self._session_store: Optional[FlightSessionStore] = None
+        # Set during ``shutdown()`` so the ``_on_tile_closed`` slot can
+        # distinguish "operator clicked X on the tile" (clear the
+        # persisted entry — they don't want this feed back) from
+        # "viewer / app is closing" (keep the entry so next launch
+        # auto-resumes). Plan §20 spec: "Clear the entry on
+        # operator-initiated disconnect."
+        self._shutting_down: bool = False
 
         # Apply any persisted layout on construction (plan §15 M3).
         self.restore_layout()
@@ -126,9 +148,192 @@ class FlightViewerController(QObject):
         self.window.showMaximized()
         self.window.raise_()
         self.window.activateWindow()
+        # Auto-resume any pairings that were active when the operator
+        # last closed the viewer (plan §20). Deferred via QTimer so the
+        # window is fully shown / Qt event loop is pumping before we
+        # block on GET /state.
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, self._try_auto_resume)
+
+    def _try_auto_resume(self) -> None:
+        """Kick off resume flow for every persisted session (plan §20).
+
+        For each entry in ``LastSessions/v1``:
+
+        1. Restore the session's stored detections into the live gallery
+           so the operator immediately sees their prior history.
+        2. ``GET /v1/sessions/:code/state`` on the Worker (async).
+        3. If the Worker reports ``awaiting_viewer`` with the same
+           ``session_id`` → kick off a pairing dialog pre-filled with
+           the code and armed for resume backfill.
+        4. If ``active`` (someone else attached) → leave the persisted
+           entry for now; operator can resolve manually.
+        5. If ``ended`` / 404 → clear the entry; gallery still shows
+           the restored history.
+        """
+        entries = self._read_persisted_sessions()
+        if not entries:
+            self.logger.info(
+                "Flight Viewer: no persisted sessions to auto-resume"
+            )
+            return
+        self.logger.info(
+            f"Flight Viewer: auto-resume found {len(entries)} persisted session(s): "
+            f"{[e.get('code') for e in entries]}"
+        )
+        # Synchronously restore stored detections so the gallery isn't
+        # empty during the (async) Worker probe.
+        for entry in entries:
+            session_id = entry.get("session_id")
+            code = entry.get("code")
+            if isinstance(session_id, str) and session_id and isinstance(code, str) and code:
+                self._restore_session_detections(session_id=session_id, feed_id=code)
+        # Probe the Worker for each persisted code asynchronously so a
+        # slow / unreachable Worker doesn't block the UI thread.
+        threading.Thread(
+            target=self._auto_resume_worker,
+            args=(entries,),
+            name="adiat-flight-resume",
+            daemon=True,
+        ).start()
+
+    def _restore_session_detections(self, *, session_id: str, feed_id: str) -> None:
+        """Replay persisted detections into the live gallery + map.
+
+        Skips entries that never received a thumbnail crop (typically
+        snapshot replays from a prior session that arrived after the
+        live frame had aged out of the cropper's ring). Those rows
+        carry no image and minimal operator value — they'd just
+        accumulate as "no thumb" placeholders.
+
+        Collapses to one envelope per ``track_key`` (latest ``seq``
+        wins) before replay. SQLite stores every promote/update event
+        keyed by ``(session_id, seq)`` — for a long-lived target
+        that's typically hundreds of UPDATEs. The live ``add_detection``
+        path now dedups by ``track_key`` so feeding all 5000 events
+        would still yield the right final state, but at the cost of
+        5000 insert-then-refresh roundtrips on launch. Collapsing
+        client-side keeps relaunch cheap.
+        """
+        try:
+            envelopes = self.session_store.load_session_detections(session_id)
+        except Exception as exc:  # noqa: BLE001
+            self.logger.warning(
+                f"Flight Viewer: load session {session_id} failed: {exc}"
+            )
+            return
+        if not envelopes:
+            return
+        with_thumbs = [
+            env for env in envelopes
+            if isinstance(env.get("thumb_bytes"), (bytes, bytearray))
+            and env.get("thumb_bytes")
+        ]
+        if not with_thumbs:
+            return
+        # Envelopes are returned from the store in ``seq`` order, so the
+        # later iteration overwrites earlier — latest event per track
+        # wins. Envelopes without a ``track_key`` (pre-§20 publishers)
+        # fall through as one row each.
+        latest_per_track: dict = {}
+        for env in with_thumbs:
+            tk = env.get("track_key")
+            if isinstance(tk, str) and tk:
+                latest_per_track[tk] = env
+            else:
+                latest_per_track[id(env)] = env
+        collapsed = list(latest_per_track.values())
+        # Register the feed before flushing rows so the Feed filter
+        # dropdown has the entry.
+        first = collapsed[0]
+        label = (
+            first.get("feed_display_name")
+            or (first.get("aircraft_name") and f"{first['aircraft_name']} ({feed_id})")
+            or f"Tile-{feed_id}"
+        )
+        self.gallery.register_feed(feed_id, label)
+        for envelope in collapsed:
+            envelope.setdefault("feed_id", feed_id)
+            self.gallery.add_detection(feed_id, envelope)
+            # Mirror detections-with-GPS into the map too.
+            self._on_detection_for_map(feed_id, envelope)
+
+    def _auto_resume_worker(self, entries: List[dict]) -> None:
+        """Async Worker-state probe + auto-pair kickoff. Runs off the UI thread."""
+        import asyncio
+        for entry in entries:
+            code = entry.get("code")
+            session_id = entry.get("session_id")
+            if not isinstance(code, str) or not code:
+                continue
+            if not isinstance(session_id, str) or not session_id:
+                continue
+            try:
+                loop = asyncio.new_event_loop()
+                state = loop.run_until_complete(self._signaling.get_session_state(code))
+                loop.close()
+            except Exception as exc:  # noqa: BLE001
+                self.logger.warning(
+                    f"Flight Viewer: get_session_state({code}) failed: {exc}"
+                )
+                continue
+            self.logger.info(
+                f"Flight Viewer: Worker reports state={state.state} for {code} "
+                f"(local session_id={session_id}, remote session_id={state.session_id})"
+            )
+            # Marshal back to the Qt main thread to spawn the dialog.
+            from PySide6.QtCore import QMetaObject, Q_ARG, Qt as _Qt
+            QMetaObject.invokeMethod(
+                self,
+                "_handle_resume_state",
+                _Qt.QueuedConnection,
+                Q_ARG(str, code),
+                Q_ARG(str, session_id),
+                Q_ARG(str, state.state),
+                Q_ARG(str, state.session_id or ""),
+            )
+
+    @Slot(str, str, str, str)
+    def _handle_resume_state(
+        self,
+        code: str,
+        local_session_id: str,
+        state: str,
+        remote_session_id: str,
+    ) -> None:
+        """Apply the Worker's session-state response on the Qt main thread."""
+        if state == "awaiting_viewer":
+            # Same session_id → silent resume. Different → operator
+            # archive/discard prompt fires once envelopes arrive (via
+            # ``_on_tile_session_changed``).
+            self.open_pairing_dialog(
+                prefilled_code=code, resume_session_id=local_session_id
+            )
+        elif state == "active":
+            # Someone else is already attached. Leave the entry; the
+            # operator can re-pair via the Add Feed dialog if they want
+            # to take over (which will return 409 until that viewer
+            # disconnects, per plan §20 race resolution).
+            self.logger.info(
+                f"Flight Viewer: skipping auto-resume of {code} — Worker reports active"
+            )
+        else:
+            # ``ended`` / 404 / anything else → cleanup. Gallery rows
+            # already restored stay visible until the operator clears
+            # them via the Mission Gallery's existing controls.
+            self._clear_persisted_session(code)
 
     def shutdown(self) -> None:
-        """Tear down all active tiles + signaling, persist layout."""
+        """Tear down all active tiles + signaling, persist layout.
+
+        Sets ``_shutting_down`` so the per-tile teardown signal chain
+        knows to PRESERVE the persisted ``lastSessions`` entries
+        instead of treating each tile close as an "operator-initiated
+        disconnect" (which clears the entry). Without this guard,
+        every clean app close wipes the resume state and the next
+        launch can't find anything to auto-resume.
+        """
+        self._shutting_down = True
         try:
             self.save_layout()
         except Exception:  # pragma: no cover - persistence shouldn't crash exit
@@ -148,9 +353,26 @@ class FlightViewerController(QObject):
     # pairing flow
     # ------------------------------------------------------------------
 
-    def open_pairing_dialog(self) -> None:
-        """Spawn a non-modal pairing dialog so multiple feeds can be added in parallel."""
-        controller = FlightTileController(signaling=self._signaling, parent=self)
+    def open_pairing_dialog(
+        self,
+        *,
+        prefilled_code: Optional[str] = None,
+        resume_session_id: Optional[str] = None,
+    ) -> None:
+        """Spawn a non-modal pairing dialog.
+
+        Defaults to a blank dialog the operator fills in. The auto-resume
+        path on launch (plan §20) calls this with ``prefilled_code`` +
+        ``resume_session_id`` set so the tile controller arms the
+        resume handshake and the dialog dismisses itself the moment
+        the network connection establishes.
+        """
+        controller = FlightTileController(
+            signaling=self._signaling,
+            session_store=self.session_store,
+            resume_session_id=resume_session_id,
+            parent=self,
+        )
         controller.tileReady.connect(self._on_tile_ready)
         controller.tileClosed.connect(self._on_tile_closed)
         controller.detectionPromoted.connect(self.gallery.add_detection)
@@ -163,6 +385,19 @@ class FlightViewerController(QObject):
         # per track. Bridge straight to the Mission Gallery's
         # ``upsert_thumb`` so the row's image refreshes in place.
         controller.thumbReady.connect(self._on_thumb_ready)
+        # Tile renames + telemetry-derived names → propagate to the
+        # gallery's Feed filter dropdown AND every row that already
+        # carries this feed's pairing code.
+        controller.feedDisplayNameChanged.connect(self.gallery.set_feed_display_name)
+        # Plan §20 session-continuity wiring. ``sessionEstablished``
+        # fires once per pairing as soon as the publisher's
+        # ``session_id`` lands on any envelope; we persist the
+        # ``(code, session_id)`` pair so an accidental close can
+        # auto-resume on the next launch.
+        controller.sessionEstablished.connect(self._on_session_established)
+        controller.sessionChanged.connect(self._on_tile_session_changed)
+        controller.resumeComplete.connect(self._on_tile_resume_complete)
+        controller.resumeFailed.connect(self._on_tile_resume_failed)
         # Snapshot replay is fanned out per-detection through the existing
         # detectionPromoted path (plan §18 → *Desktop residual work* item 2),
         # so the gallery picks it up automatically. The bulk
@@ -177,6 +412,18 @@ class FlightViewerController(QObject):
         dialog.setAttribute(Qt.WA_DeleteOnClose, True)
         dialog.setModal(False)  # plan §4: multiple pairings in parallel
         self._dialogs.append((controller, dialog))
+        # Auto-resume: pre-fill the code and submit immediately so the
+        # operator doesn't have to type anything. The dialog still
+        # renders (carries the "Pairing…" / "Failed" UI) but skips
+        # the code-entry step.
+        if prefilled_code:
+            try:
+                dialog.codeEdit.setText(prefilled_code)
+                dialog._on_connect_clicked()
+            except Exception as exc:  # noqa: BLE001
+                self.logger.warning(
+                    f"Flight Viewer: auto-resume prefill failed for {prefilled_code}: {exc}"
+                )
         dialog.show()
 
     # ------------------------------------------------------------------
@@ -208,6 +455,123 @@ class FlightViewerController(QObject):
         self._dialogs = [
             (ctrl, dlg) for (ctrl, dlg) in self._dialogs if ctrl is not controller
         ]
+        # Only clear the persisted entry when this is an operator-driven
+        # close (X on the tile / Disconnect). App / viewer shutdown also
+        # routes through this slot via the per-tile tear_down chain;
+        # the ``_shutting_down`` guard preserves the entry so the next
+        # launch can auto-resume per plan §20.
+        if not self._shutting_down:
+            self._clear_persisted_session(code)
+
+    # ------------------------------------------------------------------
+    # session continuity (plan §20)
+    # ------------------------------------------------------------------
+
+    def _on_session_established(self, code: str, session_id: str) -> None:
+        """Persist ``(code, session_id)`` so the next launch can auto-resume."""
+        worker_url = getattr(self._signaling, "base_url", "") or ""
+        self._upsert_persisted_session(
+            code=code, session_id=session_id, worker_url=worker_url
+        )
+        self.logger.info(
+            f"Flight Viewer: persisted session for {code} "
+            f"(session_id={session_id}); next launch will auto-resume"
+        )
+
+    def _on_tile_session_changed(
+        self, code: str, old_session_id: str, new_session_id: str
+    ) -> None:
+        """Mobile started a fresh session since our stored history.
+
+        Prompt the operator: archive the old session's detections
+        under their session_id, or discard. Default is archive — the
+        UI shows the new session's detections going forward either way.
+        """
+        from PySide6.QtWidgets import QMessageBox
+        # Update the persisted ``LastSession`` to the new id so a
+        # subsequent restart auto-resumes against the right session.
+        worker_url = getattr(self._signaling, "base_url", "") or ""
+        self._upsert_persisted_session(
+            code=code, session_id=new_session_id, worker_url=worker_url
+        )
+        reply = QMessageBox.question(
+            self.window,
+            self.tr("New flight session"),
+            self.tr(
+                "Mobile started a new flight under code {code}. The previous "
+                "session's detections are still saved on this computer. "
+                "Discard them, or keep them archived?"
+            ).format(code=code),
+            QMessageBox.Discard | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply == QMessageBox.Discard:
+            try:
+                self.session_store.prune_session(old_session_id)
+            except Exception as exc:  # noqa: BLE001
+                self.logger.warning(
+                    f"Flight Viewer: discard of session {old_session_id} failed: {exc}"
+                )
+        # Clear any rows already painted in the gallery for the old
+        # session — the new session_id will repopulate from live promotions.
+        self.gallery.clear()
+
+    def _on_tile_resume_complete(self, code: str, session_id: str, last_seq: int) -> None:
+        """Mobile finished streaming backfill for our resume request."""
+        self.logger.info(
+            f"Flight Viewer: resume complete for {code} ({session_id}, seq≤{last_seq})"
+        )
+
+    def _on_tile_resume_failed(self, code: str) -> None:
+        """Auto-resume aborted — clear the persisted entry.
+
+        Triggered when the operator cancels the auto-resume dialog or
+        the connection times out before ICE pairs. Without clearing,
+        every subsequent launch would repeat the same broken
+        auto-resume against a stale persisted code.
+        """
+        self.logger.info(
+            f"Flight Viewer: auto-resume failed for {code} — clearing "
+            "persisted entry"
+        )
+        self._clear_persisted_session(code)
+
+    # -- persistence helpers ------------------------------------------------
+
+    def _read_persisted_sessions(self) -> List[dict]:
+        raw = self._settings.value(SETTINGS_LAST_SESSIONS_KEY)
+        if isinstance(raw, str) and raw:
+            try:
+                payload = json.loads(raw)
+            except (TypeError, ValueError):
+                return []
+            if isinstance(payload, list):
+                return [entry for entry in payload if isinstance(entry, dict)]
+        return []
+
+    def _write_persisted_sessions(self, entries: List[dict]) -> None:
+        self._settings.setValue(SETTINGS_LAST_SESSIONS_KEY, json.dumps(entries))
+        self._settings.sync()
+
+    def _upsert_persisted_session(
+        self, *, code: str, session_id: str, worker_url: str
+    ) -> None:
+        if not code or not session_id:
+            return
+        existing = [e for e in self._read_persisted_sessions() if e.get("code") != code]
+        existing.append({
+            "code": code,
+            "session_id": session_id,
+            "worker_url": worker_url,
+            "connected_at_epoch_s": time.time(),
+        })
+        self._write_persisted_sessions(existing)
+
+    def _clear_persisted_session(self, code: str) -> None:
+        if not code:
+            return
+        remaining = [e for e in self._read_persisted_sessions() if e.get("code") != code]
+        self._write_persisted_sessions(remaining)
 
     def _on_thumb_ready(self, _feed_id: str, track_key: str, jpeg_bytes: bytes) -> None:
         """Bridge a desktop-cropped thumbnail to the Mission Gallery.
@@ -231,6 +595,80 @@ class FlightViewerController(QObject):
 
     def _toggle_gallery(self, visible: bool) -> None:
         self.window.mission_gallery.setVisible(visible)
+
+    def _toggle_map(self, visible: bool) -> None:
+        """Show/hide the map dock via the menu toggle."""
+        if visible:
+            self.window.show_map_dock()
+        else:
+            self.window.map_dock.setVisible(False)
+
+    # ------------------------------------------------------------------
+    # navigation to other ADIAT windows
+    # ------------------------------------------------------------------
+
+    def _open_image_analysis(self) -> None:
+        """Open the Image Analysis main window; keep the Flight Viewer up."""
+        try:
+            from core.controllers.images.MainWindow import MainWindow
+            from PySide6.QtWidgets import QApplication
+            app = QApplication.instance()
+            existing = getattr(app, "_main_window", None) if app else None
+            if existing is not None and existing.isVisible():
+                existing.raise_()
+                existing.activateWindow()
+                return
+            main_window = MainWindow()
+            if app is not None:
+                app._main_window = main_window
+            main_window.show()
+        except Exception as exc:  # noqa: BLE001 - surface to user, never crash
+            self.logger.error(f"Flight Viewer: open Image Analysis failed: {exc}")
+            self._show_navigation_error(self.tr("Image Analysis"), exc)
+
+    def _open_streaming_detector(self) -> None:
+        """Open the Streaming Detector window; keep the Flight Viewer up."""
+        try:
+            from core.controllers.streaming.StreamViewerWindow import StreamViewerWindow
+            from PySide6.QtWidgets import QApplication
+            from core.services.SettingsService import SettingsService
+            app = QApplication.instance()
+            existing = getattr(app, "_stream_viewer", None) if app else None
+            if existing is not None and existing.isVisible():
+                existing.raise_()
+                existing.activateWindow()
+                return
+            theme = SettingsService().get_setting("Theme", "Dark").lower()
+            stream_viewer = StreamViewerWindow(
+                algorithm_name="ColorAnomalyAndMotionDetection", theme=theme
+            )
+            if app is not None:
+                app._stream_viewer = stream_viewer
+            stream_viewer.show()
+        except Exception as exc:  # noqa: BLE001
+            self.logger.error(f"Flight Viewer: open Streaming Detector failed: {exc}")
+            self._show_navigation_error(self.tr("Streaming Detector"), exc)
+
+    def _open_help(self) -> None:
+        """Open the ADIAT documentation URL in the operator's browser."""
+        try:
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(
+                QUrl("https://www.texsar.org/automated-drone-image-analysis-tool/")
+            )
+        except Exception as exc:  # noqa: BLE001
+            self.logger.error(f"Flight Viewer: open help URL failed: {exc}")
+
+    def _show_navigation_error(self, target_name: str, exc: Exception) -> None:
+        from PySide6.QtWidgets import QMessageBox
+        QMessageBox.critical(
+            self.window,
+            self.tr("Error"),
+            self.tr("Failed to open {target}:\n{error}").format(
+                target=target_name, error=str(exc)
+            ),
+        )
 
     # ------------------------------------------------------------------
     # map dock plumbing
@@ -283,6 +721,17 @@ class FlightViewerController(QObject):
         if self._fingerprint_store is None:
             self._fingerprint_store = FingerprintStore()
         return self._fingerprint_store
+
+    @property
+    def session_store(self) -> FlightSessionStore:
+        """SQLite-backed per-session detection store (plan §20).
+
+        Lazy-instantiated so test fixtures that never touch session
+        continuity don't have to mock the filesystem.
+        """
+        if self._session_store is None:
+            self._session_store = FlightSessionStore()
+        return self._session_store
 
     def remember_fingerprint(
         self,

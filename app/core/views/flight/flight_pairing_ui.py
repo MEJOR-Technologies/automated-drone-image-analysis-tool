@@ -152,7 +152,7 @@ class Ui_FlightPairingDialog(object):
 
     def retranslateUi(self, FlightPairingDialog):
         FlightPairingDialog.setWindowTitle(QCoreApplication.translate("FlightPairingDialog", u"Add Flight Feed", None))
-        self.codeInstructions.setText(QCoreApplication.translate("FlightPairingDialog", u"Ask the drone operator to read out the 6-character pairing code shown on their tablet.", None))
+        self.codeInstructions.setText(QCoreApplication.translate("FlightPairingDialog", u"Ask the drone operator to read out the 6-character pairing code shown on their controller.", None))
         self.codeEdit.setPlaceholderText(QCoreApplication.translate("FlightPairingDialog", u"e.g. K3F7PM", None))
         self.codeErrorLabel.setText("")
         self.negotiatingHeader.setText(QCoreApplication.translate("FlightPairingDialog", u"Pairing\u2026", None))

@@ -44,19 +44,31 @@
      <height>22</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuSession">
+   <widget class="QMenu" name="menuMain">
     <property name="title">
-     <string>Session</string>
+     <string>Menu</string>
     </property>
     <addaction name="actionAddFeed"/>
+    <addaction name="separator"/>
     <addaction name="actionToggleGallery"/>
+    <addaction name="actionToggleMap"/>
     <addaction name="separator"/>
     <addaction name="actionSaveLayout"/>
     <addaction name="actionRestoreLayout"/>
     <addaction name="separator"/>
+    <addaction name="actionOpenImageAnalysis"/>
+    <addaction name="actionOpenStreamingDetector"/>
+    <addaction name="separator"/>
     <addaction name="actionClose"/>
    </widget>
-   <addaction name="menuSession"/>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionHelp"/>
+   </widget>
+   <addaction name="menuMain"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="mainToolBar">
@@ -76,7 +88,6 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionAddFeed"/>
-   <addaction name="actionToggleGallery"/>
    <addaction name="separator"/>
    <addaction name="actionSaveLayout"/>
    <addaction name="actionRestoreLayout"/>
@@ -86,7 +97,7 @@
     <string>+ Add Feed</string>
    </property>
    <property name="toolTip">
-    <string>Pair with an ADIAT Mobile drone tablet using a 6-character code.</string>
+    <string>Pair with an ADIAT Mobile drone controller using a 6-character code.</string>
    </property>
   </action>
   <action name="actionToggleGallery">
@@ -122,6 +133,44 @@
   <action name="actionClose">
    <property name="text">
     <string>Close Viewer</string>
+   </property>
+  </action>
+  <action name="actionToggleMap">
+   <property name="text">
+    <string>Map</string>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the detection map dock.</string>
+   </property>
+  </action>
+  <action name="actionOpenImageAnalysis">
+   <property name="text">
+    <string>Open Image Analysis</string>
+   </property>
+   <property name="toolTip">
+    <string>Switch to the Image Analysis window for post-flight image review.</string>
+   </property>
+  </action>
+  <action name="actionOpenStreamingDetector">
+   <property name="text">
+    <string>Open Streaming Detector</string>
+   </property>
+   <property name="toolTip">
+    <string>Switch to the Streaming Detector window for RTMP / HDMI capture sessions.</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="text">
+    <string>ADIAT Help</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the ADIAT documentation in your browser.</string>
    </property>
   </action>
  </widget>

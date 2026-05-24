@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QMainWindow,
     QMdiArea,
@@ -29,6 +30,20 @@ from core.views.flight.flight_viewer_ui import Ui_FlightViewerWindow
 from core.views.flight.MapDock import MapDock
 from core.views.flight.MissionGalleryDock import MissionGalleryDock
 from helpers.TranslationMixin import TranslationMixin
+
+
+def _empty_icon() -> QIcon:
+    """Return a 1×1 fully-transparent ``QIcon``.
+
+    ``QMdiSubWindow`` displays an icon area in its title bar even when
+    ``setWindowIcon(QIcon())`` is called; Qt falls back to the
+    ``QApplication.windowIcon()`` or, on some platforms, a default Qt
+    logo. A real-but-transparent icon displaces both without changing
+    the title bar layout.
+    """
+    pm = QPixmap(1, 1)
+    pm.fill(Qt.transparent)
+    return QIcon(pm)
 
 
 class _TileSubWindow(QMdiSubWindow):
@@ -64,15 +79,43 @@ class _TileSubWindow(QMdiSubWindow):
                     pass
         super().closeEvent(event)
 
+    def mouseDoubleClickEvent(self, event):  # noqa: N802 - Qt name
+        """Double-click on the title bar opens the rename dialog.
+
+        Qt's default behavior toggles maximize on title-bar double-click;
+        most operators expect double-click-to-rename (Windows Explorer,
+        VS Code editor tabs, etc.). Maximize is still one click away on
+        the title bar's maximize button.
+        """
+        # Only the title bar — clicks on the embedded widget land
+        # elsewhere. ``Qt.LeftButton`` only; right-click double doesn't
+        # carry the same convention.
+        if event.button() == Qt.LeftButton:
+            from PySide6.QtWidgets import QStyle
+            title_height = self.style().pixelMetric(
+                QStyle.PM_TitleBarHeight, None, self
+            )
+            if event.position().y() <= title_height:
+                widget = self.widget()
+                if widget is not None and hasattr(widget, "_prompt_rename"):
+                    widget._prompt_rename()
+                    event.accept()
+                    return
+        super().mouseDoubleClickEvent(event)
+
 
 class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
     """Top-level Flight Viewer window."""
 
     addFeedRequested = Signal()
     toggleGalleryRequested = Signal(bool)
+    toggleMapRequested = Signal(bool)
     saveLayoutRequested = Signal()
     restoreLayoutRequested = Signal()
     closeViewerRequested = Signal()
+    openImageAnalysisRequested = Signal()
+    openStreamingDetectorRequested = Signal()
+    helpRequested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -160,16 +203,26 @@ class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
 
         self.actionAddFeed.triggered.connect(self.addFeedRequested.emit)
         self.actionToggleGallery.toggled.connect(self.toggleGalleryRequested.emit)
+        self.actionToggleMap.toggled.connect(self.toggleMapRequested.emit)
         self.actionSaveLayout.triggered.connect(self.saveLayoutRequested.emit)
         self.actionRestoreLayout.triggered.connect(self.restoreLayoutRequested.emit)
+        self.actionOpenImageAnalysis.triggered.connect(
+            self.openImageAnalysisRequested.emit
+        )
+        self.actionOpenStreamingDetector.triggered.connect(
+            self.openStreamingDetectorRequested.emit
+        )
+        self.actionHelp.triggered.connect(self.helpRequested.emit)
         self.actionClose.triggered.connect(self.closeViewerRequested.emit)
         self.actionClose.triggered.connect(self.close)
 
-        # Keep the toolbar checkbox in sync if the user closes the dock.
+        # Keep the menu check-states in sync if the operator closes
+        # the docks via their own X buttons.
         self.mission_gallery.visibilityChanged.connect(self._on_gallery_visibility)
+        self.map_dock.visibilityChanged.connect(self._on_map_visibility)
 
     # ------------------------------------------------------------------
-    # gallery sync helpers
+    # gallery / map sync helpers
     # ------------------------------------------------------------------
 
     def _on_gallery_visibility(self, visible: bool) -> None:
@@ -177,6 +230,12 @@ class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
             self.actionToggleGallery.blockSignals(True)
             self.actionToggleGallery.setChecked(visible)
             self.actionToggleGallery.blockSignals(False)
+
+    def _on_map_visibility(self, visible: bool) -> None:
+        if self.actionToggleMap.isChecked() != visible:
+            self.actionToggleMap.blockSignals(True)
+            self.actionToggleMap.setChecked(visible)
+            self.actionToggleMap.blockSignals(False)
 
     # ------------------------------------------------------------------
     # docking convenience
@@ -196,7 +255,29 @@ class FlightViewerWindow(TranslationMixin, QMainWindow, Ui_FlightViewerWindow):
         # and let the subwindow own destruction of its child widget.
         subwindow.setAttribute(Qt.WA_DeleteOnClose, True)
         subwindow.setWindowTitle(tile.windowTitle())
+        # Suppress the inherited app icon — the QMdiSubWindow title bar
+        # picks up the parent QMainWindow's icon by default, which puts
+        # an ADIAT mark in every tile's chrome. A null QIcon falls back
+        # to the Qt logo on some platforms; a 1×1 transparent icon
+        # reliably blanks the slot.
+        subwindow.setWindowIcon(_empty_icon())
         subwindow.setWidget(tile)
+        # Add a "Rename Feed..." entry at the top of the subwindow's
+        # system menu (the one that pops when the operator clicks the
+        # title bar's icon or right-clicks the title bar). The same
+        # action lives on the tile body's right-click menu, but the
+        # title bar is the more natural place to look.
+        system_menu = subwindow.systemMenu()
+        if system_menu is not None:
+            from PySide6.QtGui import QAction
+            rename_action = QAction(
+                self.tr("Rename Feed..."), system_menu
+            )
+            rename_action.triggered.connect(tile._prompt_rename)
+            first_action = system_menu.actions()[0] if system_menu.actions() else None
+            system_menu.insertAction(first_action, rename_action)
+            if first_action is not None:
+                system_menu.insertSeparator(first_action)
         # Remember the wrapper so ``remove_tile`` can find it from the
         # bare ``FlightTile`` reference the controller hands us.
         tile.setProperty("_mdi_subwindow", subwindow)

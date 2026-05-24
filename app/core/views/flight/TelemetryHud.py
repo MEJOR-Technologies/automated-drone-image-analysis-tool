@@ -192,6 +192,14 @@ class TelemetryHud(TranslationMixin, QWidget, Ui_TelemetryHud):
     def _format_speed(self, horizontal_ms) -> str:
         if not isinstance(horizontal_ms, (int, float)):
             return self.tr("SPD —")
+        # Match the altitude unit's family: ``Feet`` operators get mph
+        # (the way ground-side SAR teams typically read drone speed in
+        # the US); ``Meters`` keeps m/s. Without this, the HUD mixes
+        # "ALT 878 ft" with "SPD 4.3 m/s" on the same strip.
+        if self._distance_unit == "Feet":
+            return self.tr("SPD {value} mph").format(
+                value=self._fmt_num(float(horizontal_ms) * 2.23694, 1)
+            )
         return self.tr("SPD {value} m/s").format(
             value=self._fmt_num(horizontal_ms, 1)
         )
@@ -200,6 +208,11 @@ class TelemetryHud(TranslationMixin, QWidget, Ui_TelemetryHud):
         if not isinstance(vertical_ms, (int, float)):
             return "↕ —"
         arrow = "↑" if vertical_ms > 0 else ("↓" if vertical_ms < 0 else "•")
+        # ``Feet`` → fpm (aviation-standard vertical speed in the US);
+        # ``Meters`` → m/s. Matches the horizontal-speed unit family.
+        if self._distance_unit == "Feet":
+            fpm = abs(float(vertical_ms)) * 196.850393701
+            return f"{arrow}{self._fmt_num(fpm, 0)} fpm"
         return f"{arrow}{self._fmt_num(abs(vertical_ms), 1)} m/s"
 
     @staticmethod

@@ -16,8 +16,9 @@ The desktop receiver is implemented and the signaling backend is live. Mobile + 
 | End-to-end pair-and-stream smoke (§14) | **Pending** | Next milestone — real M4E tablet + real desktop, voice-radio code handoff, SAS confirm, multi-tile canvas exercise. Now also exercises ICE restart and snapshot replay (§14 step 13 onwards). |
 | Desktop WS reconnect + gallery snapshot wire-up | **Pending** | Two small follow-ups that complete the resilience story on the desktop side. See §18 → *Desktop residual work*. |
 | Detector boxes burned into the published video | **Implemented** | `:feature:liveview` now caches per-detector overlays from `StreamOrchestrator.results` and pumps them through `FramePublishSink.pushFrame` so remote viewers see the operator's HUD. |
+| Session continuity (reconnect-with-same-code) | **Planned** | Desktop can be closed and reopened without losing the session, detection history, or pairing code. Spans mobile + Worker + desktop. See §20. |
 
-This file is the design-of-record; sections below describe the architecture as-built. The phasing in §15 is annotated with status; the open questions in §16 are pruned to what is genuinely still undecided. §18 captures the resilience contract that mobile + worker now uphold and the small desktop changes that complete it end-to-end.
+This file is the design-of-record; sections below describe the architecture as-built. The phasing in §15 is annotated with status; the open questions in §16 are pruned to what is genuinely still undecided. §18 captures the resilience contract that mobile + worker now uphold and the small desktop changes that complete it end-to-end. §20 specs the next planned milestone — *session continuity* — which extends the resilience contract from "survive a transient network blip" to "survive a desktop app close".
 
 ## 1. Goal & non-goals
 
@@ -133,10 +134,10 @@ The toolbar carries: **+ Add Feed**, **Mission Gallery** (toggle dock visibility
 
 A `QDockWidget` containing:
 
-- Title bar with the pairing code (truncated) and ICE state pill.
+- Title bar: prefer `telemetry.last_envelope["aircraft_name"]` (operator's drone nickname / DJI model name) and fall back to the pairing code when the name is null (typical for the first second of a pairing, before the mobile's `ProductState` has populated). When both are present, the title reads `"<aircraft_name> · <code>"`. Operator-recognizable identifiers come first; the code is the disambiguator. ICE state pill still rides on the title bar.
 - Central video pane: `QLabel` with `setPixmap(QImage(ndarray, ...))`. Reuses the existing pattern from `RTMPColorDetectionViewer`.
 - Right-side strip (collapsible): per-tile detection list — most-recent first, scrollable, click to enlarge thumbnail.
-- Footer status strip: resolution · FPS · bitrate · one-way latency · peer SAS phrase.
+- Footer status strip: resolution · FPS · bitrate · one-way latency · peer SAS phrase. The serial number from `telemetry.last_envelope["aircraft_serial"]` lives in this strip's tooltip (or the dock title's `whatsThis`) so the operator can disambiguate two identically-named drones if it ever comes up.
 
 Tile menu (right-click on the dock title):
 - Full Screen (toggle)
@@ -294,16 +295,76 @@ A `QDockWidget` (`MissionGalleryDock`) that subscribes to every active `Detectio
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ [128×96  ] PERSON  87%   30.2672, -97.7431   312.4m  03:14:22pm  │
-│ [thumb   ]         Feed: Tile-A (K3F9PM)               [👁] [⤴]  │
+│ [thumb   ]         TEXSAR-01 (K3F9PM)                  [👁] [⤴]  │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-- `[👁]` — open larger view (modal `QDialog` with full-size thumb + metadata).
+- The aircraft name on the second line comes from `tile.telemetry_feed_service.last_envelope["aircraft_name"]` cached per tile — not from anything stamped into the detection meta envelope on the wire. The pairing code stays as a disambiguator in parentheses. Fall back to `"Feed <code>"` when `aircraft_name` is still null.
+- `[👁]` — open larger view (modal `QDialog` with full-size thumb + metadata, including `aircraft_serial` for unambiguous identification).
 - `[⤴]` — copy lat/lon to clipboard in operator-preferred format (DD, DM, MGRS). DD only in M1; DM/MGRS in M2.
 - Filter strip at the top: by feed, by class, by min-confidence; date/time slider in M2.
 - Persistence: in-memory only for v1. Cleared on session end. M3 will offer "export selected to standard ADIAT gallery."
 
 Per-tile detection list is the same widget pattern, scoped to the tile.
+
+### Per-track lifecycle — PROMOTE creates, UPDATE refreshes (NOT duplicates)
+
+The mobile wire protocol distinguishes two `event` values on `detections.meta`:
+
+| `event` | Meaning | Gallery behavior |
+|---|---|---|
+| `"promote"` | A new track has just confirmed (`TrackerParams.confirmFrames` consecutive associated frames). | **Insert** a new gallery row keyed by `track_key`. |
+| `"update"` | An existing track produced a better view — peak confidence improved by `policy.updateMinConfidenceDelta`, OR `policy.updateMinIntervalMs` elapsed (so the operator sees current position for a moving target). | **Refresh** the existing row identified by `track_key` in place. Do **not** spawn a new row. |
+
+`track_key` is `"{detector_id}|{publisher_session_id}|{track_id}"` and is stable for the lifetime of the track. Mobile's `PromotionPublisher` emits one PROMOTE per confirmed track and many UPDATEs for the same `track_key` thereafter; both go to the same `detections.meta` channel in arrival order.
+
+**Why this matters operationally.** SAR targets aren't always stationary — a moving vehicle, person walking, or animal can stay in-track for minutes. The UPDATE stream is how the desktop's gallery row keeps its GPS, confidence, and thumbnail current. Without UPDATEs the row stays pinned to the confirmation-frame position; without dedup the gallery accumulates one row every few seconds per target and floods the operator with apparent duplicates. The per-track collapse keeps both behaviors right: one row per target, latest known state always visible.
+
+**Dedup contract (`MissionGalleryController.add_detection`).** Both `detectionPromoted` and `detectionUpdated` flow into the same slot; the dispatch is by `event` field on the envelope (or, equivalently, by whether a row with the incoming `track_key` already exists). Pseudocode:
+
+```python
+def add_detection(self, feed_id: str, detection: dict) -> None:
+    track_key = detection.get("track_key")
+    ts = self._timestamp(detection)
+
+    # 1. Thumbnail cache (existing logic — keep)
+    self._cache_or_restore_thumb(detection, track_key)
+
+    # 2. Per-track collapse: refresh in place if we've seen this track_key.
+    #    PROMOTE arriving for a track_key we already have is treated the
+    #    same as UPDATE — the publisher's UPDATE-vs-PROMOTE distinction
+    #    is informational; the dedup is keyed on track_key, not event.
+    if isinstance(track_key, str) and track_key:
+        for i, (_existing_ts, existing) in enumerate(self._detections):
+            if existing.get("track_key") == track_key:
+                merged = {**existing, **detection}
+                # Preserve fields the UPDATE didn't carry (e.g. context
+                # frame JPEG captured at promote-time) by letting the
+                # right-hand side win only where present.
+                self._detections[i] = (ts, merged)
+                self._notify_row_changed(i)
+                return
+
+    # 3. New track — append.
+    self._detections.append((ts, dict(detection)))
+    self._notify_row_inserted(len(self._detections) - 1)
+    # ... existing detector-registry / cap / sort logic ...
+```
+
+**Field merge semantics.** UPDATEs from mobile carry the full envelope shape (the publisher rebuilds it from the live `PromotionEvent` each time), so they include `confidence`, `bbox_norm`, `captured_at_ms`, `frame_ts_ns`, `location`, `session_id`, `seq`, and a fresh `thumb_bytes`. PROMOTE-time-only fields the desktop attaches locally — like `context_frame_jpeg` from `_attach_context_frame` — should be preserved across UPDATEs (don't let an UPDATE that lacks them overwrite to null). The `{**existing, **detection}` merge above does this when the missing field is simply absent from the UPDATE envelope; if the UPDATE carries a key with a `None` value, guard with `{k: v for k, v in detection.items() if v is not None}` before the merge.
+
+**Sorted order.** When a row refreshes, its `(ts, …)` tuple is replaced with a fresher `ts`. The gallery's render order is whatever sort `MissionGalleryController.detections()` (or equivalent) applies — typically newest-first. The refresh naturally bubbles an actively-updating track to the top, which matches operator expectation ("the target I'm watching right now is at the top").
+
+**Both signal wires stay connected.** Existing wiring in `FlightViewerController`:
+
+```python
+controller.detectionPromoted.connect(self.gallery.add_detection)
+controller.detectionUpdated.connect(self.gallery.add_detection)
+```
+
+…remains correct under this spec. Both signals enter the same dedup-keyed method. The other subscribers — the in-tile video overlay (`tile.detection_overlay.on_track_event`) and `DetectionThumbCropper.on_track_event` — also already key on `track_key` for their own state, so they're already correct for the moving-target case; this spec just makes the gallery match.
+
+**SQLite persistence.** `FlightSessionStore.append_detection` is already idempotent on `(session_id, seq)` and writes both PROMOTE and UPDATE rows (each event has a unique `seq`). The gallery dedup is purely a presentation concern — the persistence layer keeps full history for cross-session replay. On `_restore_session_detections`, the loader should collapse the SQLite rows back into one-row-per-`track_key` (latest `seq` wins) before feeding them to the gallery so a relaunched desktop sees the same one-row-per-target view as a continuously-running one.
 
 ## 8. Signaling
 
@@ -735,13 +796,15 @@ class FlightTileController(QObject):
 
 **Files.** New `app/core/services/streaming/TelemetryFeedService.py`; new view `app/core/views/TelemetryHud.py`; small render hook in `FlightTile.py` / `FlightTileController.py`.
 
-**Background.** Mobile now publishes a `telemetry` DataChannel alongside `detections.meta` / `.thumb` / `.snapshot`. Payloads are UTF-8 JSON envelopes pushed at ~4 Hz (publisher-side throttle in `LiveViewViewModel`'s `combine(flightTelemetry, gimbalState).sample(250 ms)`). The desktop has a placeholder comment at `FlightViewerController.py:169` but no consumer; the channel's bytes hit the floor.
+**Background.** Mobile now publishes a `telemetry` DataChannel alongside `detections.meta` / `.snapshot`. Payloads are UTF-8 JSON envelopes pushed at ~4 Hz (publisher-side throttle in `LiveViewViewModel`'s `combine(flightTelemetry, gimbalState, productState, deviceHealthState).sample(250 ms)`). The desktop has a placeholder comment at `FlightViewerController.py:169` but no consumer; the channel's bytes hit the floor.
 
 **Wire format** (from `ADIAT_Mobile/core/flightpublish/TelemetryPublisher.kt → TelemetryEnvelope`):
 
 ```json
 {
   "captured_at_ms": 1737310912345,
+  "aircraft_name": "TEXSAR-01",
+  "aircraft_serial": "1ZNDH6V0011234",
   "aircraft_latitude": 30.2672,
   "aircraft_longitude": -97.7431,
   "aircraft_altitude_msl_m": 312.4,
@@ -761,6 +824,12 @@ class FlightTileController(QObject):
 ```
 
 Every field except `captured_at_ms` is nullable. Receivers must treat `null` (and missing keys) as "unknown" and not interpolate.
+
+**Aircraft identity (`aircraft_name`, `aircraft_serial`).** Mobile sources `aircraft_name` from `ProductState.displayName` — the operator-set custom drone nickname when present, otherwise the DJI model name (e.g. `"M4E"`). `aircraft_serial` comes from `FlightControllerKey.KeySerialNumber` via `DeviceHealthState.serialNumber`. Both are sent on every envelope so a desktop joining mid-session, or one whose telemetry-cache flushed on reconnect, recovers the identity within ~250 ms. Both are `null` until the SDK reports a connected product (typical first second of any session).
+
+These fields drive the desktop UX in two places:
+- **Tile title** (see §4 *FlightTile*): prefer `aircraft_name` over the pairing code, falling back to the code when the name is null. `aircraft_serial` lives in the tile's right-click menu / status tooltip so the operator can disambiguate two identically-named drones if it ever matters.
+- **Detection rows / Mission Gallery**: each per-tile detection list row is already implicitly scoped to its tile, so the aircraft identity comes for free. The **aggregate** Mission Gallery (§7) shows the source aircraft on every row using `tile.telemetry_feed_service.last_envelope["aircraft_name"]` — the live cache, not anything stamped into the meta envelope on the wire. This keeps the `detections.meta` payload lean while still letting the gallery show "PERSON · 87% · TEXSAR-01" instead of "PERSON · 87% · Tile-A".
 
 **Service.** Mirror `DetectionFeedService`'s shape — a `QObject` that turns DataChannel bytes into a typed signal:
 
@@ -1225,7 +1294,133 @@ Size: typical SDP is ~2 KB; with full ICE candidate set ~3-4 KB. QR encodes up t
 
 Sizing: ~400 lines (channel + dialog tab + tests). Deprioritized — operators with internet access have the much-easier Worker path; this is for fully-offline ops.
 
-## 20. References
+## 20. Session continuity (reconnect-with-same-code)
+
+A planned follow-up to §18 that lets a desktop be closed and reopened — accidentally or deliberately — and resume the same publish session without the field operator doing anything. Same pairing code, same video, all prior detections still visible.
+
+**Operational driver.** SAR scenes: a search coordinator's laptop battery dies, their power adapter is in the truck, or they accidentally close the window mid-flight. Making them walk to the controller for a fresh code is unacceptable on an active mission — the operator is busy flying. §18 covers transient network blips on a live peer connection; §21 covers the harder case where the entire desktop process has gone away.
+
+### Lifecycle states
+
+Three states replace today's two:
+
+| State | Mobile | Worker | Desktop |
+|---|---|---|---|
+| **Active** | publishing video + telemetry + detections | answer posted, WS bridged | rendering live |
+| **Awaiting** *(new)* | publishing continues; that viewer's PC torn down; offer kept fresh | offer retained, answer slot cleared, TTL extended | not connected |
+| **Ended** | publish toggle off OR aircraft gone OR operator-clicked Disconnect | DO deleted | reconnect impossible |
+
+Operator-initiated stop, aircraft-disconnect, and operator-clicked **Disconnect** on a per-viewer row all go straight to **Ended** for that viewer. A desktop crash / app close transitions that viewer's slot **Active → Awaiting** instead. Other viewers' slots are unaffected.
+
+### Authorization model
+
+The pairing code is the only credential. Possession = permission; there is no viewer identity binding. This is deliberate:
+
+- A desktop drops; another viewer with the same code can step in.
+- A desktop crashes permanently; the operator doesn't need to issue a new code.
+- The cost is that anyone who knows the code can attach during an Awaiting window — but the code is already a shared secret distributed verbally / by text on-mission; this trust model is unchanged from v1.
+
+Race resolution at the mobile session impl:
+
+| Mobile slot state when a new answer arrives | Behavior |
+|---|---|
+| **Active** (someone already attached on this slot) | Reject with `409 already_attached`. Desktop UI: *"Another viewer is connected — wait or ask them to disconnect."* |
+| **Awaiting** | Accept. First answer wins; a later auto-resume from the original viewer sees `409` and the operator-facing *"Session taken over by another viewer."* |
+
+### Mobile changes (`:core:flightpublish`)
+
+1. **Session-id stamp.** Generate a UUID at `startSession()`. Include `session_id` on every MetaEnvelope, TelemetryEnvelope, and signaling write. Desktop uses it to distinguish "this is a fresh mobile session, discard history" from "same session, dedupe by seq".
+2. **Monotonic event sequence.** `PromotionPublisher` assigns `seq: Long` to every promote/update event. Persisted alongside the in-memory state.
+3. **Session history ring buffer.** Bounded (default 1000 events) of all MetaEnvelopes since `startSession()` — *not* just live tracks held by `currentEnvelopes`. This is the source of truth for backfill on reconnect.
+4. **Per-viewer Awaiting state.** Today's `ViewerPhase` gains an `AwaitingReconnect` variant. When a specific viewer's WS orphan-close arrives:
+   - Tear down that viewer's `PeerConnection` (releases the encoder slot, saves battery).
+   - Keep the viewer row in the slot list with its code preserved.
+   - Flip status to `AwaitingReconnect`.
+   - Other viewers' slots are unaffected.
+5. **Publisher-side telemetry continues.** Telemetry collection, detector pipeline, and the history ring buffer keep running while *any* slot is Awaiting — so a returning viewer gets fresh state immediately. Only H.264 encoding for that slot pauses (no PC = no sink).
+6. **Resume handshake.** The previous PC was torn down on `viewer_left`, so the slot needs a fresh PC + offer before any new answer can be applied to a working ICE/DTLS context. Two triggers can start the rebuild — whichever fires first wins; the second is a no-op:
+   - **Primary — `viewer_returning`**: the Worker broadcasts this when a `role=desktop` WS reattaches in the awaiting state. Mobile builds a fresh PC + offer and PUT's it to the Worker, which broadcasts a `{type:"offer", iceRestart:true}` to the desktop. The desktop's `_handle_reoffer` path applies the new SDP and POSTs a fresh answer.
+   - **Fallback — stale-answer arrival**: the desktop's auto-resume flow calls `GET /offer` on the Worker and may POST an answer against the *stale* stored offer before `viewer_returning` round-trips back to mobile. Mobile detects this (answer arrives while the slot is in `AwaitingReconnect`), **discards the stale answer**, and kicks off the same rebuild. The desktop's existing `_handle_reoffer` then picks up the fresh offer broadcast on its WS and POSTs a fresh answer.
+
+   Either way, the slot transitions `AwaitingReconnect → Negotiating` once the fresh offer is published, then `Negotiating → Active` when the fresh answer arrives. The ICE-restart path from §18 is *not* reused — this is a full new PC because the previous one was disposed.
+
+   **Phase update ordering matters.** The slot must enter `Negotiating` *before* the fresh offer is PUT to the Worker. The desktop's fresh answer can otherwise race the phase update; the answer collector keys off phase to decide accept-vs-discard, and an answer arriving while still `AwaitingReconnect` would be treated as another stale-offer answer (which only triggers a no-op rebuild since one is already in flight).
+7. **Backfill responder.** New inbound messages on the existing `detections.snapshot_request` / `detections.snapshot` channel pair, distinguished by a `kind` field:
+   - Desktop sends `{kind: "resume", session_id, last_seq}` on `snapshot_request`.
+   - If `session_id` matches the current mobile session, mobile streams all history-ring events where `seq > last_seq` on `detections.meta` in order, then sends `{kind: "resume_complete", session_id, last_seq: <highest>}`.
+   - If `session_id` doesn't match (fresh mobile session, stale desktop), mobile replies `{kind: "session_changed", new_session_id}` and desktop discards its local history for the old session.
+8. **No auto-timeout.** Awaiting slots stay Awaiting indefinitely. The operator clears them with the existing per-viewer **Disconnect** button on the share popout. Toggling the whole share off clears every Awaiting slot. (See *Decisions locked* below.)
+
+### Worker changes (`adiat-flight-signaling`)
+
+1. **No eager orphan teardown.** When the last `role=desktop` watcher for a slot leaves *after* an answer was posted, don't call `teardown`. Instead clear the slot's `answer` field, set the slot to `state: "awaiting_viewer"`, and refresh the TTL alarm. The mobile heartbeat keeps the DO warm; if mobile *also* goes away, the DO genuinely TTLs and the slot disappears.
+2. **Mobile-driven teardown is authoritative.** Only operator stop or `DELETE /v1/sessions/:code` from mobile (or the mobile heartbeat dropping past the TTL window) tears the DO down.
+3. **`GET /v1/sessions/:code/state`** *(new)* — returns `{state: "active"|"awaiting_viewer"|"ended", session_id?, has_offer}`. Desktop calls this on reconnect to confirm the code is still alive *before* re-prompting the operator.
+4. **Existing `PUT /v1/sessions/:code/offer`** covers the case where mobile needs to publish a fresh offer for a reconnecting viewer (same shape as the ICE-restart path from §18; the Worker doesn't need to distinguish them).
+
+### Desktop changes (`adiat_ai`)
+
+1. **Persisted session.** On every successful pairing, write `{worker_url, code, session_id, ts}` to QSettings (encrypted via the existing keychain helper if available). Clear the entry on operator-initiated disconnect.
+2. **Auto-resume on launch.** If a persisted session exists, call `GET /v1/sessions/:code/state`:
+   - `awaiting_viewer` + `session_id` matches → skip the pairing dialog, post a new answer, show a non-blocking "Reconnecting…" overlay with a Cancel button.
+   - `active` (some other viewer attached) → show the normal pairing dialog with the last code pre-filled; operator can ask the other viewer to step aside, or wait.
+   - `ended` / 404 → clear the persisted entry, show the empty pairing dialog.
+3. **Local detection store.** Append every MetaEnvelope to SQLite keyed by `(session_id, seq)`. Snapshot JPEGs (the desktop-cropped per-track thumbnails from §19.4.1) stay on disk keyed the same way. This is what survives an accidental app close.
+4. **Resume message on reconnect.** Once the data channels reopen, send `{kind: "resume", session_id, last_seq}` on `detections.snapshot_request`. Render incoming backfill events on `detections.meta` as if they arrived live; rows insert in order, deduplicated by `(session_id, seq)`.
+5. **Session-mismatch path.** If mobile replies `{kind: "session_changed", new_session_id}`, prompt the operator: *"Mobile started a new flight. Archive previous detections, or discard?"* Default: archive (rename SQLite session bucket; start a fresh one for the new session_id).
+6. **Stale-code fallback.** If `GET /state` returns 404 or `ended`, show the empty pairing dialog (the persisted entry has already been cleared in step 2's logic).
+
+### Wire format additions
+
+```text
+# Every MetaEnvelope gains:
+session_id: "<uuid>"
+seq: <long, monotonic per publish session>
+
+# Every TelemetryEnvelope gains:
+session_id: "<uuid>"
+
+# Desktop → mobile on detections.snapshot_request:
+{ kind: "resume", session_id: "<uuid>", last_seq: <long> }
+
+# Mobile → desktop on detections.meta (in response to resume):
+# - stream of backfill MetaEnvelopes (each carries its own session_id + seq), in order, followed by:
+{ kind: "resume_complete", session_id: "<uuid>", last_seq: <long> }
+# OR, if session_id is stale:
+{ kind: "session_changed", new_session_id: "<uuid>" }
+
+# New Worker endpoint:
+GET /v1/sessions/:code/state
+→ 200 { state: "active"|"awaiting_viewer"|"ended", session_id?: "<uuid>", has_offer: bool }
+→ 404 if the session doesn't exist or has fully TTL'd
+```
+
+### UI
+
+The mobile-side share popout is the only visible change. The per-viewer row gains an "Awaiting reconnect" label — amber dot using `AdiatColors.SignalAmber`, text in `TextSecondary`. The existing **Disconnect** button on the row is still the operator's explicit "drop this slot" action. No toast, no sidebar badge, no countdown.
+
+The desktop's "Reconnecting…" overlay during auto-resume is a small non-blocking indicator; no operator action is required unless the Worker reports the session has ended.
+
+### Decisions locked
+
+| # | Decision | Choice |
+|---|---|---|
+| 1 | Awaiting timeout | None. Operator manages via per-viewer **Disconnect**; toggling share off clears all Awaiting slots. |
+| 2 | History ring buffer size | 1000 events (~hours of typical SAR detection rate). |
+| 3 | Auto-resume freshness | Whatever the Worker reports — no client-side freshness check beyond `GET /state`. |
+| 4 | Multi-desktop policy | Code is the credential; possession = permission. Active rejects with 409; Awaiting accepts first answer. |
+| 5 | Encode while Awaiting | Pause H.264 encode for that slot only. Detector pipeline + telemetry keep running so a returning viewer gets fresh state. |
+| 6 | Aircraft loss during Awaiting | Flushes every slot (Active *and* Awaiting) to Ended. No aircraft = nothing to publish. |
+
+### Sequencing
+
+This is a planned milestone, separate from the §18 resilience contract that's already shipped. The pieces are independent and can ship in this order:
+
+1. **Worker** — non-teardown-on-orphan + `GET /state` endpoint. Ships first because it's backward-compatible: existing clients don't notice the change.
+2. **Mobile** — session_id + seq stamping, history ring buffer, `AwaitingReconnect` viewer state, backfill responder, UI label. Ships second.
+3. **Desktop** — persisted session, auto-resume on launch, local SQLite store, resume message on reconnect, session-mismatch prompt. Ships third (depends on 1 + 2).
+
+## 21. References
 
 - `CLAUDE.md` — engineering standards.
 - `app/core/services/streaming/RTMPStreamService.py` — public surface to mirror.

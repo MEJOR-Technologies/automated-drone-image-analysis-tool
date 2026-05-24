@@ -9,6 +9,7 @@ fingerprint data with paired ADIAT Mobile publishers via the
 from .SignalingChannel import (
     CodeAlreadyAnswered,
     CodeNotFound,
+    SessionState,
     SignalingChannel,
     ViewerCapReached,
 )
@@ -24,6 +25,7 @@ __all__ = [
     "HttpSignalingChannel",
     "InMemorySignalingChannel",
     "QRSignalingChannel",
+    "SessionState",
     "SignalingChannel",
     "ViewerCapReached",
     "pairing",

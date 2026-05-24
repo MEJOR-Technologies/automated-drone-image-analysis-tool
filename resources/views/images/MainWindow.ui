@@ -1218,7 +1218,7 @@ Use to prepare video footage for image-based analysis.</string>
     <string>Flight Viewer</string>
    </property>
    <property name="toolTip">
-    <string>Open the Flight Viewer to pair with ADIAT Mobile drone tablets and watch their live feeds.</string>
+    <string>Open the Flight Viewer to pair with ADIAT Mobile drone controllers and watch their live feeds.</string>
    </property>
    <property name="font">
     <font>

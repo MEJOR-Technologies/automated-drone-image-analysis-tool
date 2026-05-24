@@ -33,6 +33,7 @@ from core.services.LoggerService import LoggerService
 from .SignalingChannel import (
     CodeAlreadyAnswered,
     CodeNotFound,
+    SessionState,
     SignalingChannel,
     ViewerCapReached,
 )
@@ -353,6 +354,57 @@ class HttpSignalingChannel(SignalingChannel):
             except (GeneratorExit, asyncio.CancelledError):
                 raise
             backoff = min(backoff * 2, self.SUBSCRIBE_MAX_BACKOFF)
+
+    async def get_session_state(self, code: str) -> SessionState:
+        """Query the Worker's ``GET /v1/sessions/:code/state`` (plan §20).
+
+        Used by :class:`FlightViewerController` to decide whether to
+        auto-resume a persisted pairing on launch. Any error path —
+        backend unreachable, 404, malformed body — degrades to a
+        synthetic ``"ended"`` response so the desktop falls through
+        to the empty pairing dialog rather than hanging.
+        """
+        import httpx  # type: ignore
+
+        ended = SessionState(state="ended", session_id=None, has_offer=False)
+        url = f"{self._base_url}/v1/sessions/{code}/state"
+        try:
+            response = await self._client().get(url)
+        except httpx.HTTPError as exc:
+            self.logger.debug(
+                f"HttpSignalingChannel.get_session_state unreachable for "
+                f"{code}: {exc}"
+            )
+            return ended
+        if response.status_code == 404:
+            return ended
+        if response.status_code >= 400:
+            self.logger.debug(
+                f"HttpSignalingChannel.get_session_state non-2xx for "
+                f"{code}: {response.status_code}"
+            )
+            return ended
+        try:
+            payload = response.json()
+        except json.JSONDecodeError as exc:
+            self.logger.debug(
+                f"HttpSignalingChannel.get_session_state malformed JSON "
+                f"for {code}: {exc}"
+            )
+            return ended
+        if not isinstance(payload, dict):
+            return ended
+        state = payload.get("state")
+        if state not in ("active", "awaiting_viewer", "ended"):
+            state = "ended"
+        session_id = payload.get("session_id")
+        if not isinstance(session_id, str) or not session_id:
+            session_id = None
+        return SessionState(
+            state=str(state),
+            session_id=session_id,
+            has_offer=bool(payload.get("has_offer")),
+        )
 
     async def delete_session(self, code: str) -> None:
         import httpx  # type: ignore

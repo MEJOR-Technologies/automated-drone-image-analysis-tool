@@ -24,7 +24,7 @@
        <item>
         <widget class="QLabel" name="codeInstructions">
          <property name="text">
-          <string>Ask the drone operator to read out the 6-character pairing code shown on their tablet.</string>
+          <string>Ask the drone operator to read out the 6-character pairing code shown on their controller.</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

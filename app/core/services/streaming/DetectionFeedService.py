@@ -65,6 +65,16 @@ class DetectionFeedService(QObject):
     detectionUpdated = Signal(dict)
     detectionSnapshot = Signal(list)  # bulk snapshot from M3 channel
     feedError = Signal(str)
+    # Mobile → desktop control messages on the ``detections.meta``
+    # channel after a resume handshake (plan §20):
+    #   ``resumeComplete`` carries (session_id, last_seq) once backfill
+    #     has finished — the desktop can drop any "Reconnecting…" UI.
+    #   ``sessionChanged`` carries (new_session_id) when mobile has
+    #     started a fresh publish session since the desktop's stored
+    #     ``session_id`` — desktop discards local history (or archives
+    #     it) and adopts the new session_id.
+    resumeComplete = Signal(str, int)        # session_id, last_seq
+    sessionChanged = Signal(str)             # new session_id
 
     def __init__(self, parent: Optional[QObject] = None, *, thumb_timeout: float = THUMB_TIMEOUT_SECONDS):
         super().__init__(parent)
@@ -76,6 +86,12 @@ class DetectionFeedService(QObject):
         # log readable when the publisher opens a per-session channel we
         # don't yet consume (e.g. ``telemetry``, sent at ~3 Hz).
         self._unknown_labels_seen: set = set()
+        # ``(session_id, seq)`` of envelopes we've already emitted. The
+        # resume backfill from mobile (plan §20) may overlap with what
+        # the desktop already received pre-close; dedup keeps the
+        # gallery row count honest. Bounded to the last few thousand
+        # entries; older entries naturally rotate out as sessions end.
+        self._seen_seq: set = set()
 
     # ------------------------------------------------------------------
     # entry point: WebRTCStreamService.dataChannelMessage -> here
@@ -115,6 +131,37 @@ class DetectionFeedService(QObject):
         if not isinstance(envelope, dict):
             self.feedError.emit("detections.meta envelope must be a JSON object")
             return
+
+        # Resume control messages on the ``detections.meta`` channel
+        # (plan §20). A ``kind`` field distinguishes these from regular
+        # MetaEnvelopes (which use ``event = promote|update``).
+        kind = envelope.get("kind")
+        if kind == "resume_complete":
+            session_id = envelope.get("session_id")
+            last_seq = envelope.get("last_seq")
+            if isinstance(session_id, str) and isinstance(last_seq, (int, float)):
+                self.resumeComplete.emit(session_id, int(last_seq))
+            return
+        if kind == "session_changed":
+            new_session_id = envelope.get("new_session_id")
+            if isinstance(new_session_id, str) and new_session_id:
+                self.sessionChanged.emit(new_session_id)
+            return
+
+        # Dedup regular MetaEnvelopes by (session_id, seq). Backfill on
+        # resume can replay events the desktop received pre-close — the
+        # session_id+seq pair is the stable identity.
+        session_id = envelope.get("session_id")
+        seq = envelope.get("seq")
+        if (
+            isinstance(session_id, str)
+            and session_id
+            and isinstance(seq, (int, float))
+        ):
+            key = (session_id, int(seq))
+            if key in self._seen_seq:
+                return
+            self._seen_seq.add(key)
 
         thumb = envelope.get("thumb")
         if not thumb:

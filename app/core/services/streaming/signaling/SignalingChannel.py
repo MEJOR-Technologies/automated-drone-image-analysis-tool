@@ -14,7 +14,24 @@ session early.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import AsyncIterator
+from dataclasses import dataclass
+from typing import AsyncIterator, Optional
+
+
+@dataclass(frozen=True)
+class SessionState:
+    """Worker's view of a pairing code (plan §20 ``GET /v1/sessions/:code/state``).
+
+    Returned by :meth:`SignalingChannel.get_session_state`. Lets the
+    desktop decide whether to auto-resume a persisted session
+    (``state == "awaiting_viewer"`` and matching ``session_id``),
+    show a "code already in use" prompt (``state == "active"``), or
+    fall back to a fresh-pair flow (``state == "ended"`` / missing).
+    """
+
+    state: str          # "active" | "awaiting_viewer" | "ended"
+    session_id: Optional[str]
+    has_offer: bool
 
 
 class CodeNotFound(LookupError):
@@ -88,6 +105,16 @@ class SignalingChannel(ABC):
         the Worker's WebSocket envelope (plan §8). Known types include
         ``candidate``, ``answer``, ``closed``, ``error``.
         """
+
+    async def get_session_state(self, code: str) -> SessionState:
+        """Return the Worker's session-state view of ``code`` (plan §20).
+
+        Default implementation returns ``SessionState("ended", None, False)``
+        so older signaling backends that don't expose the state endpoint
+        cleanly downgrade to "treat as expired" — the desktop falls
+        through to the empty pairing dialog rather than crashing.
+        """
+        return SessionState(state="ended", session_id=None, has_offer=False)
 
     @abstractmethod
     async def delete_session(self, code: str) -> None:

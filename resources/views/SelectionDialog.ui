@@ -28,7 +28,7 @@
       </font>
      </property>
      <property name="text">
-      <string>What type of media are you working with?</string>
+      <string>What would you like to do?</string>
      </property>
     </widget>
    </item>
@@ -83,7 +83,7 @@
             <string notr="true">QToolButton { border: 3px solid palette(mid); border-radius: 8px; }</string>
            </property>
            <property name="text">
-            <string>Images</string>
+            <string>Image Analysis</string>
            </property>
            <property name="iconSize">
             <size>
@@ -166,7 +166,7 @@
             <string notr="true">QToolButton { border: 3px solid palette(mid); border-radius: 8px; }</string>
            </property>
            <property name="text">
-            <string>Streaming</string>
+            <string>Stream Analysis</string>
            </property>
            <property name="iconSize">
             <size>
@@ -243,7 +243,7 @@
             </font>
            </property>
            <property name="toolTip">
-            <string>Pair with ADIAT Mobile drone tablets to receive their live camera feeds with detections.</string>
+            <string>Pair with ADIAT Mobile drone controllers to receive their live camera feeds with detections.</string>
            </property>
            <property name="styleSheet">
             <string notr="true">QToolButton { border: 3px solid palette(mid); border-radius: 8px; }</string>

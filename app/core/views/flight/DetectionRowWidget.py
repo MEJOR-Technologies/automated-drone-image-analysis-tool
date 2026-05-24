@@ -95,11 +95,44 @@ class DetectionRowWidget(TranslationMixin, QWidget, Ui_DetectionRowWidget):
         else:
             self.timestampLabel.setText("--:--:--")
 
-        feed_label = detection.get("feed_label")
-        if feed_label:
-            self.feedLabel.setText(self.tr("Feed: {feed}").format(feed=feed_label))
+        # Source-aircraft line. Precedence:
+        #   1. ``feed_display_name`` — the tile's current operator-facing
+        #      label (nickname if set, otherwise the aircraft formula
+        #      already resolved by the tile). Always takes priority so
+        #      a rename propagates here without us re-resolving.
+        #   2. ``aircraft_name`` from telemetry, with pairing code in
+        #      parens as a disambiguator (plan §19.3).
+        #   3. ``feed_label`` ("Tile-<code>") — first-second fallback
+        #      before telemetry populates.
+        display_name = detection.get("feed_display_name")
+        aircraft_name = detection.get("aircraft_name")
+        code = detection.get("feed_id")
+        if isinstance(display_name, str) and display_name.strip():
+            self.feedLabel.setText(display_name.strip())
+        elif isinstance(aircraft_name, str) and aircraft_name.strip():
+            if isinstance(code, str) and code:
+                self.feedLabel.setText(
+                    self.tr("{name} ({code})").format(
+                        name=aircraft_name.strip(), code=code
+                    )
+                )
+            else:
+                self.feedLabel.setText(aircraft_name.strip())
         else:
-            self.feedLabel.setText("")
+            feed_label = detection.get("feed_label")
+            if feed_label:
+                self.feedLabel.setText(self.tr("Feed: {feed}").format(feed=feed_label))
+            else:
+                self.feedLabel.setText("")
+        # Serial in the row tooltip — disambiguates identically-named
+        # drones if the same operator nicknames two of them the same.
+        serial = detection.get("aircraft_serial")
+        if isinstance(serial, str) and serial.strip():
+            self.feedLabel.setToolTip(
+                self.tr("Aircraft serial: {sn}").format(sn=serial.strip())
+            )
+        else:
+            self.feedLabel.setToolTip("")
 
         self._apply_thumbnail(detection.get("thumb_bytes"))
 
@@ -251,7 +284,14 @@ class DetectionRowWidget(TranslationMixin, QWidget, Ui_DetectionRowWidget):
         layout.addWidget(image_label, stretch=1)
 
         meta_lines = []
-        for key in ("class_name", "confidence", "captured_at_ms", "track_key", "feed_label"):
+        # ``aircraft_name`` + ``aircraft_serial`` lead the popout meta so the
+        # operator can unambiguously identify the source drone without
+        # hunting through the wire-level fields below them.
+        for key in (
+            "aircraft_name", "aircraft_serial",
+            "class_name", "confidence", "captured_at_ms",
+            "track_key", "feed_label",
+        ):
             if key in self._detection and self._detection.get(key) is not None:
                 meta_lines.append(f"{key}: {self._detection[key]}")
         loc = self._detection.get("location") or {}

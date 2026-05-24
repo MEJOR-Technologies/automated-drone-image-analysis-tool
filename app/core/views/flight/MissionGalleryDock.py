@@ -80,6 +80,20 @@ class MissionGalleryDock(TranslationMixin, QDockWidget):
             return
         self.ui.feedFilterCombo.addItem(label, feed_id)
 
+    def update_feed_label(self, feed_id: str, label: str) -> None:
+        """Rename the feed's entry in the Feed filter dropdown.
+
+        Used when a tile's ``displayNameChanged`` fires — e.g. the
+        operator nicknamed the drone, or telemetry populated
+        ``aircraft_name`` after the initial ``Tile-<code>`` registration.
+        Idempotent: adds the entry if the feed wasn't registered yet.
+        """
+        idx = self._index_for_data(self.ui.feedFilterCombo, feed_id)
+        if idx is None:
+            self.ui.feedFilterCombo.addItem(label, feed_id)
+        else:
+            self.ui.feedFilterCombo.setItemText(idx, label)
+
     def deregister_feed(self, feed_id: str) -> None:
         idx = self._index_for_data(self.ui.feedFilterCombo, feed_id)
         if idx is not None:

@@ -137,6 +137,12 @@ class DetectionOverlayWidget(QWidget):
         # Legacy fallback bookkeeping.
         self._metas_seen: int = 0
         self._legacy_mode: bool = False
+        # Publisher-clock floor for accepted envelopes. Set by the
+        # controller from the first telemetry envelope's
+        # ``captured_at_ms`` — anything older is a pre-session ghost
+        # from the publisher's never-cleared ``currentEnvelopes`` map
+        # and is dropped before it lands in ``_tracks``.
+        self._session_baseline_pub_ms: Optional[int] = None
         # Frame ring buffer for the desktop-side thumb cropper (plan
         # §19.4.1). Each entry is ``(frame_time_s, ndarray, local_arrival_s)``
         # — RTP-derived seconds, the source BGR frame as ndarray, and
@@ -155,6 +161,28 @@ class DetectionOverlayWidget(QWidget):
     # public API — called by FlightTileController via signal connections
     # ------------------------------------------------------------------
 
+    PRE_SESSION_TOLERANCE_MS = 5_000
+
+    def set_session_baseline(self, baseline_pub_ms: Optional[int]) -> None:
+        """Anchor the overlay to a publisher-clock floor for filtering.
+
+        Mirrors :class:`FlightTileController`'s behaviour — once the
+        baseline is set, any track whose ``captured_at_ms`` is older
+        than ``baseline - PRE_SESSION_TOLERANCE_MS`` is dropped before
+        it ever enters ``_tracks``, so pre-session ghosts from a
+        snapshot replay never flash up on the live video pane.
+        """
+        if isinstance(baseline_pub_ms, (int, float)):
+            self._session_baseline_pub_ms = int(baseline_pub_ms)
+
+    def _is_pre_session(self, envelope: dict) -> bool:
+        if self._session_baseline_pub_ms is None:
+            return False
+        ts = envelope.get("captured_at_ms")
+        if not isinstance(ts, (int, float)):
+            return False
+        return int(ts) < self._session_baseline_pub_ms - self.PRE_SESSION_TOLERANCE_MS
+
     def on_track_event(self, envelope: dict) -> None:
         """Upsert a single track from a promote/update envelope.
 
@@ -164,6 +192,8 @@ class DetectionOverlayWidget(QWidget):
         distinction.
         """
         if not isinstance(envelope, dict):
+            return
+        if self._is_pre_session(envelope):
             return
         track_key = envelope.get("track_key")
         if not isinstance(track_key, str) or not track_key:

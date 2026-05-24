@@ -47,6 +47,32 @@ class MissionGalleryController(QObject):
     def register_feed(self, feed_id: str, label: str) -> None:
         self._dock.register_feed(feed_id, label)
 
+    def set_feed_display_name(self, feed_id: str, display_name: str) -> None:
+        """Rename an active feed across the gallery — dropdown + every row.
+
+        Wired to :class:`FlightTileController.feedDisplayNameChanged` so
+        an operator-typed nickname (or a telemetry-derived aircraft
+        name) propagates to:
+
+        * The Feed filter dropdown entry (label only; ``itemData`` stays
+          the pairing code so the filter logic doesn't move).
+        * Every existing detection row's ``feed_display_name`` field,
+          so already-rendered rows pick up the new label on re-paint.
+        """
+        if not isinstance(feed_id, str) or not feed_id:
+            return
+        if not isinstance(display_name, str) or not display_name.strip():
+            return
+        cleaned = display_name.strip()
+        self._dock.update_feed_label(feed_id, cleaned)
+        patched = False
+        for _, detection in self._detections:
+            if detection.get("feed_id") == feed_id:
+                detection["feed_display_name"] = cleaned
+                patched = True
+        if patched:
+            self._render()
+
     def deregister_feed(self, feed_id: str) -> None:
         self._dock.deregister_feed(feed_id)
         before = len(self._detections)
@@ -68,20 +94,22 @@ class MissionGalleryController(QObject):
     # ------------------------------------------------------------------
 
     def add_detection(self, _feed_id: str, detection: dict) -> None:
+        track_key = detection.get("track_key")
+        thumb_bytes = detection.get("thumb_bytes")
+
         # Thumbnail cache: remember thumbs as they arrive on live
         # promotions; restore them on snapshot replays that carry meta
         # only. Keyed by ``track_key`` so the cache survives tile
         # close/reopen and snapshot dedup boundaries.
-        track_key = detection.get("track_key")
-        thumb_bytes = detection.get("thumb_bytes")
         if isinstance(thumb_bytes, (bytes, bytearray)) and thumb_bytes:
             if isinstance(track_key, str) and track_key:
                 self._thumb_cache[track_key] = bytes(thumb_bytes)
         elif isinstance(track_key, str) and track_key in self._thumb_cache:
             detection = dict(detection)
             detection["thumb_bytes"] = self._thumb_cache[track_key]
+
         ts = self._timestamp(detection)
-        self._detections.append((ts, dict(detection)))
+
         # Register the detector id (universal across publishers) rather
         # than the per-detector class_name — operators pick from
         # ``person`` / ``color-range`` / ``motion`` / ``dji-native``
@@ -89,6 +117,28 @@ class MissionGalleryController(QObject):
         detector_id = detection.get("detector_id") or ""
         if detector_id:
             self._dock.register_detector(str(detector_id))
+
+        # Plan §7 per-track lifecycle: PROMOTE creates the row, UPDATE
+        # refreshes it in place. Dedup is keyed on ``track_key`` — the
+        # wire ``event`` field is informational. Without this, every
+        # UPDATE for a long-lived (moving) target spawns a duplicate
+        # gallery row.
+        if isinstance(track_key, str) and track_key:
+            for i, (_existing_ts, existing) in enumerate(self._detections):
+                if existing.get("track_key") == track_key:
+                    # Right-hand-side wins where present; preserve any
+                    # promote-time fields (``context_frame_jpeg``, etc.)
+                    # that the UPDATE envelope doesn't carry.
+                    merged = {
+                        **existing,
+                        **{k: v for k, v in detection.items() if v is not None},
+                    }
+                    self._detections[i] = (ts, merged)
+                    self._render()
+                    return
+
+        # New track — append.
+        self._detections.append((ts, dict(detection)))
         self._render()
 
     def replace_snapshot(self, feed_id: str, detections: list) -> None:
