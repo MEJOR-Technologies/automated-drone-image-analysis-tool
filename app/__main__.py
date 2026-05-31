@@ -267,13 +267,28 @@ def main():
             )
             sys.exit(1)
 
+    def _launch_flight_viewer():
+        """Launch the Flight Viewer window (WebRTC pairing with ADIAT Mobile)."""
+        try:
+            from core.controllers.flight import FlightViewerController
+            app._flight_controller = FlightViewerController()
+            app._flight_controller.show()
+        except Exception as e:
+            QMessageBox.critical(
+                None,
+                "Error",
+                f"Failed to open Flight Viewer:\n{str(e)}"
+            )
+            sys.exit(1)
+
     # Connect signal to launch MainWindow when Images is selected
     def _on_selection(choice: str):
         """
         Handle selection choice from the initial dialog.
 
         Args:
-            choice: String indicating the selected option ('images' or 'stream').
+            choice: String indicating the selected option ('images', 'stream',
+                or 'flight').
         """
         if choice == 'images':
             # Wrap startup in a try so any init error raises to excepthook
@@ -285,6 +300,8 @@ def main():
                 raise
         elif choice == 'stream':
             _launch_stream_viewer()
+        elif choice == 'flight':
+            _launch_flight_viewer()
 
     # Connect signal to show setup wizard when requested
     def _on_wizard_requested():
@@ -375,6 +392,10 @@ def main():
     dlg.selectionMade.connect(_on_selection)
     dlg.wizardRequested.connect(_on_wizard_requested)
     dlg.streamWizardRequested.connect(_on_stream_wizard_requested)
+    # `flightViewerRequested` is emitted alongside selectionMade('flight');
+    # the launch already happens via _on_selection. Connect anyway so the
+    # signal has at least one consumer for callers that watch it directly.
+    dlg.flightViewerRequested.connect(lambda: None)
     result = dlg.exec()
 
     # If dialog was closed without a selection (and wizard wasn't shown), exit the app

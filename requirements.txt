@@ -28,3 +28,7 @@ imageio-ffmpeg
 rasterio
 pyproj
 pysolar
+aiortc>=1.9
+qasync>=0.27
+httpx>=0.27
+websockets>=13

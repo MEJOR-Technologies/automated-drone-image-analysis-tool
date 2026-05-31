@@ -29,6 +29,7 @@ class StreamType(Enum):
     HLS = "hls"
     FILE = "file"
     HDMI_CAPTURE = "hdmi_capture"
+    WEBRTC = "webrtc"
 
 
 DEFAULT_SAFETY_FPS_LIMIT = 30

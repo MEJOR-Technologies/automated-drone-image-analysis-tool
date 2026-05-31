@@ -234,10 +234,12 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         primary_menu = menu_bar.addMenu(self.tr("Menu"))
         self.action_streaming_guide = QAction(self.tr("Streaming Analysis Wizard"), self)
         self.action_image_analysis = QAction(self.tr("Image Analysis"), self)
+        self.action_flight_viewer = QAction(self.tr("Flight Viewer"), self)
         self.action_preferences = QAction(self.tr("Preferences"), self)
         primary_menu.addAction(self.action_streaming_guide)
         primary_menu.addSeparator()
         primary_menu.addAction(self.action_image_analysis)
+        primary_menu.addAction(self.action_flight_viewer)
         primary_menu.addAction(self.action_preferences)
 
         # Help menu
@@ -255,6 +257,7 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         # Wire actions
         self.action_streaming_guide.triggered.connect(self._open_streaming_guide)
         self.action_image_analysis.triggered.connect(self._open_image_analysis)
+        self.action_flight_viewer.triggered.connect(self._open_flight_viewer)
         self.action_preferences.triggered.connect(self._open_preferences)
         self.update_controller.bind_action(self.action_check_for_updates)
         self.action_manual.triggered.connect(self._open_manual)
@@ -719,6 +722,29 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
                 self,
                 self.tr("Error"),
                 self.tr("Failed to open Preferences:\n{error}").format(error=str(e))
+            )
+
+    def _open_flight_viewer(self):
+        """Open the Flight Viewer alongside this streaming window."""
+        try:
+            from core.controllers.flight import FlightViewerController
+
+            app = QApplication.instance()
+            existing = getattr(app, '_flight_controller', None) if app else None
+            if existing is not None and existing.window.isVisible():
+                existing.show()
+                return
+
+            controller = FlightViewerController()
+            if app is not None:
+                app._flight_controller = controller
+            controller.show()
+        except Exception as e:
+            self.logger.error(f"Error opening Flight Viewer: {e}")
+            QMessageBox.critical(
+                self,
+                self.tr("Error"),
+                self.tr("Failed to open Flight Viewer:\n{error}").format(error=str(e))
             )
 
     def _open_manual(self):
