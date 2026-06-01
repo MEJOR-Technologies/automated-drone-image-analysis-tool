@@ -18,7 +18,7 @@ from core.views.images.viewer.dialogs.ExportProgressDialog import ExportProgress
 # Try to import dependencies, skip tests if not available
 try:
     from core.controllers.images.VideoParser import VideoParser
-    from core.controllers.Perferences import Preferences
+    from core.controllers.Preferences import Preferences
     from core.services.export.PdfGeneratorService import PdfGeneratorService
     from core.services.export.KMLGeneratorService import KMLGeneratorService
     _DEPENDENCIES_AVAILABLE = True

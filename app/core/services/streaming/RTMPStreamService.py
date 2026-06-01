@@ -7,6 +7,7 @@ color detection applications. Designed for <250ms latency processing.
 
 # Set environment variable to avoid numpy compatibility issues - MUST be first
 from core.services.LoggerService import LoggerService
+from helpers.VideoFileHelper import detect_thumbnail_track, remux_to_main_track, is_ffmpeg_available, _FFMPEG_USER_MSG
 from PySide6.QtCore import QObject, QThread, Signal
 from dataclasses import dataclass
 from enum import Enum
@@ -28,6 +29,11 @@ class StreamType(Enum):
     HLS = "hls"
     FILE = "file"
     HDMI_CAPTURE = "hdmi_capture"
+    WEBRTC = "webrtc"
+
+
+DEFAULT_SAFETY_FPS_LIMIT = 30
+MAX_REASONABLE_FPS_LIMIT = 60
 
 
 @dataclass
@@ -37,8 +43,9 @@ class StreamConfig:
     stream_type: StreamType = StreamType.RTMP
     reconnect_attempts: int = 5
     buffer_size: int = 1  # Minimize buffering for real-time
-    fps_limit: int = 30
-    resolution_limit: Tuple[int, int] = (1920, 1080)
+    fps_limit: Optional[int] = None
+    resolution_limit: Optional[Tuple[int, int]] = None
+    hdmi_backend: Optional[int] = None  # OpenCV backend for HDMI capture
 
 
 @dataclass
@@ -72,6 +79,8 @@ class RTMPStreamService(QThread):
     def __init__(self, config: StreamConfig):
         super().__init__()
         self.config = config
+        self.config.fps_limit = self._normalize_fps_limit(config.fps_limit)
+        self.config.resolution_limit = self._normalize_resolution_limit(config.resolution_limit)
         self.logger = LoggerService()
 
         # Stream state
@@ -80,11 +89,14 @@ class RTMPStreamService(QThread):
         self._should_stop = False
         self._frame_number = 0
         self._last_frame_time = 0
+        self._remuxed_temp_path = None
 
         # Performance tracking
         self._fps_counter = 0
         self._fps_start_time = time.time()
         self._current_fps = 0
+        self._capture_dropped_frames = 0
+        self._source_fps_hint = 0.0
 
         # Video file playback control
         self._is_file = (config.stream_type == StreamType.FILE)
@@ -106,6 +118,51 @@ class RTMPStreamService(QThread):
         # Reconnection logic
         self._current_reconnect_delay = 1.0
         self._max_reconnect_delay = 30.0
+
+    @staticmethod
+    def _normalize_fps_limit(fps_limit: Optional[int]) -> Optional[int]:
+        """Normalize FPS limits to a supported range or None for source cadence."""
+        if fps_limit is None:
+            return None
+        if int(fps_limit) <= 0:
+            return None
+        return max(1, min(int(fps_limit), MAX_REASONABLE_FPS_LIMIT))
+
+    @staticmethod
+    def _normalize_resolution_limit(
+        resolution_limit: Optional[Tuple[Optional[int], Optional[int]]]
+    ) -> Optional[Tuple[int, int]]:
+        """Normalize legacy native-resolution sentinels to None."""
+        if resolution_limit is None:
+            return None
+
+        try:
+            width, height = resolution_limit
+        except (TypeError, ValueError):
+            return None
+
+        if width is None or height is None:
+            return None
+
+        try:
+            width = int(width)
+            height = int(height)
+        except (TypeError, ValueError):
+            return None
+
+        if width <= 0 or height <= 0:
+            return None
+        if width >= 99999 or height >= 99999:
+            return None
+
+        return width, height
+
+    def _get_live_source_fps_limit(self) -> int:
+        """Return the live-source cadence capped to a reasonable processing rate."""
+        source_fps = float(self._source_fps_hint or 0.0)
+        if source_fps <= 0.0:
+            source_fps = float(MAX_REASONABLE_FPS_LIMIT)
+        return max(1, min(int(round(source_fps)), MAX_REASONABLE_FPS_LIMIT))
 
     def run(self):
         """Main thread loop for stream processing."""
@@ -153,9 +210,32 @@ class RTMPStreamService(QThread):
                 try:
                     device_index = int(self.config.url)
                     # self.logger.info(f"Connecting to HDMI capture device {device_index}")
-                    # Try DirectShow backend instead of MSMF for better performance
-                    self._cap = cv2.VideoCapture(device_index, cv2.CAP_DSHOW)
-                    # self.logger.info(f"HDMI: Using DirectShow backend for device {device_index}")
+
+                    # Try the specified backend first, then fall back to others
+                    backends_to_try = []
+                    if self.config.hdmi_backend is not None:
+                        backends_to_try.append((self.config.hdmi_backend, "Specified"))
+                    # Add fallback backends
+                    if hasattr(cv2, 'CAP_MSMF'):
+                        backends_to_try.append((cv2.CAP_MSMF, "MSMF"))
+                    if hasattr(cv2, 'CAP_DSHOW'):
+                        backends_to_try.append((cv2.CAP_DSHOW, "DirectShow"))
+                    backends_to_try.append((cv2.CAP_ANY, "Auto"))
+
+                    # Try each backend until one works
+                    for backend_id, backend_name in backends_to_try:
+                        self._cap = cv2.VideoCapture(device_index, backend_id)
+                        if self._cap is not None and self._cap.isOpened():
+                            # self.logger.info(f"HDMI: Connected using {backend_name} backend")
+                            break
+                        if self._cap is not None:
+                            self._cap.release()
+                            self._cap = None
+
+                    if self._cap is None or not self._cap.isOpened():
+                        self.logger.error(f"Failed to open HDMI device {device_index} with any backend")
+                        return False
+
                 except ValueError:
                     self.logger.error(f"Invalid device index: {self.config.url}")
                     return False
@@ -175,18 +255,27 @@ class RTMPStreamService(QThread):
 
             # Optimize for real-time processing
             self._cap.set(cv2.CAP_PROP_BUFFERSIZE, self.config.buffer_size)
-            self._cap.set(cv2.CAP_PROP_FPS, self.config.fps_limit)
+            if self.config.fps_limit is not None and self.config.fps_limit > 0:
+                self._cap.set(cv2.CAP_PROP_FPS, self.config.fps_limit)
 
-            # Additional settings for HDMI capture devices
+            # Additional settings for HDMI/USB capture devices
             if self.config.stream_type == StreamType.HDMI_CAPTURE:
-                # Optimize HDMI capture for best performance (720p @ ~25fps)
-                self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-                self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-                self._cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('Y', 'U', 'Y', 'V'))
-                self._cap.set(cv2.CAP_PROP_CONVERT_RGB, 0)
+                # Minimize buffer for low latency
                 self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                self._cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-                # self.logger.info("HDMI capture optimized for 720p @ 25fps performance")
+
+                # Try to set preferred resolution, but accept device defaults if it fails
+                # Some devices don't support resolution changes
+                target_width, target_height = 1280, 720
+                self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, target_width)
+                self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, target_height)
+
+                # Check what resolution we actually got
+                actual_width = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                if actual_width != target_width or actual_height != target_height:
+                    self.logger.info(f"Capture device using native resolution: {actual_width}x{actual_height}")
+
+                # self.logger.info(f"Capture device configured: {actual_width}x{actual_height}")
 
             # Test frame read
             ret, frame = self._cap.read()
@@ -194,10 +283,37 @@ class RTMPStreamService(QThread):
                 self.logger.error("Failed to read initial frame")
                 return False
 
+            # Detect and fix MP4s where OpenCV grabbed a thumbnail track
+            # (e.g. Skydio X10 embeds MJPEG cover art as stream 0)
+            if self._is_file and detect_thumbnail_track(self._cap):
+                self.logger.info("Detected thumbnail track in video file, remuxing to select main video track")
+                temp_path = remux_to_main_track(self.config.url, self.logger)
+                if temp_path:
+                    self._cap.release()
+                    self._remuxed_temp_path = temp_path
+                    self._cap = cv2.VideoCapture(temp_path)
+                    if not self._cap.isOpened():
+                        self.logger.error("Failed to open remuxed video")
+                        os.unlink(temp_path)
+                        self._remuxed_temp_path = None
+                        return False
+                    ret, frame = self._cap.read()
+                    if not ret or frame is None:
+                        self.logger.error("Failed to read frame from remuxed video")
+                        return False
+                else:
+                    if not is_ffmpeg_available():
+                        self.logger.error(_FFMPEG_USER_MSG)
+                        self.errorOccurred.emit(_FFMPEG_USER_MSG)
+                    else:
+                        self.logger.error("Failed to remux video to select main track")
+                    return False
+
             # Log stream properties
             fps = self._cap.get(cv2.CAP_PROP_FPS)
             width = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self._source_fps_hint = float(fps) if fps and fps > 0 else 0.0
 
             # Get file-specific properties if this is a video file
             if self._is_file:
@@ -213,7 +329,8 @@ class RTMPStreamService(QThread):
             stats = {
                 'fps': fps,
                 'resolution': (width, height),
-                'connected_time': time.time()
+                'connected_time': time.time(),
+                'capture_dropped_frames': self._capture_dropped_frames,
             }
 
             # Add file-specific stats
@@ -240,7 +357,6 @@ class RTMPStreamService(QThread):
 
     def _process_stream(self):
         """Main stream processing loop optimized for low latency."""
-        frame_interval = 1.0 / self.config.fps_limit
         last_process_time = 0
         consecutive_errors = 0
         max_consecutive_errors = 5
@@ -248,6 +364,10 @@ class RTMPStreamService(QThread):
         while not self._should_stop and self._connected and self._cap and self._cap.isOpened():
             try:
                 current_time = time.time()
+                # Re-read current FPS limit each iteration so runtime updates apply immediately.
+                fps_limit = self._normalize_fps_limit(self.config.fps_limit)
+                live_fps_limit = fps_limit if fps_limit is not None else self._get_live_source_fps_limit()
+                frame_interval = (1.0 / live_fps_limit) if live_fps_limit > 0 else 0.0
 
                 # Handle pause state and seek requests for video files
                 if self._is_file:
@@ -270,19 +390,31 @@ class RTMPStreamService(QThread):
                             time.sleep(0.1)  # Sleep while paused
                             continue
 
-                # Frame rate limiting
-                if self.config.stream_type != StreamType.HDMI_CAPTURE:
-                    # For files, limit to TARGET FPS (not video's native FPS!)
-                    # This prevents queue backup when video FPS > processing capability
-                    target_interval = frame_interval
+                # Frame rate limiting for non-live sources
+                if self.config.stream_type not in (StreamType.HDMI_CAPTURE, StreamType.RTMP):
+                    target_interval = 0.0
                     if self._is_file and self._video_fps > 0:
-                        # CRITICAL FIX: Use MIN of video FPS and target FPS limit
-                        # If video is 60 FPS but we can only process 30 FPS, limit to 30 FPS
-                        effective_fps = min(self._video_fps, self.config.fps_limit)
-                        target_interval = 1.0 / effective_fps
+                        # Source-FPS mode follows the source file rate.
+                        # Explicit limits cap that source rate.
+                        effective_fps = self._video_fps if fps_limit is None else min(self._video_fps, fps_limit)
+                        target_interval = (1.0 / effective_fps) if effective_fps > 0 else 0.0
+                    elif fps_limit is not None and fps_limit > 0:
+                        target_interval = frame_interval
 
-                    if current_time - last_process_time < target_interval:
+                    if target_interval > 0 and current_time - last_process_time < target_interval:
                         time.sleep(0.001)  # Small sleep to prevent excessive CPU usage
+                        continue
+
+                # For live sources (HDMI/RTMP), apply frame rate limiting to prevent queue backup
+                # Process at target FPS, dropping frames that arrive faster
+                if self.config.stream_type in (StreamType.HDMI_CAPTURE, StreamType.RTMP) and frame_interval > 0:
+                    if current_time - last_process_time < frame_interval:
+                        # Drain the buffer by reading and discarding frames
+                        # This keeps us synced with the live feed
+                        if self._cap.grab():  # Fast grab without decode
+                            self._capture_dropped_frames += 1
+                        # Try a couple extra grabs to collapse buffered backlog quickly.
+                        self._drop_stale_live_frames(max_grabs=2)
                         continue
 
                 # Read frame with timeout handling - TIME THIS (critical for high-res video profiling)
@@ -293,8 +425,20 @@ class RTMPStreamService(QThread):
                 if not ret or frame is None:
                     consecutive_errors += 1
                     if consecutive_errors >= max_consecutive_errors:
-                        self.logger.error(f"Failed to read {consecutive_errors} consecutive frames, stopping")
-                        break
+                        if self._is_file:
+                            # End of video file - pause at end instead of disconnecting
+                            with self._playback_lock:
+                                self._is_playing = False
+                                last_frame = max(0, self._total_frames - 1)
+                                self._cap.set(cv2.CAP_PROP_POS_FRAMES, last_frame)
+                                self._current_frame_pos = last_frame
+                            self.videoPositionChanged.emit(self._total_duration, self._total_duration)
+                            self.streamStatsChanged.emit({'is_playing': False})
+                            consecutive_errors = 0
+                            continue
+                        else:
+                            self.logger.error(f"Failed to read {consecutive_errors} consecutive frames, stopping")
+                            break
                     else:
                         self.logger.warning(f"Failed to read frame ({consecutive_errors}/{max_consecutive_errors})")
                         time.sleep(0.1)  # Small delay before retry
@@ -308,18 +452,41 @@ class RTMPStreamService(QThread):
                     self.logger.warning("Received empty frame")
                     continue
 
+                # Ensure frame is in BGR format (3 channels) for processing
+                # Some capture devices return grayscale, YUV, or BGRA
+                if len(frame.shape) == 2:
+                    # Grayscale (1 channel) - convert to BGR
+                    frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+                elif len(frame.shape) == 3:
+                    channels = frame.shape[2]
+                    if channels == 4:
+                        # BGRA (4 channels) - convert to BGR
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+                    elif channels == 1:
+                        # Single channel in 3D array - convert to BGR
+                        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+                    # channels == 3 is already BGR, no conversion needed
+
                 # Performance optimization: resize if needed
                 # resize_start = time.perf_counter()
                 try:
                     height, width = frame.shape[:2]
-                    if width > self.config.resolution_limit[0] or height > self.config.resolution_limit[1]:
+                    # Skip invalid frames (0 dimensions from capture devices without signal)
+                    if width <= 0 or height <= 0:
+                        continue
+                    if (
+                        self.config.resolution_limit is not None and
+                        (width > self.config.resolution_limit[0] or height > self.config.resolution_limit[1])
+                    ):
                         scale_factor = min(
                             self.config.resolution_limit[0] / width,
                             self.config.resolution_limit[1] / height
                         )
                         new_width = int(width * scale_factor)
                         new_height = int(height * scale_factor)
-                        frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+                        # Ensure valid dimensions for resize
+                        if new_width > 0 and new_height > 0:
+                            frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
                 except Exception as e:
                     self.logger.error(f"Error resizing frame: {e}")
                     continue
@@ -362,6 +529,25 @@ class RTMPStreamService(QThread):
                     break
                 time.sleep(0.1)  # Small delay before retry
 
+    def set_fps_limit(self, fps_limit: Optional[int]) -> Optional[int]:
+        """
+        Update FPS limit while stream is running.
+
+        Returns:
+            The normalized FPS limit that was applied.
+        """
+        normalized = self._normalize_fps_limit(fps_limit)
+        self.config.fps_limit = normalized
+
+        # Best effort: apply to capture backend immediately where supported.
+        if self._cap and self._cap.isOpened() and normalized is not None:
+            try:
+                self._cap.set(cv2.CAP_PROP_FPS, normalized)
+            except Exception:
+                pass
+
+        return normalized
+
     def _update_fps_counter(self):
         """Update FPS tracking."""
         self._fps_counter += 1
@@ -382,8 +568,22 @@ class RTMPStreamService(QThread):
                     'resolution': (width, height),
                     'frame_number': self._frame_number,
                     'timestamp': current_time,
-                    'is_playing': self._is_playing
+                    'is_playing': self._is_playing,
+                    'capture_dropped_frames': self._capture_dropped_frames,
                 })
+
+    def _drop_stale_live_frames(self, max_grabs: int = 2):
+        """Drop stale frames from live capture buffers to reduce display lag."""
+        if not self._cap or max_grabs <= 0:
+            return
+        for _ in range(max_grabs):
+            try:
+                if self._cap.grab():
+                    self._capture_dropped_frames += 1
+                else:
+                    break
+            except Exception:
+                break
 
     def stop(self):
         """Stop the stream processing."""
@@ -473,18 +673,41 @@ class RTMPStreamService(QThread):
         }
 
     def _cleanup(self):
-        """Clean up resources."""
+        """Clean up resources and ensure capture device is fully released."""
         try:
             # Clear any pending seek requests
             self._seek_requested = False
 
             if self._cap:
+                # Stop any ongoing grab operations
+                try:
+                    self._cap.grab()  # Clear buffer
+                except Exception:
+                    pass
+
+                # Release the capture device
                 self._cap.release()
                 self._cap = None
+
+                # Give the OS time to fully release the device
+                # This is important for HDMI capture devices that may be slow to release
+                import time
+                time.sleep(0.2)
+
         except Exception as e:
             self.logger.error(f"Error releasing video capture: {e}")
         finally:
             self._connected = False
+            self._cap = None  # Ensure cap is cleared even if release failed
+
+            # Clean up remuxed temp file
+            if self._remuxed_temp_path:
+                try:
+                    os.unlink(self._remuxed_temp_path)
+                    self.logger.info(f"Cleaned up temp file: {self._remuxed_temp_path}")
+                except OSError:
+                    pass
+                self._remuxed_temp_path = None
 
     def is_connected(self) -> bool:
         """Check if stream is currently connected."""
@@ -499,6 +722,7 @@ class RTMPStreamService(QThread):
             'url': self.config.url,
             'type': self.config.stream_type.value,
             'fps': self._current_fps,
+            'source_fps': self._video_fps if self._is_file else self._source_fps_hint,
             'resolution': (
                 int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                 int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -526,13 +750,29 @@ class StreamManager(QObject):
         self._service = None
         self._current_config = None
 
-    def connect_to_stream(self, url: str, stream_type: StreamType = StreamType.RTMP) -> bool:
+    @staticmethod
+    def _normalize_fps_limit(fps_limit: Optional[int]) -> Optional[int]:
+        """Normalize FPS limits to a supported range or None for source cadence."""
+        if fps_limit is None:
+            return None
+        if int(fps_limit) <= 0:
+            return None
+        return max(1, min(int(fps_limit), MAX_REASONABLE_FPS_LIMIT))
+
+    def connect_to_stream(self, url: str, stream_type: StreamType = StreamType.RTMP,
+                          hdmi_backend: Optional[int] = None,
+                          fps_limit: Optional[int] = None) -> bool:
         """
         Connect to a video stream.
 
         Args:
             url: Stream URL (RTMP, HLS, or file path)
             stream_type: Type of stream
+            hdmi_backend: Optional OpenCV backend ID for HDMI capture
+            fps_limit: Optional target FPS limit.
+                - `None`: follow source cadence
+                - `0` or less: follow source cadence
+                - `> 0`: explicit cap
 
         Returns:
             bool: True if connection initiated successfully
@@ -541,18 +781,17 @@ class StreamManager(QObject):
             # Stop existing service
             self.disconnect_stream()
 
-            # Create new configuration
-            # Gradually increase FPS for HDMI capture testing
-            # For files, use 30 FPS target to prevent queue backup
-            fps_limit = 35 if stream_type == StreamType.HDMI_CAPTURE else 30
+            # Determine FPS limit
+            effective_fps_limit = self._normalize_fps_limit(fps_limit)
 
             self._current_config = StreamConfig(
                 url=url,
                 stream_type=stream_type,
                 reconnect_attempts=5,
                 buffer_size=1,  # Minimal buffering
-                fps_limit=fps_limit,  # This is the TARGET processing FPS, not video FPS
-                resolution_limit=(1920, 1080)
+                fps_limit=effective_fps_limit,  # This is the TARGET processing FPS, not video FPS
+                resolution_limit=None,
+                hdmi_backend=hdmi_backend
             )
 
             # Create and start service
@@ -575,21 +814,37 @@ class StreamManager(QObject):
             self.logger.error(f"Failed to connect to stream: {e}")
             return False
 
+    def set_fps_limit(self, fps_limit: Optional[int]) -> bool:
+        """Update stream FPS limit while connected."""
+        if not self._service:
+            return False
+        try:
+            effective_fps_limit = self._normalize_fps_limit(fps_limit)
+            self._service.set_fps_limit(effective_fps_limit)
+            if self._current_config:
+                self._current_config.fps_limit = effective_fps_limit
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to update FPS limit: {e}")
+            return False
+
     def disconnect_stream(self):
-        """Disconnect from current stream."""
+        """Disconnect from current stream and ensure capture device is released."""
         if self._service:
-            # Stop the service first
+            # Stop the service first - this triggers cleanup
             self._service.stop()
 
             # Immediately quit the thread's event loop
             self._service.quit()
 
-            # Give the thread time to finish
-            if not self._service.wait(3000):  # Wait up to 3 seconds
-                self.logger.warning("Stream service didn't stop gracefully, terminating...")
-                self._service.terminate()
-                if not self._service.wait(1000):
-                    self.logger.error("Stream service still running after terminate")
+            # Give the thread time to finish - increased timeout for HDMI devices
+            service_stopped = self._service.wait(5000)  # Wait up to 5 seconds
+            if not service_stopped:
+                self.logger.warning("Stream service did not stop within 5s, retrying graceful shutdown")
+                self._service.quit()
+                service_stopped = self._service.wait(5000)
+                if not service_stopped:
+                    self.logger.error("Stream service still running after graceful shutdown timeout")
 
             # Now disconnect signals after the thread has stopped
             try:
@@ -618,9 +873,17 @@ class StreamManager(QObject):
                 # self.logger.debug(f"Error disconnecting signals: {e}")
                 pass
 
-            # Delete the service to ensure proper cleanup
-            self._service.deleteLater()
+            # Delete the service to ensure proper cleanup.
+            # If still running, defer deletion until thread exits.
+            if service_stopped:
+                self._service.deleteLater()
+            else:
+                self._service.finished.connect(self._service.deleteLater)
             self._service = None
+
+            # Additional delay to ensure capture device is fully released by OS
+            # This helps with HDMI capture devices that may hold resources
+            time.sleep(0.3)
 
         # Always emit disconnection status to ensure UI updates
         self.connectionChanged.emit(False, "Disconnected")

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'Viewer.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -162,6 +162,12 @@ class Ui_Viewer(object):
 
         self.horizontalLayout_5.addWidget(self.showAOIsButton)
 
+        self.thermalHistogramButton = QToolButton(self.mainHeaderWidget)
+        self.thermalHistogramButton.setObjectName(u"thermalHistogramButton")
+        self.thermalHistogramButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_5.addWidget(self.thermalHistogramButton)
+
         self.line_7 = QFrame(self.mainHeaderWidget)
         self.line_7.setObjectName(u"line_7")
         self.line_7.setFrameShape(QFrame.Shape.VLine)
@@ -201,6 +207,12 @@ class Ui_Viewer(object):
         self.measureButton.setIconSize(QSize(25, 25))
 
         self.horizontalLayout_5.addWidget(self.measureButton)
+
+        self.personOverlayButton = QToolButton(self.mainHeaderWidget)
+        self.personOverlayButton.setObjectName(u"personOverlayButton")
+        self.personOverlayButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_5.addWidget(self.personOverlayButton)
 
         self.magnifyButton = QToolButton(self.mainHeaderWidget)
         self.magnifyButton.setObjectName(u"magnifyButton")
@@ -294,6 +306,24 @@ class Ui_Viewer(object):
 
         self.horizontalLayout_5.addWidget(self.zipButton)
 
+        self.teamPlanningButton = QToolButton(self.mainHeaderWidget)
+        self.teamPlanningButton.setObjectName(u"teamPlanningButton")
+        self.teamPlanningButton.setStyleSheet(u"QToolButton {\n"
+"    border: 1px solid transparent;\n"
+"    border-radius: 4px;\n"
+"    padding: 2px;\n"
+"}\n"
+"QToolButton:hover {\n"
+"    border: 1px solid #888;\n"
+"    background-color: rgba(136, 136, 136, 0.1);\n"
+"}\n"
+"QToolButton:pressed {\n"
+"    background-color: rgba(136, 136, 136, 0.2);\n"
+"}")
+        self.teamPlanningButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_5.addWidget(self.teamPlanningButton)
+
         self.line = QFrame(self.mainHeaderWidget)
         self.line.setObjectName(u"line")
         self.line.setFrameShape(QFrame.Shape.VLine)
@@ -369,6 +399,21 @@ class Ui_Viewer(object):
         self.jumpToLine.setMaximumSize(QSize(50, 16777215))
 
         self.ButtonLayout.addWidget(self.jumpToLine)
+
+        self.aoiJumpLabel = QLabel(self.imageWidget)
+        self.aoiJumpLabel.setObjectName(u"aoiJumpLabel")
+        self.aoiJumpLabel.setFont(font2)
+
+        self.ButtonLayout.addWidget(self.aoiJumpLabel)
+
+        self.aoiJumpLine = QLineEdit(self.imageWidget)
+        self.aoiJumpLine.setObjectName(u"aoiJumpLine")
+        sizePolicy4.setHeightForWidth(self.aoiJumpLine.sizePolicy().hasHeightForWidth())
+        self.aoiJumpLine.setSizePolicy(sizePolicy4)
+        self.aoiJumpLine.setMinimumSize(QSize(50, 0))
+        self.aoiJumpLine.setMaximumSize(QSize(50, 16777215))
+
+        self.ButtonLayout.addWidget(self.aoiJumpLine)
 
         self.previousImageButton = QPushButton(self.imageWidget)
         self.previousImageButton.setObjectName(u"previousImageButton")
@@ -579,6 +624,10 @@ class Ui_Viewer(object):
 #endif // QT_CONFIG(tooltip)
         self.showAOIsButton.setText("")
 #if QT_CONFIG(tooltip)
+        self.thermalHistogramButton.setToolTip(QCoreApplication.translate("Viewer", u"Open Histogram", None))
+#endif // QT_CONFIG(tooltip)
+        self.thermalHistogramButton.setText("")
+#if QT_CONFIG(tooltip)
         self.GPSMapButton.setToolTip(QCoreApplication.translate("Viewer", u"Map with Image Locations (M)", None))
 #endif // QT_CONFIG(tooltip)
         self.GPSMapButton.setText("")
@@ -596,6 +645,11 @@ class Ui_Viewer(object):
 #endif // QT_CONFIG(tooltip)
         self.measureButton.setText(QCoreApplication.translate("Viewer", u"...", None))
         self.measureButton.setProperty(u"iconName", QCoreApplication.translate("Viewer", u"ruler.png", None))
+#if QT_CONFIG(tooltip)
+        self.personOverlayButton.setToolTip(QCoreApplication.translate("Viewer", u"Person Size Reference (Ctrl+P)", None))
+#endif // QT_CONFIG(tooltip)
+        self.personOverlayButton.setText(QCoreApplication.translate("Viewer", u"...", None))
+        self.personOverlayButton.setProperty(u"iconName", QCoreApplication.translate("Viewer", u"person.png", None))
 #if QT_CONFIG(tooltip)
         self.magnifyButton.setToolTip(QCoreApplication.translate("Viewer", u"Toggle Magnifying Glass (Middle Mouse)", None))
 #endif // QT_CONFIG(tooltip)
@@ -616,6 +670,10 @@ class Ui_Viewer(object):
 #endif // QT_CONFIG(tooltip)
         self.zipButton.setText(QCoreApplication.translate("Viewer", u"...", None))
         self.zipButton.setProperty(u"iconName", QCoreApplication.translate("Viewer", u"zip.png", None))
+#if QT_CONFIG(tooltip)
+        self.teamPlanningButton.setToolTip(QCoreApplication.translate("Viewer", u"Plan Verification (T)", None))
+#endif // QT_CONFIG(tooltip)
+        self.teamPlanningButton.setText(QCoreApplication.translate("Viewer", u"...", None))
 #if QT_CONFIG(tooltip)
         self.skipHidden.setToolTip(QCoreApplication.translate("Viewer", u"Skip hidden images when navigating.\n"
 "When enabled, Previous/Next buttons will skip over images marked as hidden.\n"
@@ -647,6 +705,15 @@ class Ui_Viewer(object):
         self.jumpToLine.setToolTip(QCoreApplication.translate("Viewer", u"Enter an image number (1 to total) and press Enter.\n"
 "Quickly navigate to any image in the analysis results.\n"
 "Example: Type \"25\" and press Enter to jump to image #25", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.aoiJumpLabel.setToolTip(QCoreApplication.translate("Viewer", u"Jump to a specific AOI by its run-wide number.\n"
+"Enter an AOI number and press Enter to select and scroll to it.", None))
+#endif // QT_CONFIG(tooltip)
+        self.aoiJumpLabel.setText(QCoreApplication.translate("Viewer", u"Go to AOI #:", None))
+#if QT_CONFIG(tooltip)
+        self.aoiJumpLine.setToolTip(QCoreApplication.translate("Viewer", u"Enter an AOI number and press Enter.\n"
+"Selects that AOI and scrolls it into view in the gallery or single-image list.", None))
 #endif // QT_CONFIG(tooltip)
         self.previousImageButton.setText(QCoreApplication.translate("Viewer", u"Previous Image", None))
         self.previousImageButton.setProperty(u"iconName", QCoreApplication.translate("Viewer", u"previous.png", None))

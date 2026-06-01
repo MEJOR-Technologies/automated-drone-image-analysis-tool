@@ -234,7 +234,13 @@ class TextLabeledSlider(QWidget):
 
         # Default presets matching the image
         if presets is None:
-            presets = ["Very Conservative", "Conservative", "Moderate", "Aggressive", "Very Aggressive"]
+            presets = [
+                self.tr("Very Conservative"),
+                self.tr("Conservative"),
+                self.tr("Moderate"),
+                self.tr("Aggressive"),
+                self.tr("Very Aggressive"),
+            ]
 
         # Normalize presets to a list of (text, optional_numeric) tuples
         if presets and isinstance(presets[0], str):

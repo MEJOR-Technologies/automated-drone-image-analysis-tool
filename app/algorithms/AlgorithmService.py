@@ -15,7 +15,6 @@ from helpers.MetaDataHelper import MetaDataHelper
 from core.services.cache.ThumbnailCacheService import ThumbnailCacheService
 from core.services.cache.ColorCacheService import ColorCacheService
 from core.services.cache.TemperatureCacheService import TemperatureCacheService
-from core.services.image.AOIService import AOIService
 from core.services.LoggerService import LoggerService
 
 
@@ -233,6 +232,57 @@ class AlgorithmService:
 
         return areas_of_interest, base_contour_count
 
+    def transform_aois_to_original_resolution(self, areas_of_interest):
+        """
+        Transform AOI coordinates from processing resolution back to original resolution.
+
+        This should be called at the end of process_image() after all processing that
+        requires processing-resolution coordinates is complete (e.g., hue expansion,
+        confidence score calculation).
+
+        Args:
+            areas_of_interest: List of AOI dictionaries with coordinates at processing resolution.
+
+        Returns:
+            List of AOI dictionaries with coordinates transformed to original resolution.
+        """
+        if self.scale_factor == 1.0 or not areas_of_interest:
+            return areas_of_interest
+
+        inverse_scale = 1.0 / self.scale_factor
+        transformed_aois = []
+
+        for aoi in areas_of_interest:
+            transformed_aoi = aoi.copy()
+
+            # Transform center coordinates
+            if 'center' in transformed_aoi:
+                x, y = transformed_aoi['center']
+                transformed_aoi['center'] = self.transform_to_original_coords(x, y)
+
+            # Transform radius (radius scales linearly)
+            if 'radius' in transformed_aoi:
+                transformed_aoi['radius'] = int(transformed_aoi['radius'] * inverse_scale)
+
+            # Transform contour points
+            if 'contour' in transformed_aoi and transformed_aoi['contour']:
+                # Convert list to numpy array, transform, then convert back
+                contour_array = np.array(transformed_aoi['contour'], dtype=np.float32)
+                transformed_contour = self.transform_contour_to_original(contour_array)
+                transformed_aoi['contour'] = transformed_contour.tolist()
+
+            # Transform detected pixels
+            if 'detected_pixels' in transformed_aoi and transformed_aoi['detected_pixels']:
+                transformed_pixels = []
+                for pixel in transformed_aoi['detected_pixels']:
+                    x, y = pixel[0], pixel[1]
+                    transformed_pixels.append(self.transform_to_original_coords(x, y))
+                transformed_aoi['detected_pixels'] = transformed_pixels
+
+            transformed_aois.append(transformed_aoi)
+
+        return transformed_aois
+
     def apply_hue_expansion(self, img, mask, areas_of_interest, hue_range):
         """
         Expands the pixel detection mask based on hue similarity within AOI circles.
@@ -332,32 +382,32 @@ class AlgorithmService:
             output_dir: Output directory where cache folders will be created.
             thermal: Whether this is a thermal image. Defaults to False.
         """
+        import colorsys
+
         try:
             if not areas_of_interest:
                 return
 
-            # Set up thumbnail cache directory (still needed for disk storage)
+            # Set up thumbnail cache directory
             thumbnail_cache_dir = Path(output_dir) / '.thumbnails'
             thumbnail_cache_dir.mkdir(parents=True, exist_ok=True)
 
             # Initialize cache services
-            # Note: Color and temperature cache data goes to XML, not JSON files
             thumbnail_service = ThumbnailCacheService(dataset_cache_dir=str(thumbnail_cache_dir))
             color_service = ColorCacheService()  # In-memory only - data goes to XML
-            temperature_service = TemperatureCacheService() if thermal else None  # In-memory only - data goes to XML
+            temperature_service = TemperatureCacheService() if thermal else None
 
-            # Create AOIService for color calculation
-            image_data = {
-                'path': image_path,
-                'is_thermal': self.is_thermal
-            }
+            # Convert BGR to RGB for color calculations
+            if len(img.shape) == 3 and img.shape[2] == 3:
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            else:
+                img_rgb = img
 
-            aoi_service = AOIService(image_data)
+            height, width = img_rgb.shape[:2]
 
             # Process each AOI
             for aoi in areas_of_interest:
                 try:
-                    # Extract thumbnail from in-memory image
                     center = aoi.get('center')
                     radius = aoi.get('radius', 50)
 
@@ -365,67 +415,129 @@ class AlgorithmService:
                         continue
 
                     cx, cy = center
-                    crop_radius = radius + 10  # Add padding
+                    crop_radius = radius + 10
 
-                    # Calculate crop bounds
-                    height, width = img.shape[:2]
                     x1 = max(0, int(cx - crop_radius))
                     y1 = max(0, int(cy - crop_radius))
                     x2 = min(width, int(cx + crop_radius))
                     y2 = min(height, int(cy + crop_radius))
 
-                    # Extract region from in-memory image
                     thumbnail_region = img[y1:y2, x1:x2]
 
                     if thumbnail_region.size == 0:
                         continue
 
-                    # Resize to target thumbnail size
-                    # Use INTER_AREA for downscaling - faster and better quality than INTER_LANCZOS4
                     thumbnail_resized = cv2.resize(thumbnail_region, (180, 180), interpolation=cv2.INTER_AREA)
 
-                    # Convert to RGB if needed (some algorithms work in different color spaces)
                     if len(thumbnail_resized.shape) == 2:
-                        # Grayscale
                         thumbnail_rgb = cv2.cvtColor(thumbnail_resized, cv2.COLOR_GRAY2RGB)
                     elif thumbnail_resized.shape[2] == 4:
-                        # RGBA
                         thumbnail_rgb = cv2.cvtColor(thumbnail_resized, cv2.COLOR_BGRA2RGB)
                     else:
-                        # BGR to RGB
                         thumbnail_rgb = cv2.cvtColor(thumbnail_resized, cv2.COLOR_BGR2RGB)
 
                     # Save thumbnail to dataset cache
                     thumbnail_service.save_thumbnail_from_array(image_path, aoi, thumbnail_rgb, thumbnail_cache_dir)
 
-                    # Calculate and cache color information
-                    color_result = aoi_service.get_aoi_representative_color(aoi)
+                    # Calculate representative color
+                    color_result = self._calculate_aoi_representative_color(img_rgb, aoi)
                     if color_result:
                         color_info = {
                             'rgb': color_result['rgb'],
                             'hex': color_result['hex'],
                             'hue_degrees': color_result['hue_degrees']
                         }
-                        # Store color info directly in AOI dict for XML export (no JSON file)
                         aoi['color_info'] = color_info
-                        # Also store in cache service for memory tracking (will be written to XML later)
                         color_service.save_color_info(image_path, aoi, color_info)
 
-                    # Temperature is already in aoi dict, just track in cache service
                     if 'temperature' in aoi and aoi['temperature'] is not None:
                         temperature_service.save_temperature(image_path, aoi, aoi['temperature'])
 
                 except Exception as e:
-                    # Log error but continue processing other AOIs
                     self.logger.error(f"Error caching AOI at {center}: {e}")
                     continue
 
-            # Note: Color and temperature cache data is now stored in AOI dicts and will be written to XML
-            # No need to save JSON files - data goes directly to XML via AnalyzeService
+        except Exception as e:
+            self.logger.error(f"Error generating AOI cache: {e}")
+
+    def _calculate_aoi_representative_color(self, img_rgb: np.ndarray, aoi: dict) -> dict:
+        """
+        Calculate a representative color for an AOI directly from the in-memory image.
+
+        This method avoids creating AOIService/ImageService which would read metadata
+        from disk and potentially cause memory errors on large files.
+
+        Args:
+            img_rgb: RGB image array (not BGR).
+            aoi: AOI dictionary with 'center', 'radius', and optionally 'detected_pixels'.
+
+        Returns:
+            dict or None: {
+                'rgb': (r, g, b),           # Vibrant marker color (0-255)
+                'hex': '#rrggbb',           # Hex color string
+                'hue_degrees': int,         # Hue in degrees (0-360)
+                'avg_rgb': (r, g, b)        # Original average RGB
+            } or None if calculation fails.
+        """
+        import colorsys
+
+        try:
+            height, width = img_rgb.shape[:2]
+
+            center = aoi.get('center', [0, 0])
+            radius = aoi.get('radius', 0)
+            cx, cy = int(center[0]), int(center[1])
+
+            # Collect RGB values within the AOI
+            colors = []
+
+            # If we have detected pixels, use those
+            if 'detected_pixels' in aoi and aoi['detected_pixels']:
+                for pixel in aoi['detected_pixels']:
+                    if isinstance(pixel, (list, tuple)) and len(pixel) >= 2:
+                        px, py = int(pixel[0]), int(pixel[1])
+                        if 0 <= py < height and 0 <= px < width:
+                            colors.append(img_rgb[py, px])
+            # Otherwise sample within the circle
+            else:
+                y_min = max(0, cy - radius)
+                y_max = min(height, cy + radius + 1)
+                x_min = max(0, cx - radius)
+                x_max = min(width, cx + radius + 1)
+
+                for y in range(y_min, y_max):
+                    for x in range(x_min, x_max):
+                        if (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2:
+                            colors.append(img_rgb[y, x])
+
+            if not colors:
+                return None
+
+            # Calculate average RGB
+            avg_rgb = np.mean(colors, axis=0).astype(int)
+            r, g, b = int(avg_rgb[0]), int(avg_rgb[1]), int(avg_rgb[2])
+
+            # Convert to HSV
+            h, _, _ = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+
+            # Create full saturation and full value version for vibrant marker
+            full_sat_rgb = colorsys.hsv_to_rgb(h, 1.0, 1.0)
+            marker_rgb = tuple(int(c * 255) for c in full_sat_rgb)
+
+            # Format color info
+            hex_color = '#{:02x}{:02x}{:02x}'.format(*marker_rgb)
+            hue_degrees = int(h * 360)
+
+            return {
+                'rgb': marker_rgb,
+                'hex': hex_color,
+                'hue_degrees': hue_degrees,
+                'avg_rgb': (r, g, b)
+            }
 
         except Exception as e:
-            # Don't fail the entire detection if cache generation fails
-            self.logger.error(f"Error generating AOI cache: {e}")
+            self.logger.error(f"Failed to calculate AOI color: {e}")
+            return None
 
     def _construct_output_path(self, full_path, input_dir, output_dir):
         """
@@ -609,7 +721,8 @@ class AnalysisResult:
     """Class representing the result of an image processing operation."""
 
     def __init__(self, input_path=None, output_path=None, output_dir=None,
-                 areas_of_interest=None, base_contour_count=None, error_message=None):
+                 areas_of_interest=None, base_contour_count=None, error_message=None,
+                 image_width=None, image_height=None):
         """
         Initializes an AnalysisResult with the given parameters.
 
@@ -620,6 +733,8 @@ class AnalysisResult:
             areas_of_interest (list, optional): List of detected areas of interest. Defaults to None.
             base_contour_count (int, optional): Count of base contours. Defaults to None.
             error_message (str, optional): Error message if processing failed. Defaults to None.
+            image_width (int, optional): Original image width in pixels. Defaults to None.
+            image_height (int, optional): Original image height in pixels. Defaults to None.
         """
         self.input_path = input_path
 
@@ -635,3 +750,5 @@ class AnalysisResult:
         self.areas_of_interest = areas_of_interest
         self.base_contour_count = base_contour_count
         self.error_message = error_message
+        self.image_width = image_width
+        self.image_height = image_height

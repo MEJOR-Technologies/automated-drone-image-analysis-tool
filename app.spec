@@ -1,7 +1,21 @@
 import platform
+import glob
+import os
 # -*- mode: python -*-
 
 block_cipher = None
+
+try:
+    spec_dir = os.path.abspath(os.path.dirname(__file__))
+except NameError:
+    # __file__ may be undefined in some PyInstaller contexts; fall back to cwd
+    spec_dir = os.path.abspath(os.getcwd())
+translation_candidates = [
+    os.path.join(spec_dir, 'translations', 'app_en.qm'),
+    os.path.join(spec_dir, 'translations', 'app_it.qm'),
+    os.path.join(spec_dir, 'translations', 'app_es.qm'),
+]
+translation_datas = [(path, 'translations') for path in translation_candidates if os.path.exists(path)]
 
 if platform.system() == 'Windows':
     a = Analysis(['app/__main__.py'],
@@ -15,16 +29,35 @@ if platform.system() == 'Windows':
                 datas=[
                     ('resources/icons/ADIAT.ico','.'),
                     ('app/algorithms.conf','.'),
-                    ('app/drones.pkl', '.'),
-                    ('app/xmp.pkl', '.'),
+                    ('app/drones.csv', '.'),
+                    ('app/xmp.csv', '.'),
                     ('app/colors.pkl', '.'),
                     ('colors.csv', '.'),
                     # AI Person Detector models
-                    ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_640.onnx', 'ai_models'),
-                    ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_1024.onnx', 'ai_models')
-                    ],
+                    ('app/algorithms/models/AIPersonDetector/ai_person_model_V3_640.onnx', 'algorithms/models/AIPersonDetector'),
+                    ('app/algorithms/models/AIPersonDetector/ai_person_model_V3_1024.onnx', 'algorithms/models/AIPersonDetector')
+                    ] + translation_datas,
 
                 hiddenimports=[
+                    'shapely',
+                    'shapely.geometry',
+                    # pysolar dispatches between numeric_numpy / numeric_python at runtime;
+                    # PyInstaller's static analysis misses the fallback path.
+                    'pysolar',
+                    'pysolar.solar',
+                    'pysolar.numeric',
+                    'pysolar.numeric_numpy',
+                    'pysolar.numeric_python',
+                    # Image algorithm services (dynamically loaded via importlib in AnalyzeService)
+                    'algorithms.images.ColorRange.services.ColorRangeService',
+                    'algorithms.images.HSVColorRange.services.HSVColorRangeService',
+                    'algorithms.images.MatchedFilter.services.MatchedFilterService',
+                    'algorithms.images.RXAnomaly.services.RXAnomalyService',
+                    'algorithms.images.MRMap.services.MRMapService',
+                    'algorithms.images.ThermalRange.services.ThermalRangeService',
+                    'algorithms.images.ThermalAnomaly.services.ThermalAnomalyService',
+                    'algorithms.images.ThermalResidualAnomaly.services.ThermalResidualAnomalyService',
+                    'algorithms.images.AIPersonDetector.services.AIPersonDetectorService',
                     # Streaming algorithms modules
                     'algorithms.streaming',
                     'algorithms.streaming.MotionDetection',
@@ -57,7 +90,7 @@ if platform.system() == 'Windows':
                 ],
                 hookspath=None,
                 runtime_hooks=None,
-                excludes=None,
+                excludes=['PyQt5', 'PyQt6'],
                 cipher=block_cipher)
 elif platform.system() == 'Darwin':
     a = Analysis(['app/__main__.py'],
@@ -68,16 +101,35 @@ elif platform.system() == 'Darwin':
                     datas=[
                         ('resources/icons/ADIAT.ico','.'),
                         ('app/algorithms.conf','.'),
-                        ('app/drones.pkl', '.'),
-                        ('app/xmp.pkl', '.'),
+                        ('app/drones.csv', '.'),
+                        ('app/xmp.csv', '.'),
                         # Color lists used by ColorListService (expects under app/)
                         ('app/colors.pkl', 'app'),
                         ('colors.csv', 'app'),
                         # AI Person Detector models
-                        ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_640.onnx', 'ai_models'),
-                        ('app/algorithms/images/AIPersonDetector/services/ai_person_model_V2_1024.onnx', 'ai_models')
-                        ],
+                        ('app/algorithms/models/AIPersonDetector/ai_person_model_V3_640.onnx', 'algorithms/models/AIPersonDetector'),
+                        ('app/algorithms/models/AIPersonDetector/ai_person_model_V3_1024.onnx', 'algorithms/models/AIPersonDetector')
+                        ] + translation_datas,
                     hiddenimports=[
+                        'shapely',
+                        'shapely.geometry',
+                        # pysolar dispatches between numeric_numpy / numeric_python at runtime;
+                        # PyInstaller's static analysis misses the fallback path.
+                        'pysolar',
+                        'pysolar.solar',
+                        'pysolar.numeric',
+                        'pysolar.numeric_numpy',
+                        'pysolar.numeric_python',
+                        # Image algorithm services (dynamically loaded via importlib in AnalyzeService)
+                        'algorithms.images.ColorRange.services.ColorRangeService',
+                        'algorithms.images.HSVColorRange.services.HSVColorRangeService',
+                        'algorithms.images.MatchedFilter.services.MatchedFilterService',
+                        'algorithms.images.RXAnomaly.services.RXAnomalyService',
+                        'algorithms.images.MRMap.services.MRMapService',
+                        'algorithms.images.ThermalRange.services.ThermalRangeService',
+                        'algorithms.images.ThermalAnomaly.services.ThermalAnomalyService',
+                        'algorithms.images.ThermalResidualAnomaly.services.ThermalResidualAnomalyService',
+                        'algorithms.images.AIPersonDetector.services.AIPersonDetectorService',
                         # Streaming algorithms modules
                         'algorithms.streaming',
                         'algorithms.streaming.MotionDetection',
@@ -110,7 +162,7 @@ elif platform.system() == 'Darwin':
                     ],
                     hookspath=None,
                     runtime_hooks=None,
-                    excludes=None,
+                    excludes=['PyQt5', 'PyQt6'],
                     cipher=block_cipher)
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)

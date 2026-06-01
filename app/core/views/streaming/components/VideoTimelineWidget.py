@@ -43,7 +43,7 @@ class VideoTimelineWidget(QWidget):
         # Play/Pause button
         self.play_pause_btn = QPushButton("▶")
         self.play_pause_btn.setFixedWidth(40)
-        self.play_pause_btn.setToolTip("Play/Pause (Space)")
+        self.play_pause_btn.setToolTip(self.tr("Play/Pause (Space)"))
         layout.addWidget(self.play_pause_btn)
 
         # Current time label
@@ -56,7 +56,7 @@ class VideoTimelineWidget(QWidget):
         self.timeline_slider = QSlider(Qt.Horizontal)
         self.timeline_slider.setRange(0, 1000)
         self.timeline_slider.setValue(0)
-        self.timeline_slider.setToolTip("Drag to seek through video")
+        self.timeline_slider.setToolTip(self.tr("Drag to seek through video"))
         layout.addWidget(self.timeline_slider, 1)  # Stretch
 
         # Total duration label
@@ -97,7 +97,7 @@ class VideoTimelineWidget(QWidget):
         """Update play/pause button state."""
         self.is_playing = playing
         self.play_pause_btn.setText("⏸" if playing else "▶")
-        self.play_pause_btn.setToolTip("Pause (Space)" if playing else "Play (Space)")
+        self.play_pause_btn.setToolTip(self.tr("Pause (Space)") if playing else self.tr("Play (Space)"))
 
     def set_duration(self, duration_seconds: float):
         """Set total video duration."""

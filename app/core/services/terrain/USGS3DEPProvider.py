@@ -1,0 +1,240 @@
+"""
+USGS3DEPProvider - Local GeoTIFF elevation provider for USGS 3DEP 1m tiles.
+
+Reads a per-folder dem_manifest.csv (filename, minX, minY, maxX, maxY, ...)
+to build an in-memory bounding-box index over local GeoTIFFs, then samples
+elevations directly via rasterio. Designed for high-resolution use cases
+(WALDO airplane imagery over the Sierra) where the global Terrarium tiles
+are not precise enough.
+
+Vertical datum: NAVD88 (GEOID18) for 3DEP. ADIAT's GeoidService is EGM96;
+typical CONUS bias is <2 m which is acceptable at the resolutions involved.
+"""
+
+from collections import OrderedDict
+from pathlib import Path
+from typing import Optional, Tuple
+
+from core.services.LoggerService import LoggerService
+from .ElevationProvider import ElevationProvider
+
+
+class USGS3DEPProvider(ElevationProvider):
+    """Local-disk USGS 3DEP 1m GeoTIFF elevation provider."""
+
+    DATASET_LRU_SIZE = 16
+
+    def __init__(self, manifest_csv: str, tiles_dir: str):
+        """
+        Args:
+            manifest_csv: Path to a CSV with columns
+                'filename, minX, minY, maxX, maxY' (lat/lon WGS84 bboxes).
+            tiles_dir: Folder containing the GeoTIFFs referenced by 'filename'.
+        """
+        self.logger = LoggerService()
+        self.manifest_path = Path(manifest_csv)
+        self.tiles_dir = Path(tiles_dir)
+        self._tiles = []  # list of dicts: {filename, full_path, minX, minY, maxX, maxY}
+        self._strtree = None
+        self._strtree_geoms = []  # parallel list of shapely boxes
+        self._open_datasets: "OrderedDict[str, object]" = OrderedDict()
+
+        self._load_manifest()
+
+    def _load_manifest(self):
+        """Parse the manifest CSV and build a spatial bounding-box index."""
+        try:
+            import pandas as pd
+            from shapely.geometry import box
+            from shapely.strtree import STRtree
+        except ImportError as e:
+            self.logger.error(f"USGS3DEPProvider missing dependency: {e}")
+            return
+
+        if not self.manifest_path.is_file():
+            self.logger.error(f"USGS3DEPProvider: manifest not found at {self.manifest_path}")
+            return
+
+        try:
+            df = pd.read_csv(self.manifest_path)
+        except Exception as e:
+            self.logger.error(f"USGS3DEPProvider: failed to read manifest: {e}")
+            return
+
+        required = {'filename', 'minX', 'minY', 'maxX', 'maxY'}
+        missing = required - set(df.columns)
+        if missing:
+            self.logger.error(
+                f"USGS3DEPProvider: manifest missing required columns {missing}"
+            )
+            return
+
+        for _, row in df.iterrows():
+            filename = str(row['filename'])
+            full_path = self.tiles_dir / filename
+            self._tiles.append({
+                'filename': filename,
+                'full_path': str(full_path),
+                'minX': float(row['minX']),
+                'minY': float(row['minY']),
+                'maxX': float(row['maxX']),
+                'maxY': float(row['maxY']),
+            })
+            self._strtree_geoms.append(
+                box(float(row['minX']), float(row['minY']),
+                    float(row['maxX']), float(row['maxY']))
+            )
+
+        if self._strtree_geoms:
+            self._strtree = STRtree(self._strtree_geoms)
+
+        self.logger.info(
+            f"USGS3DEPProvider: indexed {len(self._tiles)} tiles from {self.manifest_path}"
+        )
+
+    def get_provider_kind(self) -> str:
+        return 'local_geotiff'
+
+    def get_provider_name(self) -> str:
+        return "USGS 3DEP 1m (Local GeoTIFF)"
+
+    def get_datum_info(self) -> dict:
+        return {
+            'name': 'NAVD88',
+            'type': 'orthometric',
+            'geoid_model': 'GEOID18',
+            'source': 'USGS 3DEP 1m',
+            'resolution_m': 1,
+            'note': 'EGM96 geoid correction in ADIAT introduces <2m bias vs GEOID18',
+        }
+
+    def lookup_tile(self, lat: float, lon: float) -> Optional[dict]:
+        """Find the manifest entry whose lat/lon bbox contains the query point."""
+        if self._strtree is None:
+            return None
+        from shapely.geometry import Point
+        point = Point(lon, lat)
+        # STRtree.query returns indices in shapely 2.x; geoms in 1.x.
+        candidates = self._strtree.query(point)
+        for c in candidates:
+            if hasattr(c, 'contains'):
+                geom = c
+                idx = self._strtree_geoms.index(geom)
+            else:
+                idx = int(c)
+                geom = self._strtree_geoms[idx]
+            if geom.contains(point) or geom.touches(point):
+                return self._tiles[idx]
+        return None
+
+    def _get_dataset(self, full_path: str):
+        """LRU-cached rasterio dataset open."""
+        if full_path in self._open_datasets:
+            self._open_datasets.move_to_end(full_path)
+            return self._open_datasets[full_path]
+
+        try:
+            import rasterio
+        except ImportError:
+            self.logger.error("USGS3DEPProvider: rasterio is required for sampling")
+            return None
+
+        try:
+            ds = rasterio.open(full_path)
+        except Exception as e:
+            self.logger.warning(f"USGS3DEPProvider: failed to open {full_path}: {e}")
+            return None
+
+        self._open_datasets[full_path] = ds
+        if len(self._open_datasets) > self.DATASET_LRU_SIZE:
+            _, evicted = self._open_datasets.popitem(last=False)
+            try:
+                evicted.close()
+            except Exception:
+                pass
+        return ds
+
+    def sample_elevation(self, lat: float, lon: float) -> Optional[float]:
+        """Sample orthometric elevation (NAVD88) at lat/lon. Returns None if out of coverage or nodata."""
+        tile = self.lookup_tile(lat, lon)
+        if tile is None:
+            return None
+
+        ds = self._get_dataset(tile['full_path'])
+        if ds is None:
+            return None
+
+        try:
+            from rasterio.warp import transform as rio_transform
+        except ImportError:
+            return None
+
+        try:
+            xs, ys = rio_transform("EPSG:4326", ds.crs, [lon], [lat])
+            x, y = xs[0], ys[0]
+            row, col = ds.index(x, y)
+        except Exception as e:
+            self.logger.warning(f"USGS3DEPProvider: reproject/index failed at ({lat},{lon}): {e}")
+            return None
+
+        if row < 0 or col < 0 or row >= ds.height or col >= ds.width:
+            return None
+
+        try:
+            value = self._sample_bilinear(ds, x, y)
+        except Exception as e:
+            self.logger.warning(f"USGS3DEPProvider: sample failed at ({lat},{lon}): {e}")
+            return None
+
+        if value is None:
+            return None
+
+        nodata = ds.nodatavals[0] if ds.nodatavals else None
+        if nodata is not None and value == nodata:
+            return None
+        # Common nodata sentinels for 3DEP DEMs
+        if value < -1e6 or value > 1e6:
+            return None
+
+        return float(value)
+
+    @staticmethod
+    def _sample_bilinear(ds, x: float, y: float) -> Optional[float]:
+        """Bilinear sample of the first band at projected coordinate (x, y)."""
+        from rasterio.windows import Window
+        # Convert projected (x, y) to fractional (row, col)
+        col_f, row_f = ~ds.transform * (x, y)
+        col_i = int(col_f)
+        row_i = int(row_f)
+        fx = col_f - col_i
+        fy = row_f - row_i
+
+        if row_i < 0 or col_i < 0 or row_i + 1 >= ds.height or col_i + 1 >= ds.width:
+            # Fall back to nearest in-bounds pixel
+            col_i = max(0, min(col_i, ds.width - 1))
+            row_i = max(0, min(row_i, ds.height - 1))
+            arr = ds.read(1, window=Window(col_i, row_i, 1, 1))
+            if arr.size == 0:
+                return None
+            return float(arr[0, 0])
+
+        arr = ds.read(1, window=Window(col_i, row_i, 2, 2))
+        if arr.size == 0:
+            return None
+
+        e00 = float(arr[0, 0])
+        e10 = float(arr[0, 1])
+        e01 = float(arr[1, 0])
+        e11 = float(arr[1, 1])
+        e0 = e00 * (1 - fx) + e10 * fx
+        e1 = e01 * (1 - fx) + e11 * fx
+        return e0 * (1 - fy) + e1 * fy
+
+    def close(self):
+        """Close all cached open datasets."""
+        for ds in self._open_datasets.values():
+            try:
+                ds.close()
+            except Exception:
+                pass
+        self._open_datasets.clear()

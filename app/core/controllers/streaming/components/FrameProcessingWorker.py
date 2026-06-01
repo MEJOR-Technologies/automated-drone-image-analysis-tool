@@ -24,7 +24,7 @@ class FrameProcessingWorker(QObject):
     """
 
     # Signals emitted from worker thread
-    frameProcessed = Signal(np.ndarray, list, float, bool, int)  # frame, detections, processing_time_ms, was_skipped, video_frame_pos
+    frameProcessed = Signal(np.ndarray, list, float, float, bool, int)  # frame, detections, timestamp, processing_time_ms, was_skipped, video_frame_pos
     errorOccurred = Signal(str)  # error_message
 
     # Signal to request frame processing (emitted from main thread, received in worker thread)
@@ -75,6 +75,9 @@ class FrameProcessingWorker(QObject):
 
         # Check if paused (skip processing if paused)
         if self._pause_check and self._pause_check():
+            # Emit a skipped-frame callback so the coordinator can release the
+            # in-flight slot and continue draining pending frames.
+            self.frameProcessed.emit(frame.copy(), [], timestamp, 0.0, True, video_frame_pos)
             return
 
         try:
@@ -98,7 +101,7 @@ class FrameProcessingWorker(QObject):
 
             # Emit results back to main thread
             # Note: Rendering happens on main thread since Qt operations must be on main thread
-            self.frameProcessed.emit(frame_copy, detections, processing_time_ms, was_skipped, video_frame_pos)
+            self.frameProcessed.emit(frame_copy, detections, timestamp, processing_time_ms, was_skipped, video_frame_pos)
 
         except Exception as e:
             error_msg = f"Error processing frame: {str(e)}"

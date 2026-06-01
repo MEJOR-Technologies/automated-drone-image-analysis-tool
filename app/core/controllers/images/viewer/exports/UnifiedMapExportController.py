@@ -17,6 +17,7 @@ from core.services.image.ImageService import ImageService
 from core.services.image.AOIService import AOIService
 from core.views.images.viewer.dialogs.CalTopoMethodDialog import CalTopoMethodDialog
 from helpers.LocationInfo import LocationInfo
+from helpers.TranslationMixin import TranslationMixin
 import simplekml
 import traceback
 
@@ -31,7 +32,7 @@ class UnifiedMapExportThread(QThread):
 
     def __init__(self, kml_service, coverage_service, images, flagged_aois,
                  include_locations, include_images_without_flagged_aois, include_flagged_aois, include_coverage,
-                 output_path, custom_altitude_ft=None):
+                 output_path, custom_altitude_ft=None, use_terrain=True):
         """
         Initialize the export thread.
 
@@ -46,6 +47,7 @@ class UnifiedMapExportThread(QThread):
             include_coverage: Whether to include coverage extent
             output_path: Path to save the KML file
             custom_altitude_ft: Optional custom altitude in feet
+            use_terrain: Whether to use terrain elevation data
         """
         super().__init__()
         self.kml_service = kml_service
@@ -58,6 +60,7 @@ class UnifiedMapExportThread(QThread):
         self.include_coverage = include_coverage
         self.output_path = output_path
         self.custom_altitude_ft = custom_altitude_ft
+        self.use_terrain = use_terrain
         self._cancelled = False
 
     def cancel(self):
@@ -207,7 +210,7 @@ class UnifiedMapExportThread(QThread):
                             try:
                                 aoi_service = AOIService(image)
                                 result = aoi_service.calculate_gps_with_custom_altitude(
-                                    image, aoi, self.custom_altitude_ft
+                                    image, aoi, self.custom_altitude_ft, self.use_terrain
                                 )
 
                                 if result:
@@ -335,7 +338,7 @@ class UnifiedMapExportThread(QThread):
             self.errorOccurred.emit(error_msg)
 
 
-class UnifiedMapExportController:
+class UnifiedMapExportController(TranslationMixin):
     """
     Controller for managing unified map export functionality.
 
@@ -376,8 +379,8 @@ class UnifiedMapExportController:
             if not (include_locations or include_flagged_aois or include_coverage):
                 QMessageBox.warning(
                     self.parent,
-                    "No Data Selected",
-                    "Please select at least one type of data to export."
+                    self.tr("No Data Selected"),
+                    self.tr("Please select at least one type of data to export.")
                 )
                 return
 
@@ -402,8 +405,8 @@ class UnifiedMapExportController:
             self.logger.error(f"Error in unified map export: {str(e)}")
             QMessageBox.critical(
                 self.parent,
-                "Export Error",
-                f"An error occurred during export:\n{str(e)}"
+                self.tr("Export Error"),
+                self.tr("An error occurred during export:\n{error}").format(error=str(e))
             )
 
     def _export_to_kml(self, include_locations, include_images_without_flagged_aois, include_flagged_aois, include_coverage):
@@ -420,9 +423,9 @@ class UnifiedMapExportController:
             # Show file save dialog
             file_name, _ = QFileDialog.getSaveFileName(
                 self.parent,
-                "Save Map Export",
+                self.tr("Save Map Export"),
                 "",
-                "KML files (*.kml)"
+                self.tr("KML files (*.kml)")
             )
 
             if not file_name:  # User cancelled
@@ -433,8 +436,11 @@ class UnifiedMapExportController:
             if hasattr(self.parent, 'altitude_controller'):
                 custom_alt = self.parent.altitude_controller.get_effective_altitude()
 
+            # Get terrain preference
+            use_terrain = getattr(self.parent, 'use_terrain_elevation', True)
+
             # Create services
-            kml_service = KMLGeneratorService(custom_altitude_ft=custom_alt)
+            kml_service = KMLGeneratorService(custom_altitude_ft=custom_alt, use_terrain=use_terrain)
             coverage_service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger)
 
             # Calculate total items for progress (will be recalculated in thread, but estimate here)
@@ -472,7 +478,8 @@ class UnifiedMapExportController:
                 include_flagged_aois,
                 include_coverage,
                 file_name,
-                custom_alt
+                custom_alt,
+                use_terrain
             )
 
             # Connect signals
@@ -499,8 +506,8 @@ class UnifiedMapExportController:
             self.logger.error(f"Error exporting to KML: {str(e)}")
             QMessageBox.critical(
                 self.parent,
-                "Export Error",
-                f"Failed to export to KML:\n{str(e)}"
+                self.tr("Export Error"),
+                self.tr("Failed to export to KML:\n{error}").format(error=str(e))
             )
 
     def _export_to_caltopo(self, include_locations, include_images_without_flagged_aois, include_flagged_aois, include_coverage, include_images=True):
@@ -533,8 +540,8 @@ class UnifiedMapExportController:
             self.logger.error(f"Error exporting to CalTopo: {str(e)}")
             QMessageBox.critical(
                 self.parent,
-                "Export Error",
-                f"Failed to export to CalTopo:\n{str(e)}"
+                self.tr("Export Error"),
+                self.tr("Failed to export to CalTopo:\n{error}").format(error=str(e))
             )
 
     def _export_to_caltopo_via_api(self, include_locations, include_images_without_flagged_aois, include_flagged_aois, include_coverage, include_images=True):
@@ -567,8 +574,8 @@ class UnifiedMapExportController:
             self.logger.error(f"Error exporting to CalTopo via API: {str(e)}")
             QMessageBox.critical(
                 self.parent,
-                "Export Error",
-                f"Failed to export to CalTopo:\n{str(e)}"
+                self.tr("Export Error"),
+                self.tr("Failed to export to CalTopo:\n{error}").format(error=str(e))
             )
 
     def _on_progress_updated(self, current, total, message):
@@ -584,7 +591,7 @@ class UnifiedMapExportController:
 
         if hasattr(self.parent, 'status_controller'):
             self.parent.status_controller.show_toast(
-                "Map export completed successfully!",
+                self.tr("Map export completed successfully!"),
                 3000,
                 color="#00C853"
             )
@@ -599,7 +606,7 @@ class UnifiedMapExportController:
 
         if hasattr(self.parent, 'status_controller'):
             self.parent.status_controller.show_toast(
-                "Map export cancelled",
+                self.tr("Map export cancelled"),
                 3000,
                 color="#FFA726"
             )
@@ -612,6 +619,6 @@ class UnifiedMapExportController:
         self.logger.error(f"Map export error: {error_message}")
         QMessageBox.critical(
             self.parent,
-            "Export Error",
-            f"Map export failed:\n{error_message}"
+            self.tr("Export Error"),
+            self.tr("Map export failed:\n{error}").format(error=error_message)
         )

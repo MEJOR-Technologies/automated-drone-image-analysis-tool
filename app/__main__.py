@@ -1,24 +1,26 @@
 # Set environment variable to avoid numpy._core issues - MUST be first
-from os import path
-import qdarktheme
-import faulthandler
-from core.controllers.images.ImageAnalysisGuide import ImageAnalysisGuide
-from core.controllers.SelectionDialog import SelectionDialog
-from core.controllers.images.MainWindow import MainWindow
-from core.controllers.streaming.StreamViewerWindow import StreamViewerWindow
-from core.controllers.streaming.StreamingGuide import StreamingGuide
-from core.services.SettingsService import SettingsService
-from core.services.LoggerService import LoggerService
-from helpers.PickleHelper import PickleHelper
-from multiprocessing import freeze_support
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
-from PySide6.QtGui import QIcon
 import traceback
+from PySide6.QtCore import QTranslator, QLocale
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from multiprocessing import freeze_support
+from helpers.PickleHelper import PickleHelper
+from core.services.LoggerService import LoggerService
+from core.services.SettingsService import SettingsService
+from core.controllers.streaming.StreamingGuide import StreamingGuide
+from core.controllers.streaming.StreamViewerWindow import StreamViewerWindow
+from core.controllers.images.MainWindow import MainWindow
+from core.controllers.SelectionDialog import SelectionDialog
+from core.controllers.images.ImageAnalysisGuide import ImageAnalysisGuide
+import faulthandler
+import qdarktheme
+from os import path
 import sys
 import os
 os.environ['NUMPY_EXPERIMENTAL_DTYPE_API'] = '0'
 
-version = '2.0.0'
+
+version = '2.1.0 Alpha'
 
 
 def update_app_version(app_version):
@@ -128,16 +130,22 @@ def initialize_default_settings():
         if theme is None:
             settings_service.set_setting('Theme', 'Dark')
 
+        # Update checks
+        auto_check_updates = settings_service.get_setting('AutoCheckForUpdates')
+        if not isinstance(auto_check_updates, bool):
+            settings_service.set_setting('AutoCheckForUpdates', True)
+
     except Exception as e:
         logger.error(f"Error initializing default settings: {e}")
         logger.error(traceback.format_exc())
 
 
 def check_and_update_pickle_files(app_version):
-    """Check pickle file versions and update if necessary.
+    """Ensure the bundled drones.csv / xmp.csv lookup tables are present and current.
 
-    This function runs at application startup to ensure that pickle files
-    (drones.pkl and xmp.pkl) are up-to-date with the current app version.
+    Runs at startup. Re-copies the bundled file when the stored app version
+    advances; PickleHelper itself also auto-refreshes when the bundled
+    file's version header advertises a newer revision.
 
     Args:
         app_version (str): The current application version string.
@@ -148,27 +156,24 @@ def check_and_update_pickle_files(app_version):
     try:
         current_version = settings_service.get_setting('app_version')
 
-        # Copy drones.pkl if:
+        # Copy drones.csv if:
         # 1. No app version is stored (first run)
         # 2. No drone sensor file exists in AppData
         # 3. New app version is greater than stored version
         if current_version is None or PickleHelper.get_drone_sensor_file_version() is None:
-            PickleHelper.copy_pickle('drones.pkl')
-            # logger.info("Copied drones.pkl to AppData (first run or missing file)")
+            PickleHelper.copy_pickle('drones.csv')
         else:
             current_version_int = PickleHelper.version_to_int(current_version)
             new_version_int = PickleHelper.version_to_int(app_version)
             if new_version_int > current_version_int:
-                PickleHelper.copy_pickle('drones.pkl')
-                # logger.info(f"Updated drones.pkl to AppData (version upgrade: {current_version} -> {app_version})")
+                PickleHelper.copy_pickle('drones.csv')
 
-        # Ensure xmp.pkl exists
+        # Ensure xmp.csv exists
         if PickleHelper.get_xmp_mapping() is None:
-            PickleHelper.copy_pickle('xmp.pkl')
-            # logger.info("Copied xmp.pkl to AppData")
+            PickleHelper.copy_pickle('xmp.csv')
 
     except Exception as e:
-        logger.error(f"Error checking/updating pickle files: {e}")
+        logger.error(f"Error checking/updating data files: {e}")
 
 
 def main():
@@ -183,8 +188,46 @@ def main():
     ImageAnalysisGuide wizard before opening the MainWindow.
     """
     app = QApplication(sys.argv)
+
+    # Load translation
+    settings_service = SettingsService()
+    lang = settings_service.get_setting('Language', 'en')
+    if lang != 'en':
+        translator = QTranslator(app)
+        # Resolve translations path for source vs PyInstaller builds
+        if getattr(sys, "frozen", False):
+            base_dir = path.dirname(sys.executable)
+            translations_path = path.join(base_dir, "_internal", "translations")
+            if not path.exists(translations_path):
+                translations_path = path.join(base_dir, "translations")
+        else:
+            # app/ is the directory of __main__.py, so translations/ is at ../translations
+            translations_path = path.abspath(path.join(path.dirname(__file__), "..", "translations"))
+        try:
+            os.listdir(translations_path)
+        except Exception:
+            pass
+        qm_name = f"app_{lang}.qm"
+        if translator.load(qm_name, translations_path):
+            app.installTranslator(translator)
+            # Store translator to prevent garbage collection
+            app._translator = translator
+
     qdarktheme.setup_theme()
     app.setWindowIcon(QIcon(path.abspath(path.join(path.dirname(__file__), 'ADIAT.ico'))))
+
+    # Load translations
+    translator = QTranslator(app)
+    # Get system locale (e.g., "es_ES", "fr_FR") or use a setting
+    locale = QLocale.system().name()  # e.g., "en_US", "es_ES"
+    translations_path = path.abspath(path.join(path.dirname(__file__), '..', 'translations'))
+
+    # Try to load translation for system locale (e.g., app_es.qm for Spanish)
+    lang_code = locale.split('_')[0]  # "es_ES" -> "es"
+    if translator.load(f"app_{lang_code}", translations_path):
+        app.installTranslator(translator)
+        # Keep translator reference alive
+        app._translator = translator
 
     # Initialize default settings early (before any windows are created)
     initialize_default_settings()
@@ -224,13 +267,28 @@ def main():
             )
             sys.exit(1)
 
+    def _launch_flight_viewer():
+        """Launch the Flight Viewer window (WebRTC pairing with ADIAT Mobile)."""
+        try:
+            from core.controllers.flight import FlightViewerController
+            app._flight_controller = FlightViewerController()
+            app._flight_controller.show()
+        except Exception as e:
+            QMessageBox.critical(
+                None,
+                "Error",
+                f"Failed to open Flight Viewer:\n{str(e)}"
+            )
+            sys.exit(1)
+
     # Connect signal to launch MainWindow when Images is selected
     def _on_selection(choice: str):
         """
         Handle selection choice from the initial dialog.
 
         Args:
-            choice: String indicating the selected option ('images' or 'stream').
+            choice: String indicating the selected option ('images', 'stream',
+                or 'flight').
         """
         if choice == 'images':
             # Wrap startup in a try so any init error raises to excepthook
@@ -242,6 +300,8 @@ def main():
                 raise
         elif choice == 'stream':
             _launch_stream_viewer()
+        elif choice == 'flight':
+            _launch_flight_viewer()
 
     # Connect signal to show setup wizard when requested
     def _on_wizard_requested():
@@ -332,6 +392,10 @@ def main():
     dlg.selectionMade.connect(_on_selection)
     dlg.wizardRequested.connect(_on_wizard_requested)
     dlg.streamWizardRequested.connect(_on_stream_wizard_requested)
+    # `flightViewerRequested` is emitted alongside selectionMade('flight');
+    # the launch already happens via _on_selection. Connect anyway so the
+    # signal has at least one consumer for callers that watch it directly.
+    dlg.flightViewerRequested.connect(lambda: None)
     result = dlg.exec()
 
     # If dialog was closed without a selection (and wizard wasn't shown), exit the app
@@ -342,8 +406,9 @@ def main():
 
 
 if __name__ == "__main__":
-    # Enable faulthandler only if stderr is available (avoid issues in packaged apps)
-    if sys.stderr is not None:
+    # Enable faulthandler for crash tracebacks (skip Windows where it catches
+    # benign COM exceptions like RPC_E_WRONGTHREAD 0x8001010d from Qt internals)
+    if sys.stderr is not None and sys.platform != 'win32':
         faulthandler.enable()
     # Install a global exception hook that exits the app on any uncaught error
 

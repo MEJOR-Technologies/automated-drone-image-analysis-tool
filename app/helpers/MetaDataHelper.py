@@ -516,8 +516,11 @@ class MetaDataHelper:
         except (KeyError, IndexError):
             pass
 
-        # Additional fallback: check common variations in xmp_data directly
-        if make and 'DJI' in make.upper():
+        # Additional fallback: check common variations in xmp_data directly.
+        # We allow this fallback for any make so that images carrying
+        # drone-dji:* XMP fields synthesized by ADIAT (e.g. WALDO Canon DSLRs)
+        # resolve correctly even when EXIF Make is not "DJI".
+        if make:
             # Define possible keys for different attributes
             if attribute == 'AGL' or mapped_attribute == 'Relative Altitude':
                 possible_keys = [
@@ -557,6 +560,90 @@ class MetaDataHelper:
                     return xmp_data[key]
 
         return None
+
+    @staticmethod
+    def add_xmp_fields(destination_file: str, fields):
+        """Batch variant of add_xmp_field that writes multiple small tags in a single
+        parse / embed cycle. Avoids re-reading and re-embedding the JPEG once per tag.
+
+        Each entry of `fields` is a (namespace_uri, tag_name, value_str) tuple. All
+        values must fit in the base packet (no extended-XMP path); for large values
+        keep using add_xmp_field.
+        """
+        if not fields:
+            return
+
+        xmp_segment = MetaDataHelper.extract_xmp(destination_file)
+
+        def minimal_packet():
+            return (
+                '<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>'
+                '<x:xmpmeta xmlns:x="adobe:ns:meta/">'
+                '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+                '<rdf:Description/>'
+                '</rdf:RDF>'
+                '</x:xmpmeta>'
+                '<?xpacket end="w"?>'
+            ).encode("utf-8")
+
+        if xmp_segment is None:
+            base_xml = minimal_packet()
+        else:
+            if xmp_segment.startswith(b"\xFF\xE1"):
+                seg_len = struct.unpack(">H", xmp_segment[2:4])[0]
+                payload = xmp_segment[4:4 + seg_len - 2]
+            else:
+                payload = xmp_segment
+            if payload.startswith(_XMP_STD_HDR):
+                xml_bytes = payload[len(_XMP_STD_HDR):]
+            else:
+                idx = payload.find(b"<?xpacket")
+                xml_bytes = payload[idx:] if idx != -1 else payload
+            try:
+                ET.fromstring(xml_bytes.decode("utf-8"))
+                base_xml = xml_bytes
+            except Exception:
+                base_xml = minimal_packet()
+
+        root = ET.fromstring(base_xml)
+        rdf_ns = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
+        desc = root.find(f".//{rdf_ns}Description")
+        if desc is None:
+            rdf = root.find(f".//{rdf_ns}RDF")
+            if rdf is None:
+                rdf = ET.SubElement(root, f"{rdf_ns}RDF")
+            desc = ET.SubElement(rdf, f"{rdf_ns}Description")
+
+        # Register one prefix per unique URI. Re-registering the same URI under
+        # multiple synthetic prefixes triggers libxml2 "Prefix format reserved
+        # for internal use" during serialization, so dedupe first and prefer
+        # human-readable prefixes for the namespaces ADIAT actually emits.
+        prefix_for_uri = {
+            "http://www.dji.com/drone-dji/1.0/": "drone-dji",
+            "http://adiat.io/ns/waldo/1.0/": "waldo",
+        }
+        unique_uris = []
+        seen = set()
+        for ns_uri, _tag, _value in fields:
+            if ns_uri not in seen:
+                seen.add(ns_uri)
+                unique_uris.append(ns_uri)
+        for i, ns_uri in enumerate(unique_uris):
+            prefix = prefix_for_uri.get(ns_uri, f"ns{i}")
+            ET.register_namespace(prefix, ns_uri)
+
+        for ns_uri, tag, value in fields:
+            desc.set(f"{{{ns_uri}}}{tag}", str(value))
+
+        base_bytes = ET.tostring(root, encoding="utf-8", xml_declaration=False)
+        if b"<?xpacket" not in base_bytes:
+            xpacket_start = (
+                b'<?xpacket begin="\xef\xbb\xbf" '
+                b'id="W5M0MpCehiHzreSzNTczkc9d"?>'
+            )
+            xpacket_end = b'<?xpacket end="w"?>'
+            base_bytes = xpacket_start + base_bytes + xpacket_end
+        MetaDataHelper.embed_xmp_xml(base_bytes, destination_file)
 
     @staticmethod
     def add_xmp_field(destination_file: str, namespace_uri: str, tag_name: str, value_str: str, threshold: int = 48000):

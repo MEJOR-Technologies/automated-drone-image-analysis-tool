@@ -30,6 +30,7 @@ class SelectionDialog(QDialog, Ui_MediaSelector):
     selectionMade = Signal(str)
     wizardRequested = Signal()  # Signal emitted when image setup wizard should be shown
     streamWizardRequested = Signal()  # Signal emitted when streaming setup wizard should be shown
+    flightViewerRequested = Signal()  # Signal emitted when Flight Viewer should be opened
 
     def __init__(self, theme: str):
         """Initialize the selection dialog.
@@ -59,6 +60,8 @@ class SelectionDialog(QDialog, Ui_MediaSelector):
 
         self.imageButton.clicked.connect(self._on_image_clicked)
         self.streamButton.clicked.connect(self._on_stream_clicked)
+        if hasattr(self, "flightButton"):
+            self.flightButton.clicked.connect(self._on_flight_clicked)
 
         self._apply_icons(theme)
 
@@ -103,6 +106,18 @@ class SelectionDialog(QDialog, Ui_MediaSelector):
             self.accept()
             self.streamWizardRequested.emit()
 
+    def _on_flight_clicked(self) -> None:
+        """Handle click on the Flight Viewer button.
+
+        Sets selection to "flight", emits both selectionMade and the
+        dedicated flightViewerRequested signal, and closes the dialog. The
+        viewer window is constructed in __main__.py via the signal handler.
+        """
+        self.selection = "flight"
+        self.selectionMade.emit(self.selection)
+        self.accept()
+        self.flightViewerRequested.emit()
+
     def _apply_icons(self, theme: str) -> None:
         """Apply themed icons to the dialog buttons.
 
@@ -113,6 +128,9 @@ class SelectionDialog(QDialog, Ui_MediaSelector):
             self.imageButton.setIcon(IconHelper.create_icon("fa6s.image", theme))
             # Use a broadly available Material icon for streaming/video
             self.streamButton.setIcon(IconHelper.create_icon("fa6s.video", theme))
+            if hasattr(self, "flightButton"):
+                # Drone icon for the WebRTC flight viewer
+                self.flightButton.setIcon(IconHelper.create_icon("mdi6.quadcopter", theme))
         except Exception:
             # Icons are non-critical; ignore if assets are not available yet
             pass

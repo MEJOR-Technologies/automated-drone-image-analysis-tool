@@ -388,7 +388,7 @@ QToolButton:checked { border-color: #4CAF50; background-color: #1b2d44; }</strin
            </item>
           </layout>
          </item>
-         <item row="1" column="0">
+         <item row="2" column="0">
           <widget class="QLabel" name="labelAutoConnect">
            <property name="font">
             <font>
@@ -400,7 +400,7 @@ QToolButton:checked { border-color: #4CAF50; background-color: #1b2d44; }</strin
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="2" column="1">
           <widget class="QCheckBox" name="autoConnectCheckBox">
            <property name="font">
             <font>
@@ -412,7 +412,7 @@ QToolButton:checked { border-color: #4CAF50; background-color: #1b2d44; }</strin
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
+         <item row="1" column="0">
           <widget class="QLabel" name="labelHdmiDevices">
            <property name="font">
             <font>
@@ -424,7 +424,7 @@ QToolButton:checked { border-color: #4CAF50; background-color: #1b2d44; }</strin
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="1" column="1">
           <layout class="QHBoxLayout" name="horizontalLayout_hdmiDevices">
            <item>
             <widget class="QComboBox" name="deviceComboBox">

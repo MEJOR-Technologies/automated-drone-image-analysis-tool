@@ -22,9 +22,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QSizePolicy, QColorDialog, QToolButton, QStyle,
                                QApplication)
 from .HSVColorRangeAssistant import HSVColorRangeAssistant
+from helpers.TranslationMixin import TranslationMixin
 
 
-class HSVRangePickerWidget(QWidget):
+class HSVRangePickerWidget(TranslationMixin, QWidget):
     """Advanced HSV color range picker with visual feedback."""
 
     # Signals emitted when values change
@@ -56,6 +57,7 @@ class HSVRangePickerWidget(QWidget):
 
         # Initialize UI
         self.setup_ui()
+        self._apply_translations()
         self.setMinimumSize(800, 750)
 
     def setup_ui(self):
@@ -84,37 +86,37 @@ class HSVRangePickerWidget(QWidget):
         header_layout = QHBoxLayout()
 
         # Hex input
-        hex_label = QLabel("HEX:")
+        hex_label = QLabel(self.tr("HEX:"))
         hex_label.setFont(QFont("Arial", 10, QFont.Bold))
-        hex_label.setToolTip(
+        hex_label.setToolTip(self.tr(
             "Hexadecimal color code input.\n"
             "Enter colors as hex codes (e.g., #FF0000 for red)."
-        )
+        ))
 
         self.hex_input = QLineEdit("#FF0000")
         self.hex_input.setMaxLength(7)
         self.hex_input.setFixedWidth(120)
         self.hex_input.setFont(QFont("Courier", 10))
-        self.hex_input.setToolTip(
+        self.hex_input.setToolTip(self.tr(
             "Enter a hexadecimal color code.\n"
             "• Format: #RRGGBB (e.g., #FF0000 for red, #00FF00 for green)\n"
             "• Also accepts short format: #RGB (e.g., #F00 for red)\n"
             "Type or paste a hex code to quickly set a specific color.\n"
             "The color will be converted to HSV automatically."
-        )
+        ))
         self.hex_input.textChanged.connect(self.on_hex_changed)
 
         # Reset button
-        self.reset_button = QPushButton("Reset to Default")
+        self.reset_button = QPushButton(self.tr("Reset to Default"))
         self.reset_button.setFixedHeight(30)
-        self.reset_button.setToolTip(
+        self.reset_button.setToolTip(self.tr(
             "Reset to default color and ranges.\n"
             "• Color: Pure red (H:0°, S:100%, V:100%)\n"
             "• Hue range: ±20° (total 40° range)\n"
             "• Saturation range: ±20%\n"
             "• Value range: ±20%\n"
             "Use this to start over with standard settings."
-        )
+        ))
         self.reset_button.clicked.connect(self.reset_to_default)
 
         header_layout.addWidget(hex_label)
@@ -131,18 +133,18 @@ class HSVRangePickerWidget(QWidget):
 
         # SV Square section
         sv_layout = QVBoxLayout()
-        sv_label = QLabel("Saturation / Value")
+        sv_label = QLabel(self.tr("Saturation / Value"))
         sv_label.setAlignment(Qt.AlignCenter)
         sv_label.setFont(QFont("Arial", 12, QFont.Bold))
-        sv_label.setToolTip(
+        sv_label.setToolTip(self.tr(
             "Saturation and Value (brightness) selector.\n"
             "Saturation controls color intensity (left=gray, right=vivid).\n"
             "Value controls brightness (bottom=dark, top=bright)."
-        )
+        ))
 
         self.sv_widget = SVSquareWidget(self)
         self.sv_widget.setFixedSize(self.sv_square_size, self.sv_square_size)
-        self.sv_widget.setToolTip(
+        self.sv_widget.setToolTip(self.tr(
             "Interactive Saturation/Value selector.\n"
             "• Click anywhere to set the center color's saturation and brightness\n"
             "• White circle = current center color position\n"
@@ -151,7 +153,7 @@ class HSVRangePickerWidget(QWidget):
             "• Horizontal range = saturation tolerance\n"
             "• Vertical range = value/brightness tolerance\n"
             "Larger ranges detect more color variations but may include unwanted colors."
-        )
+        ))
         self.sv_widget.valueChanged.connect(self.on_sv_changed)
 
         sv_layout.addWidget(sv_label)
@@ -159,17 +161,17 @@ class HSVRangePickerWidget(QWidget):
 
         # Hue Ring section
         hue_layout = QVBoxLayout()
-        hue_label = QLabel("Hue")
+        hue_label = QLabel(self.tr("Hue"))
         hue_label.setAlignment(Qt.AlignCenter)
         hue_label.setFont(QFont("Arial", 12, QFont.Bold))
-        hue_label.setToolTip(
+        hue_label.setToolTip(self.tr(
             "Hue (color type) selector.\n"
             "Hue represents the actual color: red, orange, yellow, green, cyan, blue, purple, magenta."
-        )
+        ))
 
         self.hue_widget = HueRingWidget(self)
         self.hue_widget.setFixedSize(self.hue_ring_size, self.hue_ring_size)
-        self.hue_widget.setToolTip(
+        self.hue_widget.setToolTip(self.tr(
             "Interactive Hue color ring selector.\n"
             "• Click on the ring to select a hue (color type)\n"
             "• White line = current center hue\n"
@@ -178,7 +180,7 @@ class HSVRangePickerWidget(QWidget):
             "• Left handle = lower bound (minus range)\n"
             "• Right handle = upper bound (plus range)\n"
             "Warning: Hue ranges wider than 60° may detect too many colors."
-        )
+        ))
         self.hue_widget.valueChanged.connect(self.on_hue_changed)
 
         hue_layout.addWidget(hue_label)
@@ -199,9 +201,9 @@ class HSVRangePickerWidget(QWidget):
 
         # HSV Assistant button - now a regular button like "Pick Screen Color"
         # Hidden per user request - "Use Image" option should not appear in HSV Color Picker
-        self.hsv_assistant_button = QPushButton("Use Image")
+        self.hsv_assistant_button = QPushButton(self.tr("Use Image"))
         self.hsv_assistant_button.setFixedHeight(35)
-        self.hsv_assistant_button.setToolTip(
+        self.hsv_assistant_button.setToolTip(self.tr(
             "Open HSV Color Range Assistant.\n"
             "Advanced tool for selecting colors from an image:\n"
             "• Load an image from your input folder\n"
@@ -209,33 +211,33 @@ class HSVRangePickerWidget(QWidget):
             "• Automatically calculates optimal HSV ranges\n"
             "• See real-time preview of detection results\n"
             "Recommended for finding the best color range for your target."
-        )
+        ))
         self.hsv_assistant_button.clicked.connect(self.open_hsv_assistant)
         self.hsv_assistant_button.hide()  # Hide the "Use Image" button
 
-        self.pick_screen_button = QPushButton("Pick Screen Color")
+        self.pick_screen_button = QPushButton(self.tr("Pick Screen Color"))
         self.pick_screen_button.setFixedHeight(35)
-        self.pick_screen_button.setToolTip(
+        self.pick_screen_button.setToolTip(self.tr(
             "Pick a color from anywhere on your screen.\n"
             "Opens a color picker that lets you:\n"
             "• Click anywhere on your screen to sample a color\n"
             "• Sample from other applications or images\n"
             "The picked color will be set as the center color.\n"
             "Ranges remain unchanged - adjust manually after picking."
-        )
+        ))
         self.pick_screen_button.clicked.connect(self.pick_screen_color)
         self.pick_screen_button.hide()  # Hide the "Pick Screen Color" button
 
-        self.add_custom_button = QPushButton("Add to Custom Colors")
+        self.add_custom_button = QPushButton(self.tr("Add to Custom Colors"))
         self.add_custom_button.setFixedHeight(35)
-        self.add_custom_button.setToolTip(
+        self.add_custom_button.setToolTip(self.tr(
             "Save current color to Custom Colors palette.\n"
             "Adds the current center color to the first empty slot in Custom Colors.\n"
             "• Only saves the color, not the ranges\n"
             "• Click saved colors to quickly reuse them\n"
             "• Custom colors persist across sessions\n"
             "Useful for building a palette of frequently used colors."
-        )
+        ))
         self.add_custom_button.clicked.connect(self.add_to_custom_colors)
 
         buttons_layout.addWidget(self.hsv_assistant_button)
@@ -247,45 +249,45 @@ class HSVRangePickerWidget(QWidget):
 
         # Basic Colors section
         basic_colors_layout = QVBoxLayout()
-        basic_label = QLabel("Basic Colors:")
+        basic_label = QLabel(self.tr("Basic Colors:"))
         basic_label.setFont(QFont("Arial", 10, QFont.Bold))
-        basic_label.setToolTip(
+        basic_label.setToolTip(self.tr(
             "Preset basic color palette.\n"
             "Quick access to common colors like red, orange, yellow, green, cyan, blue, purple, and grayscale.\n"
             "Click any color swatch to set it as the center color."
-        )
+        ))
         basic_colors_layout.addWidget(basic_label)
 
         self.basic_colors_grid = self.create_basic_colors_grid()
-        self.basic_colors_grid.setToolTip(
+        self.basic_colors_grid.setToolTip(self.tr(
             "Basic color swatches.\n"
             "Click any color to quickly set it as your center color.\n"
             "• Top row: Primary colors and tints\n"
             "• Bottom row: Grayscale and darker shades\n"
             "Useful for quickly selecting standard colors."
-        )
+        ))
         basic_colors_layout.addWidget(self.basic_colors_grid)
 
         # Custom Colors section
         custom_colors_layout = QVBoxLayout()
-        custom_label = QLabel("Custom Colors:")
+        custom_label = QLabel(self.tr("Custom Colors:"))
         custom_label.setFont(QFont("Arial", 10, QFont.Bold))
-        custom_label.setToolTip(
+        custom_label.setToolTip(self.tr(
             "Your saved custom color palette.\n"
             "Colors you've saved using 'Add to Custom Colors' button.\n"
             "Click any saved color to reuse it."
-        )
+        ))
         custom_colors_layout.addWidget(custom_label)
 
         self.custom_colors_grid = self.create_custom_colors_grid()
-        self.custom_colors_grid.setToolTip(
+        self.custom_colors_grid.setToolTip(self.tr(
             "Custom color swatches.\n"
             "Click any color to set it as your center color.\n"
             "• Empty slots shown as gray\n"
             "• Use 'Add to Custom Colors' button to save current color\n"
             "• Custom colors persist across sessions\n"
             "Build your own palette of frequently used colors."
-        )
+        ))
         custom_colors_layout.addWidget(self.custom_colors_grid)
 
         # Side by side layout for color grids
@@ -454,22 +456,22 @@ class HSVRangePickerWidget(QWidget):
         info_frame = QFrame()
         info_frame.setFrameStyle(QFrame.StyledPanel)
         info_frame.setStyleSheet("QFrame { background-color: #555555; border-radius: 8px; }")
-        info_frame.setToolTip(
+        info_frame.setToolTip(self.tr(
             "Current HSV color range summary.\n"
             "Shows the center color and detection ranges in real-time.\n"
             "Warning indicators appear when ranges may cause detection issues."
-        )
+        ))
 
         info_layout = QGridLayout(info_frame)
         info_layout.setContentsMargins(20, 15, 20, 15)
 
         # Labels
-        labels = ["Center HSV:", "Hue Range:", "Sat Range:", "Val Range:"]
+        labels = [self.tr("Center HSV:"), self.tr("Hue Range:"), self.tr("Sat Range:"), self.tr("Val Range:")]
         label_tooltips = [
-            "Current center HSV color values.\nH = Hue (0-360°), S = Saturation (0-100%), V = Value/brightness (0-100%).",
-            "Hue detection range (minus/plus from center).\nTotal range = minus + plus. Warning shown if total > 60°.",
-            "Saturation detection range (minus/plus from center).\nWarning shown if lower bound < 25%.",
-            "Value detection range (minus/plus from center).\nWarning shown if lower bound < 25%."
+            self.tr("Current center HSV color values.\nH = Hue (0-360°), S = Saturation (0-100%), V = Value/brightness (0-100%)."),
+            self.tr("Hue detection range (minus/plus from center).\nTotal range = minus + plus. Warning shown if total > 60°."),
+            self.tr("Saturation detection range (minus/plus from center).\nWarning shown if lower bound < 25%."),
+            self.tr("Value detection range (minus/plus from center).\nWarning shown if lower bound < 25%.")
         ]
         self.info_labels = []
         self.warning_labels = []  # Store warning labels
@@ -491,42 +493,42 @@ class HSVRangePickerWidget(QWidget):
 
             # Add warning labels for Hue, Sat, and Val ranges (to the right)
             if i == 1:  # Hue Range
-                self.h_warning_label = QLabel("⚠ Too wide!")
+                self.h_warning_label = QLabel(self.tr("⚠ Too wide!"))
                 self.h_warning_label.setStyleSheet("QLabel { color: yellow; font-size: 10px; font-weight: bold; }")
                 self.h_warning_label.setVisible(False)
                 self.h_warning_label.setAlignment(Qt.AlignLeft)
-                self.h_warning_label.setToolTip(
+                self.h_warning_label.setToolTip(self.tr(
                     "Hue range warning.\n"
                     "Your hue range is wider than 60° total.\n"
                     "Wide hue ranges may detect too many different colors.\n"
                     "Consider narrowing the range for more accurate detection."
-                )
+                ))
                 info_layout.addWidget(self.h_warning_label, i, 2)
                 self.warning_labels.append(self.h_warning_label)
             elif i == 2:  # Sat Range
-                self.s_warning_label = QLabel("⚠ Too low!")
+                self.s_warning_label = QLabel(self.tr("⚠ Too low!"))
                 self.s_warning_label.setStyleSheet("QLabel { color: yellow; font-size: 10px; font-weight: bold; }")
                 self.s_warning_label.setVisible(False)
                 self.s_warning_label.setAlignment(Qt.AlignLeft)
-                self.s_warning_label.setToolTip(
+                self.s_warning_label.setToolTip(self.tr(
                     "Saturation range warning.\n"
                     "Your saturation lower bound is below 25%.\n"
                     "Low saturation includes grayish/washed out colors.\n"
                     "May detect unintended gray or desaturated colors."
-                )
+                ))
                 info_layout.addWidget(self.s_warning_label, i, 2)
                 self.warning_labels.append(self.s_warning_label)
             elif i == 3:  # Val Range
-                self.v_warning_label = QLabel("⚠ Too low!")
+                self.v_warning_label = QLabel(self.tr("⚠ Too low!"))
                 self.v_warning_label.setStyleSheet("QLabel { color: yellow; font-size: 10px; font-weight: bold; }")
                 self.v_warning_label.setVisible(False)
                 self.v_warning_label.setAlignment(Qt.AlignLeft)
-                self.v_warning_label.setToolTip(
+                self.v_warning_label.setToolTip(self.tr(
                     "Value range warning.\n"
                     "Your value lower bound is below 25%.\n"
                     "Low value includes very dark colors.\n"
                     "May detect shadows or dark unintended objects."
-                )
+                ))
                 info_layout.addWidget(self.v_warning_label, i, 2)
                 self.warning_labels.append(self.v_warning_label)
 

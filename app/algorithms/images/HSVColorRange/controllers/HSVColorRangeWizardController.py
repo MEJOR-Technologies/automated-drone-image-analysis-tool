@@ -4,7 +4,9 @@ Wizard controller for Color Range (HSV) algorithm.
 Provides a simplified, guided interface for configuring HSV color range detection.
 """
 
-from PySide6.QtWidgets import QWidget, QLabel, QSizePolicy, QPushButton
+from PySide6.QtWidgets import QWidget, QLabel, QSizePolicy, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox
+
+from algorithms import DetectionExpansion as _DE
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt, Signal
 import cv2
@@ -17,9 +19,10 @@ from algorithms.images.HSVColorRange.views.HSVColorRowWizardWidget import HSVCol
 from algorithms.images.HSVColorRange.controllers.HSVColorRangeViewerController import HSVColorRangeRangeViewer
 from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from helpers.IconHelper import IconHelper
+from helpers.TranslationMixin import TranslationMixin
 
 
-class HSVColorRangeWizardController(QWidget, Ui_HSVColorRangeWizard, AlgorithmController):
+class HSVColorRangeWizardController(TranslationMixin, QWidget, Ui_HSVColorRangeWizard, AlgorithmController):
     """Wizard controller for Color Range (HSV) algorithm."""
 
     # Signal emitted when validation state changes (e.g., when rows are added/removed)
@@ -44,14 +47,20 @@ class HSVColorRangeWizardController(QWidget, Ui_HSVColorRangeWizard, AlgorithmCo
         self.colorsLayout.setContentsMargins(0, 0, 0, 0)
 
         # Empty state label
-        self.emptyLabel = QLabel("No Colors Selected", self.colorsContainer)
+        self.emptyLabel = QLabel(
+            self.tr("No Colors Selected"),
+            self.colorsContainer
+        )
         self.emptyLabel.setAlignment(Qt.AlignCenter)
         self.emptyLabel.setStyleSheet("color: #888; font-style: italic;")
         self.emptyLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.colorsLayout.addWidget(self.emptyLabel, 1, Qt.AlignCenter)
 
         # View Range button (hidden until colors are added)
-        self.viewRangeButton = QPushButton("View Range", self.widgetAddButton)
+        self.viewRangeButton = QPushButton(
+            self.tr("View Range"),
+            self.widgetAddButton
+        )
         self.viewRangeButton.setFont(self.addColorButton.font())
         self.viewRangeButton.setIcon(IconHelper.create_icon('fa6s.eye', self.theme))
         self.viewRangeButton.clicked.connect(self.view_range_button_clicked)
@@ -69,10 +78,37 @@ class HSVColorRangeWizardController(QWidget, Ui_HSVColorRangeWizard, AlgorithmCo
         )
         self.color_selection_menu.attach_to(self.addColorButton)
 
+        self._build_expansion_controls()
+
         # Update empty state visibility
         self._update_empty_state()
         self._update_view_range_button()
         self.validation_changed.emit()
+
+    def _build_expansion_controls(self):
+        """Append optional hue expansion checkbox. Defaults are fixed in DetectionExpansion."""
+        container = QWidget(self)
+        v = QVBoxLayout(container)
+        v.setContentsMargins(0, 10, 0, 0)
+        v.setSpacing(4)
+
+        row = QHBoxLayout()
+        self.hueExpansionCheck = QCheckBox(self.tr("Hue Expansion"), container)
+        self.hueExpansionCheck.setToolTip(self.tr(
+            "When enabled, expand each AOI through neighbors whose hue is within +/- {0}\n"
+            "(OpenCV units) of the mean hue of the original detected pixels.\n"
+            "Pixels with saturation below {1}% or value below {2}% are excluded."
+        ).format(
+            _DE.DEFAULT_HUE_EXPANSION,
+            _DE.DEFAULT_HUE_EXPANSION_SAT_FLOOR_PCT,
+            _DE.DEFAULT_HUE_EXPANSION_VAL_FLOOR_PCT,
+        ))
+        row.addWidget(self.hueExpansionCheck)
+        row.addStretch(1)
+        v.addLayout(row)
+
+        # Insert above the trailing vertical spacer in the root layout.
+        self.verticalLayout_root.insertWidget(self.verticalLayout_root.count() - 1, container)
 
         # Ensure an in-page widget has focus so the dialog Close button doesn't take it
         try:
@@ -254,6 +290,7 @@ class HSVColorRangeWizardController(QWidget, Ui_HSVColorRangeWizard, AlgorithmCo
             options['hue_threshold'] = None
             options['saturation_threshold'] = None
             options['value_threshold'] = None
+            self._apply_expansion_options(options)
             return options
 
         # New format: list of HSV configurations (matches non-wizard controller)
@@ -328,12 +365,24 @@ class HSVColorRangeWizardController(QWidget, Ui_HSVColorRangeWizard, AlgorithmCo
         options['hue_threshold'] = int((options['hsv_ranges']['h_minus'] + options['hsv_ranges']['h_plus']) * 90)
         options['saturation_threshold'] = int((options['hsv_ranges']['s_minus'] + options['hsv_ranges']['s_plus']) * 127)
         options['value_threshold'] = int((options['hsv_ranges']['v_minus'] + options['hsv_ranges']['v_plus']) * 127)
+        self._apply_expansion_options(options)
         return options
+
+    def _apply_expansion_options(self, options):
+        """Populate hue-expansion option keys based on the checkbox state."""
+        if hasattr(self, 'hueExpansionCheck') and self.hueExpansionCheck.isChecked():
+            options['hue_expansion'] = _DE.DEFAULT_HUE_EXPANSION
+            options['hue_expansion_sat_floor'] = _DE.DEFAULT_HUE_EXPANSION_SAT_FLOOR_PCT
+            options['hue_expansion_val_floor'] = _DE.DEFAULT_HUE_EXPANSION_VAL_FLOOR_PCT
+        else:
+            options['hue_expansion'] = 0
+            options['hue_expansion_sat_floor'] = 0
+            options['hue_expansion_val_floor'] = 0
 
     def validate(self):
         """Validate configuration."""
         if not self.color_rows:
-            return "Please add at least one color to detect."
+            return self.tr("Please add at least one color to detect.")
         return None
 
     def load_options(self, options):
@@ -375,6 +424,12 @@ class HSVColorRangeWizardController(QWidget, Ui_HSVColorRangeWizard, AlgorithmCo
             if selected_color:
                 color = QColor(selected_color[0], selected_color[1], selected_color[2])
                 self.add_color_row(color, tolerance_index)
+
+        if hasattr(self, 'hueExpansionCheck') and 'hue_expansion' in options:
+            try:
+                self.hueExpansionCheck.setChecked(int(options.get('hue_expansion') or 0) > 0)
+            except (TypeError, ValueError):
+                self.hueExpansionCheck.setChecked(False)
 
         self._update_empty_state()
         self._update_view_range_button()

@@ -5,13 +5,13 @@ import re
 from algorithms.AlgorithmController import AlgorithmController
 from algorithms.images.AIPersonDetector.views.AIPersonDetector_ui import Ui_AIPersonDetector
 from core.services.LoggerService import LoggerService
-from helpers.CudaCheck import CudaCheck
 
 from PySide6.QtWidgets import QWidget, QMessageBox
 from PySide6.QtCore import Qt
+from helpers.TranslationMixin import TranslationMixin
 
 
-class AIPersonDetectorController(QWidget, Ui_AIPersonDetector, AlgorithmController):
+class AIPersonDetectorController(TranslationMixin, QWidget, Ui_AIPersonDetector, AlgorithmController):
     """
     Controller class for the AI Person Detector algorithm widget.
     Handles UI updates, configuration, and environment checks for GPU support.
@@ -78,12 +78,14 @@ class AIPersonDetectorController(QWidget, Ui_AIPersonDetector, AlgorithmControll
         Adds a requirements link for more info.
         """
         if sys.platform == 'darwin':
+            gpu_text = self.tr("GPU Not Available")
             self.GPULabel.setText(
-                '<span style="color:red;">&#x274C; GPU Not Available</span>'
+                f'<span style="color:red;">&#x274C; {gpu_text}</span>'
             )
             return
         else:
+            gpu_text = self.tr("GPU Available")
             self.GPULabel.setText(
-                '<span style="color:green;">&#x2714; GPU Available</span>'
+                f'<span style="color:green;">&#x2714; {gpu_text}</span>'
             )
             self.cpu_only = False

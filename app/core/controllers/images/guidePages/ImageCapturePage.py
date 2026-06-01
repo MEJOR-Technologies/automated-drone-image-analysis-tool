@@ -75,11 +75,11 @@ class ImageCapturePage(BasePage):
         """
         try:
             # Add default "Select Drone/Camera" option first
-            self.dialog.droneComboBox.addItem("Select Drone/Camera", None)
+            self.dialog.droneComboBox.addItem(self.tr("Select Drone/Camera"), None)
 
             drones_df = PickleHelper.get_drone_sensor_info()
             if drones_df is None or drones_df.empty:
-                self.dialog.droneComboBox.addItem("No drones available", None)
+                self.dialog.droneComboBox.addItem(self.tr("No drones available"), None)
                 return
 
             # Group cameras by manufacturer + model (unique cameras)
@@ -123,7 +123,7 @@ class ImageCapturePage(BasePage):
 
             # Add "Other" option
             self.dialog.droneComboBox.addItem("──────────", "__SECTION__")
-            self.dialog.droneComboBox.addItem("Other", None)
+            self.dialog.droneComboBox.addItem(self.tr("Other"), None)
 
             # Try to load saved drone selection
             saved_drone_key = self.settings_service.get_setting("ImageAnalysisDroneSelection", "")
@@ -159,7 +159,7 @@ class ImageCapturePage(BasePage):
 
         except Exception as e:
             self.logger.error(f"Error loading drone data: {e}")
-            self.dialog.droneComboBox.addItem("Error loading drone data", None)
+            self.dialog.droneComboBox.addItem(self.tr("Error loading drone data"), None)
 
     def _load_preferences(self):
         """Load existing preferences if available."""
@@ -237,7 +237,7 @@ class ImageCapturePage(BasePage):
                     drone_data = pd.Series(drone_data)
                 else:
                     self.logger.warning(f"Warning: drone_data is unexpected type: {type(drone_data)}")
-                    self.dialog.gsdTextEdit.setPlainText("-- (Invalid camera data)")
+                    self.dialog.gsdTextEdit.setPlainText(self.tr("-- (Invalid camera data)"))
                     return
 
             self.wizard_data['drone'] = drone_data
@@ -470,25 +470,25 @@ class ImageCapturePage(BasePage):
                     # Missing focal length
                     sensor_name = self._get_sensor_name(drone_data, sensor_idx)
                     if self.wizard_data.get('first_image_path'):
-                        gsd_results.append(f"{sensor_name}: Focal length not found in image EXIF")
+                        gsd_results.append(self.tr("{sensor_name}: Focal length not found in image EXIF").format(sensor_name=sensor_name))
                     else:
-                        gsd_results.append(f"{sensor_name}: Select input directory to extract focal length from images")
+                        gsd_results.append(self.tr("{sensor_name}: Select input directory to extract focal length from images").format(sensor_name=sensor_name))
 
             # Display results
             if gsd_results:
                 self.dialog.gsdTextEdit.setPlainText("\n".join(gsd_results))
                 self.wizard_data['gsd'] = None
             else:
-                error_msg = "-- (Missing camera data)\n\n"
-                error_msg += "Unable to calculate GSD. Sensor dimensions found, but:\n"
-                error_msg += "• Focal length is required (available from image EXIF data)\n\n"
-                error_msg += "GSD calculation requires an actual image file to extract focal length."
+                error_msg = self.tr("-- (Missing camera data)") + "\n\n"
+                error_msg += self.tr("Unable to calculate GSD. Sensor dimensions found, but:") + "\n"
+                error_msg += self.tr("• Focal length is required (available from image EXIF data)") + "\n\n"
+                error_msg += self.tr("GSD calculation requires an actual image file to extract focal length.")
                 self.dialog.gsdTextEdit.setPlainText(error_msg)
                 self.wizard_data['gsd'] = None
 
         except Exception as e:
             self.logger.error(f"Error calculating GSD: {e}")
-            self.dialog.gsdTextEdit.setPlainText("-- (Error)")
+            self.dialog.gsdTextEdit.setPlainText(self.tr("-- (Error)"))
 
     def _get_sensor_name(self, drone_data, sensor_idx):
         """Get a descriptive name for the sensor configuration."""
@@ -520,11 +520,11 @@ class ImageCapturePage(BasePage):
         # If no specific identifier, use sensor index
         if not sensor_parts:
             if len(self.wizard_data['drone_sensors']) > 1:
-                sensor_parts.append(f"Sensor {sensor_idx + 1}")
+                sensor_parts.append(self.tr("Sensor {n}").format(n=sensor_idx + 1))
             else:
-                sensor_parts.append("Primary")
+                sensor_parts.append(self.tr("Primary"))
 
-        return " / ".join(sensor_parts) if sensor_parts else "Sensor"
+        return " / ".join(sensor_parts) if sensor_parts else self.tr("Sensor")
 
     def _scan_input_directory(self):
         """Scan input directory for first image and extract metadata to populate defaults."""

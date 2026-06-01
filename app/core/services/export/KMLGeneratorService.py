@@ -8,15 +8,17 @@ from core.services.image.AOIService import AOIService
 class KMLGeneratorService:
     """Service to generate a KML file with placemarks for flagged AOIs."""
 
-    def __init__(self, custom_altitude_ft=None):
+    def __init__(self, custom_altitude_ft=None, use_terrain=True):
         """
         Initializes the KMLGeneratorService by creating a new KML document.
 
         Args:
             custom_altitude_ft: Optional custom altitude in feet to use for GSD calculations
+            use_terrain: Whether to use terrain elevation data for AOI positioning
         """
         self.kml = simplekml.Kml()
         self.custom_altitude_ft = custom_altitude_ft
+        self.use_terrain = use_terrain
 
     def add_aoi_placemark(self, name, lat, lon, description, color_rgb=None):
         """
@@ -132,7 +134,7 @@ class KMLGeneratorService:
             # Get image GPS coordinates and metadata
             try:
                 # Create ImageService to extract EXIF data
-                image_service = ImageService(image_path, image.get('mask_path', ''))
+                image_service = ImageService(image_path, image.get('mask_path', ''), calculated_bearing=image.get('bearing'))
 
                 # Get GPS from EXIF data as a dict (not formatted string)
                 image_gps = LocationInfo.get_gps(exif_data=image_service.exif_data)
@@ -185,7 +187,7 @@ class KMLGeneratorService:
                     custom_alt_ft = self.custom_altitude_ft
 
                     # Calculate AOI GPS coordinates using the convenience method
-                    result = aoi_service.calculate_gps_with_custom_altitude(image, aoi, custom_alt_ft)
+                    result = aoi_service.calculate_gps_with_custom_altitude(image, aoi, custom_alt_ft, self.use_terrain)
 
                     if result:
                         aoi_lat, aoi_lon = result
@@ -264,7 +266,7 @@ class KMLGeneratorService:
             # Get image GPS coordinates
             try:
                 # Create ImageService to extract EXIF data
-                image_service = ImageService(image_path, image.get('mask_path', ''))
+                image_service = ImageService(image_path, image.get('mask_path', ''), calculated_bearing=image.get('bearing'))
 
                 # Get GPS from EXIF data
                 image_gps = LocationInfo.get_gps(exif_data=image_service.exif_data)
