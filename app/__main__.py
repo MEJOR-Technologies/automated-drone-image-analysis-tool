@@ -435,4 +435,11 @@ if __name__ == "__main__":
     sys.excepthook = _fatal_excepthook
 
     freeze_support()
+
+    # Headless batch mode: "python app batch --input <parent> --output <root>".
+    # Falls through to the normal GUI startup when no batch subcommand is given.
+    if len(sys.argv) > 1 and sys.argv[1] == 'batch':
+        from core.services.cli.BatchCLI import run_batch_cli
+        sys.exit(run_batch_cli(sys.argv[2:]))
+
     main()

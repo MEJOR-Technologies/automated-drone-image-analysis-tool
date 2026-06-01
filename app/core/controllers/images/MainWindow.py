@@ -12,6 +12,7 @@ from core.services.ConfigService import ConfigService
 from core.services.XmlService import XmlService
 from core.services.SettingsService import SettingsService
 from core.services.AnalyzeService import AnalyzeService
+from core.services.BatchAnalyzeService import BatchAnalyzeService
 from core.services.LoggerService import LoggerService
 from core.services.ResultsScannerService import ResultsScannerService
 from core.controllers.UpdateController import UpdateController
@@ -24,7 +25,7 @@ from helpers.PickleHelper import PickleHelper
 from core.views.images.MainWindow_ui import Ui_MainWindow
 from core.views.images.viewer.dialogs.ResultsFolderDialog import ResultsFolderDialog, ScanWorker, ScanProgressDialog
 from PySide6.QtWidgets import (QApplication, QMainWindow, QColorDialog, QFileDialog,
-                               QMessageBox, QSizePolicy, QAbstractButton, QProgressDialog)
+                               QMessageBox, QSizePolicy, QAbstractButton, QCheckBox, QProgressDialog)
 from PySide6.QtCore import QThread, Slot, QSize, Qt, QUrl
 from PySide6.QtGui import QColor, QFont, QIcon, QDesktopServices
 import qtawesome as qta
@@ -34,6 +35,7 @@ import pathlib
 from core.views.components.GroupedComboBox import GroupedComboBox
 from core.controllers.images.ImageAnalysisGuide import ImageAnalysisGuide
 from helpers.IconHelper import IconHelper
+from helpers.FormatHelper import FormatHelper
 from helpers.TranslationMixin import TranslationMixin
 import os
 import xml.etree.ElementTree as ET
@@ -69,6 +71,8 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         self.algorithmWidget = None
         self.identifierColor = (0, 255, 0)
         self._auto_start_requested = False
+        self.batchService = None
+        self._batch_running = False
         self.HistogramImgWidget.setVisible(False)
         self.setWindowTitle(
             self.tr(
@@ -173,6 +177,8 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         self._previous_min_area = self.minAreaSpinBox.value()
         self._previous_max_area = self.maxAreaSpinBox.value()
 
+        # Create the batch-mode checkbox below the directory pickers
+        self._create_batch_mode_checkbox()
         self.update_controller.schedule_startup_check()
 
     def setStylesheets(self):
@@ -523,6 +529,42 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         resolution_text = self.processingResolutionCombo.currentText()
         self.settings_service.set_setting('ProcessingResolution', resolution_text)
 
+    def _create_batch_mode_checkbox(self):
+        """
+        Creates the batch-mode checkbox and places it below the directory pickers.
+
+        When checked, the input folder is treated as a parent directory and each
+        subfolder that contains images is analyzed as a separate batch.
+        """
+        font = QFont()
+        font.setPointSize(10)
+        self.batchModeCheckbox = QCheckBox(
+            "Batch mode - analyze each subfolder of the input folder as a separate batch",
+            self.setupWidget
+        )
+        self.batchModeCheckbox.setFont(font)
+        self.batchModeCheckbox.setToolTip(
+            "When enabled, the Input Folder is treated as a parent directory.\n"
+            "Every subfolder containing images is analyzed as its own batch with\n"
+            "its own results, written under the Output Folder. If one folder\n"
+            "fails, the remaining folders are still processed."
+        )
+        # Place the checkbox on its own row beneath the input/output pickers.
+        self.directoriesLayout.addWidget(self.batchModeCheckbox, 2, 0, 1, 3)
+
+        # Restore the persisted state and keep it saved across sessions.
+        self.batchModeCheckbox.setChecked(self.settings_service.get_setting('BatchMode') is True)
+        self.batchModeCheckbox.toggled.connect(self._batchModeCheckbox_toggled)
+
+    def _batchModeCheckbox_toggled(self, checked):
+        """
+        Persists the batch-mode checkbox state.
+
+        Args:
+            checked (bool): The new checkbox state.
+        """
+        self.settings_service.set_setting('BatchMode', checked)
+
     def _startButton_clicked(self):
         """
         Starts the image analysis process.
@@ -563,6 +605,14 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
             # Normalize identifier color to ensure it's a tuple of integers (R, G, B)
             identifier_color = self._normalize_color(self.identifierColor)
 
+            # Batch mode: analyze each subfolder of the input folder separately.
+            if self.batchModeCheckbox.isChecked():
+                self._start_batch_processing(
+                    identifier_color, options, hist_ref_path, kmeans_clusters,
+                    max_aois, aoi_radius, processing_resolution
+                )
+                return
+
             self.analyzeService = AnalyzeService(
                 1, self.activeAlgorithm, self.inputFolderLine.text(), self.outputFolderLine.text(),
                 identifier_color, self.minAreaSpinBox.value(), self.maxProcessesSpinBox.value(),
@@ -577,6 +627,7 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
             self.analyzeService.sig_msg.connect(self._on_worker_msg)
             self.analyzeService.sig_aois.connect(self._show_aois_limit_warning)
             self.analyzeService.sig_done.connect(self._on_worker_done)
+            self.analyzeService.sig_progress.connect(self._on_analyze_progress)
 
             thread.started.connect(self.analyzeService.process_files)
             thread.start()
@@ -585,11 +636,125 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         except Exception as e:
             self.logger.error(e)
 
+    def _start_batch_processing(self, identifier_color, options, hist_ref_path,
+                                kmeans_clusters, max_aois, aoi_radius, processing_resolution):
+        """
+        Starts folder-by-folder batch processing of the input directory.
+
+        Each subfolder that contains images is analyzed as a separate batch on a
+        background thread, so a failure in one folder does not stop the others.
+
+        Args:
+            identifier_color (tuple): RGB color used to highlight areas of interest.
+            options (dict): Algorithm-specific options.
+            hist_ref_path (str): Histogram reference image path, or None.
+            kmeans_clusters: Number of k-means clusters, or None.
+            max_aois (int): Area-of-interest warning threshold.
+            aoi_radius (int): Radius added around each area of interest.
+            processing_resolution (float): Image scaling factor (0.1 - 1.0).
+        """
+        analysis_config = {
+            'algorithm': self.activeAlgorithm,
+            'identifier_color': identifier_color,
+            'min_area': self.minAreaSpinBox.value(),
+            'max_area': self.maxAreaSpinBox.value(),
+            'num_processes': self.maxProcessesSpinBox.value(),
+            'max_aois': max_aois,
+            'aoi_radius': aoi_radius,
+            'hist_ref_path': hist_ref_path,
+            'kmeans_clusters': kmeans_clusters,
+            'options': options,
+            'processing_resolution': processing_resolution
+        }
+
+        self.batchService = BatchAnalyzeService(
+            self.inputFolderLine.text(),
+            self.outputFolderLine.text(),
+            analysis_config
+        )
+
+        # If a previous run of this batch left some folders finished, let the
+        # user resume (skip the finished folders) instead of starting over.
+        if not self._confirm_batch_resume(self.batchService):
+            self._add_log_entry("--- Batch start cancelled ---")
+            self._set_StartButton(True)
+            self.batchService = None
+            return
+
+        thread = QThread()
+        self.__threads.append((thread, self.batchService))
+        self.batchService.moveToThread(thread)
+
+        self.batchService.sig_msg.connect(self._on_worker_msg)
+        self.batchService.sig_batch_progress.connect(self._on_batch_progress)
+        self.batchService.sig_done.connect(self._on_batch_done)
+        self.batchService.sig_progress.connect(self._on_batch_status)
+
+        thread.started.connect(self.batchService.process_batches)
+        self._batch_running = True
+        thread.start()
+
+        self._set_CancelButton(True)
+
+    def _confirm_batch_resume(self, batch_service):
+        """
+        Detect a prior incomplete batch run and ask the user how to proceed.
+
+        Sets batch_service.resume based on the user's choice.
+
+        Args:
+            batch_service (BatchAnalyzeService): The service about to run.
+
+        Returns:
+            bool: True to start the run, False if the user cancelled.
+        """
+        completed, total = batch_service.count_completed_batches()
+        if completed == 0 or total == 0:
+            return True  # nothing previously done -- a normal fresh run
+
+        if completed >= total:
+            choice = QMessageBox.question(
+                self,
+                "Batch Already Complete",
+                f"All {total} folder(s) under the input already have results "
+                f"in the output folder.\n\nRe-run all of them from scratch?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if choice != QMessageBox.Yes:
+                return False
+            batch_service.resume = False
+            return True
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Question)
+        box.setWindowTitle("Resume Batch?")
+        box.setText(
+            f"A previous batch run looks incomplete: {completed} of {total} "
+            f"folder(s) already have results.\n\n"
+            f"Resume skips the finished folders and processes the rest. "
+            f"Restart processes every folder from scratch."
+        )
+        resume_btn = box.addButton("Resume", QMessageBox.AcceptRole)
+        restart_btn = box.addButton("Restart", QMessageBox.DestructiveRole)
+        box.addButton(QMessageBox.Cancel)
+        box.exec()
+        clicked = box.clickedButton()
+        if clicked == resume_btn:
+            batch_service.resume = True
+            return True
+        if clicked == restart_btn:
+            batch_service.resume = False
+            return True
+        return False
+
     def _cancelButton_clicked(self):
         """
         Cancels the in-progress analysis.
         """
-        self.analyzeService.process_cancel()
+        if self._batch_running and self.batchService is not None:
+            self.batchService.process_cancel()
+        elif hasattr(self, 'analyzeService'):
+            self.analyzeService.process_cancel()
         self._set_CancelButton(False)
 
     def _viewResultsButton_clicked(self):
@@ -649,6 +814,34 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         """
         self._add_log_entry(text)
 
+    @Slot(int, int, float)
+    def _on_analyze_progress(self, completed, total, eta_seconds):
+        """
+        Shows current-run progress and an ETA in the status bar.
+
+        Args:
+            completed (int): Number of images processed so far.
+            total (int): Total number of images in the run.
+            eta_seconds (float): Estimated seconds remaining.
+        """
+        if completed >= total or eta_seconds <= 0:
+            self.statusBar().showMessage(f"Processing image {completed} of {total}")
+        else:
+            self.statusBar().showMessage(
+                f"Processing image {completed} of {total} - about "
+                f"{FormatHelper.format_duration(eta_seconds)} remaining"
+            )
+
+    @Slot(str)
+    def _on_batch_status(self, text):
+        """
+        Shows batch progress and ETAs in the status bar.
+
+        Args:
+            text (str): A ready-to-display status line from BatchAnalyzeService.
+        """
+        self.statusBar().showMessage(text)
+
     @Slot(int, int, str)
     def _on_worker_done(self, id, images_with_aois, xml_path):
         """
@@ -659,6 +852,7 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
             images_with_aois (int): Count of images with areas of interest.
         """
         self._add_log_entry(self.tr("--- Image Processing Completed ---"))
+        self.statusBar().showMessage(self.tr("Image processing complete"), 8000)
         if images_with_aois > 0:
             self._add_log_entry(
                 self.tr("{count} images with areas of interest identified").format(
@@ -675,6 +869,62 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         self._set_CancelButton(False)
         for thread, analyze in self.__threads:
             thread.quit()
+
+    @Slot(int, int, str)
+    def _on_batch_progress(self, current, total, folder_name):
+        """
+        Logs progress as the batch run moves from one folder to the next.
+
+        Args:
+            current (int): 1-based index of the folder now being processed.
+            total (int): Total number of folders to process.
+            folder_name (str): Name of the folder now being processed.
+        """
+        self._add_log_entry(f"--- Processing batch {current} of {total}: {folder_name} ---")
+
+    @Slot(int, int, str)
+    def _on_batch_done(self, succeeded, failed, search_project_path):
+        """
+        Finalizes the UI when batch processing completes.
+
+        Args:
+            succeeded (int): Number of folders processed successfully.
+            failed (int): Number of folders that failed.
+            search_project_path (str): Path to the generated Search Coordinator
+                project, or an empty string if none was created.
+        """
+        self._add_log_entry("--- Batch Processing Completed ---")
+        self.statusBar().showMessage("Batch processing complete", 8000)
+        self._batch_running = False
+        self._set_StartButton(True)
+        self._set_CancelButton(False)
+        for thread, worker in self.__threads:
+            thread.quit()
+
+        message = (
+            f"Batch processing finished.\n\n"
+            f"{succeeded} folder(s) succeeded, {failed} folder(s) failed."
+        )
+        if search_project_path:
+            message += (
+                "\n\nA Search Coordinator project linking every batch was created. "
+                "Open it in the Search Coordinator to review all batches together, "
+                "or load an individual folder's ADIAT_Data.xml to review just that batch."
+            )
+
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Information if failed == 0 else QMessageBox.Warning)
+        msg.setWindowTitle("Batch Processing Complete")
+        msg.setText(message)
+        if search_project_path:
+            open_button = msg.addButton("Open Search Coordinator", QMessageBox.AcceptRole)
+            msg.addButton(QMessageBox.Close)
+            msg.exec()
+            if msg.clickedButton() == open_button:
+                self._open_coordinator()
+        else:
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec()
 
     def _show_error(self, text):
         """

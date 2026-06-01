@@ -143,6 +143,78 @@ def test_analyze_service_cancellation(analyze_service):
     assert analyze_service.cancelled is True
 
 
+def test_analyze_service_recursive_default(analyze_service):
+    """Recursive image collection is enabled by default."""
+    assert analyze_service.recursive is True
+
+
+def test_analyze_service_non_recursive():
+    """recursive=False scopes image collection to the input directory only."""
+    algorithm = {
+        'name': 'ColorRange',
+        'type': 'RGB',
+        'service': 'ColorRangeService'
+    }
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_dir = os.path.join(tmpdir, 'input')
+        output_dir = os.path.join(tmpdir, 'output')
+        os.makedirs(input_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
+
+        service = AnalyzeService(
+            id=1,
+            algorithm=algorithm,
+            input=input_dir,
+            output=output_dir,
+            identifier_color=(100, 150, 200),
+            min_area=10,
+            num_processes=1,
+            max_aois=100,
+            aoi_radius=5,
+            histogram_reference_path=None,
+            kmeans_clusters=None,
+            options={},
+            max_area=1000,
+            processing_resolution=1.0,
+            recursive=False
+        )
+
+        assert service.recursive is False
+
+
+def test_process_complete_handles_none_result(analyze_service):
+    """A None result must not raise.
+
+    process_file returns None on a caught error; a None reaching
+    _process_complete used to raise an AttributeError that hung the run.
+    """
+    analyze_service._completed_images = 0
+    # Must simply return without raising.
+    analyze_service._process_complete(None)
+    assert analyze_service._completed_images == 0
+
+
+def test_handle_failed_image_counts_toward_progress(analyze_service):
+    """A failed image still advances the completion counter so progress stays accurate."""
+    analyze_service.ttl_images = 4
+    analyze_service._completed_images = 0
+    analyze_service._handle_failed_image(os.path.join('imgs', 'bad.jpg'), 'Timed out')
+    assert analyze_service._completed_images == 1
+
+
+def test_emit_progress_emits_signal(analyze_service):
+    """_emit_progress emits sig_progress carrying the completed and total counts."""
+    analyze_service.ttl_images = 10
+    analyze_service._completed_images = 4
+    received = []
+    analyze_service.sig_progress.connect(lambda c, t, e: received.append((c, t, e)))
+    analyze_service._emit_progress()
+    assert received
+    assert received[0][0] == 4
+    assert received[0][1] == 10
+
+
 @patch('core.services.AnalyzeService.cv2.imdecode')
 @patch('core.services.AnalyzeService.np.fromfile')
 def test_process_file_unknown_algorithm_service_returns_error(mock_fromfile, mock_imdecode):
@@ -242,7 +314,11 @@ def test_setup_output_dir_clears_existing(analyze_service, tmp_path):
 # _process_complete
 # ---------------------------------------------------------------------------
 
-def test_process_complete_error_path_skips_counter(analyze_service):
+def test_process_complete_error_path_counts_toward_progress(analyze_service):
+    """An errored result emits a message and still advances the completion counter.
+
+    Failed images count toward progress so the reported percentage can reach 100%.
+    """
     from algorithms.AlgorithmService import AnalysisResult
     analyze_service.ttl_images = 10
     analyze_service._completed_images = 0
@@ -254,7 +330,7 @@ def test_process_complete_error_path_skips_counter(analyze_service):
     analyze_service._process_complete(result)
 
     assert any("Unable to process" in m for m in messages)
-    assert analyze_service._completed_images == 0
+    assert analyze_service._completed_images == 1
 
 
 def test_process_complete_counts_aois(analyze_service):
