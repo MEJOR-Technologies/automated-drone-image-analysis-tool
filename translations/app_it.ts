@@ -221,67 +221,78 @@ Permissivo</translation>
 <context>
     <name>AOIController</name>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="462"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="346"/>
+        <source>No AOI #{number} in this analysis.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="359"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="369"/>
+        <source>AOI #{number} is hidden by the current filter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="572"/>
         <source>Comment saved</source>
         <translation>Commento salvato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="464"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="574"/>
         <source>Comment cleared</source>
         <translation>Commento cancellato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="553"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="663"/>
         <source>Copy Data</source>
         <translation>Copia Dati</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="654"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="764"/>
         <source>AOI data copied</source>
         <translation>Dati AOI copiati</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="741"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="851"/>
         <source>Invalid image index</source>
         <translation>Indice immagine non valido</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="746"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="856"/>
         <source>Invalid AOI index</source>
         <translation>Indice AOI non valido</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="809"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="919"/>
         <source>Could not calculate AOI location. Diagnostic info copied to clipboard!</source>
         <translation>Impossibile calcolare la posizione dell&apos;AOI. Informazioni diagnostiche copiate negli appunti!</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="815"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="925"/>
         <source>Could not calculate AOI location</source>
         <translation>Impossibile calcolare la posizione dell&apos;AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1270"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1380"/>
         <source>Temperature sorting unavailable (no thermal data)</source>
         <translation>Ordinamento per temperatura non disponibile (nessun dato termico)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1602"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1732"/>
         <source>Cannot Delete AOI</source>
         <translation>Impossibile eliminare l&apos;AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1604"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1734"/>
         <source>Only manually created AOIs can be deleted. Algorithm-detected AOIs cannot be deleted.</source>
         <translation>Solo le AOI create manualmente possono essere eliminate. Le AOI rilevate dagli algoritmi non possono essere eliminate.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1613"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1743"/>
         <source>Delete AOI</source>
         <translation>Elimina AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1615"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1745"/>
         <source>Are you sure you want to delete this AOI? This action cannot be undone.</source>
         <translation>Sei sicuro di voler eliminare questa AOI? Questa azione non può essere annullata.</translation>
     </message>
@@ -710,7 +721,7 @@ Ciò potrebbe essere dovuto alla mancanza di metadati dell&apos;immagine (GPS, a
     <name>AOIUIComponent</name>
     <message>
         <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="250"/>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="333"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="346"/>
         <source>AOI Information
 Right-click to copy data to clipboard</source>
         <translation>Informazioni AOI
@@ -728,22 +739,22 @@ Tipo Punteggio: {type}
 Punteggio Grezzo: {score} ({method})</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="307"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="320"/>
         <source>Confidence Score: {score:.1f}%</source>
         <translation>Punteggio di Confidenza: {score:.1f}%</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="373"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="386"/>
         <source>Unflag AOI</source>
         <translation>Rimuovi contrassegno AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="373"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="386"/>
         <source>Flag AOI</source>
         <translation>Contrassegna AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="390"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="403"/>
         <source>Comment:
 {comment}
 
@@ -754,7 +765,7 @@ Click to edit comment</source>
 Clicca per modificare il commento</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="398"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="411"/>
         <source>No comment yet.
 Click to add a comment for this AOI.
 
@@ -767,52 +778,52 @@ Usa i commenti per annotare dettagli importanti, osservazioni,
 o azioni necessarie per questo rilevamento.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="415"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="428"/>
         <source>Calculate and show GPS location for this AOI</source>
         <translation>Calcola e mostra la posizione GPS per questa AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="433"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="446"/>
         <source>Delete this AOI</source>
         <translation>Elimina questa AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="471"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="484"/>
         <source>Area</source>
         <translation>Area</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="471"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="484"/>
         <source>Areas</source>
         <translation>Aree</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="473"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="486"/>
         <source>{filtered} of {total} {label}</source>
         <translation>{filtered} di {total} {label}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="482"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="495"/>
         <source>Area of Interest</source>
         <translation>Area di Interesse</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="484"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="497"/>
         <source>Areas of Interest</source>
         <translation>Aree di Interesse</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="487"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="500"/>
         <source>{count} {label}</source>
         <translation>{count} {label}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="630"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="643"/>
         <source>Loading AOIs...</source>
         <translation>Caricamento AOI...</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="671"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIUIComponent.py" line="684"/>
         <source>Loading AOIs... ({current}/{total})</source>
         <translation>Caricamento AOI... ({current}/{total})</translation>
     </message>
@@ -919,6 +930,118 @@ Dettagli:
     </message>
 </context>
 <context>
+    <name>AlignImageController</name>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/AlignImageController.py" line="46"/>
+        <source>No image available to align</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/AlignImageController.py" line="52"/>
+        <source>This image has no GPS data and cannot be aligned</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/AlignImageController.py" line="81"/>
+        <source>Could not save the alignment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/AlignImageController.py" line="92"/>
+        <source>Image alignment saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AlignImageDialog</name>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="54"/>
+        <source>This saved alignment looks mirrored - re-place each corner handle on its matching photo corner (coloured squares).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="61"/>
+        <source>Align Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="131"/>
+        <source>Rotate the drone image to line it up with the map. The small coloured squares mark the photo&apos;s corners - drag each corner handle onto the map where its matching-coloured photo corner belongs. For extra accuracy, add tie points: put the IMAGE end on a feature in the drone photo and the MAP end on the same feature on the map.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="138"/>
+        <source>Rotation:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="139"/>
+        <source>Map opacity:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="140"/>
+        <source>FOV overlay opacity:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="141"/>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="193"/>
+        <source>Show Street Map</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="142"/>
+        <source>Add Tie Point</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="143"/>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="196"/>
+        <source>Show Satellite</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="220"/>
+        <source>Corners look mirrored</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="222"/>
+        <source>The four corners appear mirrored - the drone image would map to the ground flipped.
+
+Each corner handle is colour-matched to a corner of the drone photo (the small coloured squares). Make sure every handle sits where its matching photo corner belongs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AlignImageDialog.py" line="232"/>
+        <source>Go Back and Fix</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AlignImageView</name>
+    <message>
+        <location filename="../app/core/views/images/viewer/widgets/AlignImageView.py" line="372"/>
+        <source>IMAGE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/widgets/AlignImageView.py" line="374"/>
+        <source>MAP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/widgets/AlignImageView.py" line="603"/>
+        <source>Remove Tie Point</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>AltitudeController</name>
     <message>
         <location filename="../app/core/controllers/images/viewer/AltitudeController.py" line="98"/>
@@ -959,52 +1082,52 @@ Dettagli:
 <context>
     <name>AnalyzeService</name>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="125"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="149"/>
         <source>Processing {count} files</source>
         <translation>Elaborazione di {count} file</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="167"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="193"/>
         <source>Skipping {file} :: File is not an image</source>
         <translation>Saltato {file} :: Il file non è un&apos;immagine</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="172"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="198"/>
         <source>All {count} images queued, processing started...</source>
         <translation>Tutte le {count} immagini in coda, elaborazione avviata...</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="193"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="252"/>
         <source>{images} images with {aois} areas of interest identified</source>
         <translation>{images} immagini con {aois} aree di interesse identificate</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="199"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="258"/>
         <source>Total Processing Time: {seconds} seconds</source>
         <translation>Tempo totale di elaborazione: {seconds} secondi</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="202"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="261"/>
         <source>Total Images Processed: {count}</source>
         <translation>Totale immagini elaborate: {count}</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="387"/>
-        <source>Unable to process {file} :: {error}</source>
-        <translation>Impossibile elaborare {file} :: {error}</translation>
+        <location filename="../app/core/services/AnalyzeService.py" line="479"/>
+        <source>Unable to process {file} :: {error} ({percent}%)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="412"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="502"/>
         <source>{count} areas of interest identified in {file} ({percent}%)</source>
         <translation>{count} aree di interesse identificate in {file} ({percent}%)</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="429"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="519"/>
         <source>No areas of interest identified in {file} ({percent}%)</source>
         <translation>Nessuna area di interesse identificata in {file} ({percent}%)</translation>
     </message>
     <message>
-        <location filename="../app/core/services/AnalyzeService.py" line="442"/>
+        <location filename="../app/core/services/AnalyzeService.py" line="565"/>
         <source>--- Cancelling Image Processing ---</source>
         <translation>--- Annullamento elaborazione immagini ---</translation>
     </message>
@@ -3862,251 +3985,251 @@ Fai clic sulle immagini per spostarle nella sezione Selezionate in alto.</transl
 <context>
     <name>CoordinatorWindow</name>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="30"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="39"/>
         <source>Search Coordinator</source>
         <translation>Coordinatore di Ricerca</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="49"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="58"/>
         <source>Create New Search</source>
         <translation>Crea Nuova Ricerca</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="54"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="63"/>
         <source>Open Existing Search</source>
         <translation>Apri Ricerca Esistente</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="59"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="68"/>
         <source>Save Search</source>
         <translation>Salva Ricerca</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="65"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="74"/>
         <source>Add Batches to Search</source>
         <translation>Aggiungi Batch alla Ricerca</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="69"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="78"/>
         <source>Add more batch XML files to the current search project</source>
         <translation>Aggiungi altri file XML batch al progetto di ricerca corrente</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="87"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="96"/>
         <source>Dashboard</source>
         <translation>Dashboard</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="91"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="100"/>
         <source>Batch Status</source>
         <translation>Stato Batch</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="95"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="104"/>
         <source>AOI Analysis</source>
         <translation>Analisi AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="103"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="112"/>
         <source>Load Review XML</source>
         <translation>Carica XML di Revisione</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="109"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="610"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="118"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="624"/>
         <source>Export Consolidated Results</source>
         <translation>Esporta Risultati Consolidati</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="121"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="130"/>
         <source>Project Information</source>
         <translation>Informazioni Progetto</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="126"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="135"/>
         <source>No project loaded</source>
         <translation>Nessun progetto caricato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="128"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="137"/>
         <source>Project:</source>
         <translation>Progetto:</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="133"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="142"/>
         <source>Created by:</source>
         <translation>Creato da:</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="138"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="147"/>
         <source>Date:</source>
         <translation>Data:</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="157"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="166"/>
         <source>Total Batches</source>
         <translation>Batch Totali</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="158"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="167"/>
         <source>Total Images</source>
         <translation>Immagini Totali</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="159"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="168"/>
         <source>Total Reviews</source>
         <translation>Revisioni Totali</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="160"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="305"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="337"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="169"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="317"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="351"/>
         <source>Reviewers</source>
         <translation>Revisori</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="170"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="179"/>
         <source>Review Progress</source>
         <translation>Progresso Revisione</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="175"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="184"/>
         <source>Overall Completion:</source>
         <translation>Completamento Totale:</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="180"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="189"/>
         <source>0%</source>
         <translation>0%</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="194"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="203"/>
         <source>Not Reviewed</source>
         <translation>Non Revisionato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="203"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="212"/>
         <source>In Progress</source>
         <translation>In Corso</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="212"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="221"/>
         <source>Complete</source>
         <translation>Completato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="220"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="229"/>
         <source>AOI Summary</source>
         <translation>Riepilogo AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="228"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="237"/>
         <source>Total AOIs</source>
         <translation>AOI Totali</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="236"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="245"/>
         <source>Flagged AOIs</source>
         <translation>AOI Contrassegnate</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="243"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="252"/>
         <source>Active Reviewers</source>
         <translation>Revisori Attivi</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="245"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="666"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="254"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="680"/>
         <source>No reviewers yet</source>
         <translation>Ancora nessun revisore</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="292"/>
-        <source>Batch review status and assignments. Load reviewer XMLs to update progress.</source>
-        <translation>Stato della revisione batch e assegnazioni. Carica gli XML dei revisori per aggiornare il progresso.</translation>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="302"/>
+        <source>Batch review status and assignments. Load reviewer XMLs to update progress. Double-click a batch to open its results in the Viewer.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="301"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="313"/>
         <source>Batch ID</source>
         <translation>ID Batch</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="302"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="314"/>
         <source>Algorithm</source>
         <translation>Algoritmo</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="303"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="315"/>
         <source>Images</source>
         <translation>Immagini</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="304"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="316"/>
         <source>Reviews</source>
         <translation>Revisioni</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="306"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="318"/>
         <source>Status</source>
         <translation>Stato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="325"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="339"/>
         <source>Consolidated AOI data from all reviews. Shows flag counts and reviewer comments.</source>
         <translation>Dati AOI consolidati da tutte le revisioni. Mostra il numero di contrassegni e i commenti dei revisori.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="334"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="348"/>
         <source>Image</source>
         <translation>Immagine</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="335"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="349"/>
         <source>Location</source>
         <translation>Posizione</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="336"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="350"/>
         <source>Flag Count</source>
         <translation>Conteggio Contrassegni</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="338"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="352"/>
         <source>Comments</source>
         <translation>Commenti</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="355"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="369"/>
         <source>New Search Project</source>
         <translation>Nuovo Progetto di Ricerca</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="356"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="370"/>
         <source>Enter project name:</source>
         <translation>Inserisci il nome del progetto:</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="365"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="379"/>
         <source>Coordinator Information</source>
         <translation>Informazioni Coordinatore</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="366"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="380"/>
         <source>Enter your name:</source>
         <translation>Inserisci il tuo nome:</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="375"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="389"/>
         <source>Select Batch Files</source>
         <translation>Seleziona File Batch</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="376"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="390"/>
         <source>Select Initial Batch XML Files</source>
         <translation>Seleziona i File XML Batch Iniziali</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="379"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="393"/>
         <source>You can select multiple ADIAT_Data.xml files from different folders.
 
 Tips:
@@ -4121,111 +4244,111 @@ Suggerimenti:
 • Ogni batch deve essere un file ADIAT_Data.xml elaborato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="393"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="407"/>
         <source>Select Batch ADIAT_Data.xml Files (Hold Ctrl to select multiple)</source>
         <translation>Seleziona i File ADIAT_Data.xml Batch (Tieni premuto Ctrl per selezionarne più di uno)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="395"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="410"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="510"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="557"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="612"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="409"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="424"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="524"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="571"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="626"/>
         <source>XML Files (*.xml)</source>
         <translation>File XML (*.xml)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="408"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="422"/>
         <source>Save Search Project</source>
         <translation>Salva Progetto di Ricerca</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="420"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="453"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="469"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="529"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="593"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="619"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="434"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="467"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="483"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="543"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="607"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="633"/>
         <source>Success</source>
         <translation>Successo</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="421"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="435"/>
         <source>Search project &apos;{project}&apos; created successfully!</source>
         <translation>Progetto di ricerca &apos;{project}&apos; creato con successo!</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="428"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="432"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="459"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="442"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="446"/>
         <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="473"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="599"/>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="623"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="487"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="613"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="637"/>
         <source>Error</source>
         <translation>Errore</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="429"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="443"/>
         <source>Failed to save project file.</source>
         <translation>Impossibile salvare il file di progetto.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="432"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="446"/>
         <source>Failed to create project.</source>
         <translation>Impossibile creare il progetto.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="438"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="452"/>
         <source>Open Search Project</source>
         <translation>Apri Progetto di Ricerca</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="440"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="454"/>
         <source>Search Project Files (ADIAT_Search_*.xml);;All XML Files (*.xml)</source>
         <translation>File Progetto di Ricerca (ADIAT_Search_*.xml);;Tutti i File XML (*.xml)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="454"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="468"/>
         <source>Project loaded successfully!</source>
         <translation>Progetto caricato con successo!</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="460"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="474"/>
         <source>Failed to load project file.</source>
         <translation>Impossibile caricare il file di progetto.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="470"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="484"/>
         <source>Project saved successfully!</source>
         <translation>Progetto salvato con successo!</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="473"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="487"/>
         <source>Failed to save project.</source>
         <translation>Impossibile salvare il progetto.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="480"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="494"/>
         <source>No Project</source>
         <translation>Nessun Progetto</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="481"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="495"/>
         <source>Please create or open a project first.</source>
         <translation>Crea o apri prima un progetto.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="488"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="502"/>
         <source>Add Batches</source>
         <translation>Aggiungi Batch</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="489"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="503"/>
         <source>Add More Batch XML Files</source>
         <translation>Aggiungi Altri File XML Batch</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="492"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="506"/>
         <source>Select additional ADIAT_Data.xml batch files to add to this search.
 
 Tips:
@@ -4242,76 +4365,76 @@ Suggerimenti:
 • I nuovi batch verranno numerati sequenzialmente</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="508"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="522"/>
         <source>Select Batch ADIAT_Data.xml Files to Add (Hold Ctrl to select multiple)</source>
         <translation>Seleziona i File ADIAT_Data.xml Batch da Aggiungere (Tieni premuto Ctrl per selezionarne più di uno)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="531"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="545"/>
         <source>Successfully added {count} batch(es) to the project!
 Total batches: {total}</source>
         <translation>Aggiunti con successo {count} batch al progetto!
 Batch totali: {total}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="541"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="555"/>
         <source>No Batches Added</source>
         <translation>Nessun Batch Aggiunto</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="543"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="557"/>
         <source>No batches were added. Check that the XML files are valid ADIAT_Data.xml files.</source>
         <translation>Nessun batch aggiunto. Controlla che i file XML siano file ADIAT_Data.xml validi.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="555"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="569"/>
         <source>Select Reviewer&apos;s ADIAT_Data.xml File</source>
         <translation>Seleziona il file ADIAT_Data.xml del revisore</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="568"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="582"/>
         <source>No Batches</source>
         <translation>Nessun Batch</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="569"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="583"/>
         <source>No batches found in project.</source>
         <translation>Nessun batch trovato nel progetto.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="577"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="591"/>
         <source>Select Batch</source>
         <translation>Seleziona Batch</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="578"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="592"/>
         <source>Which batch does this review belong to?</source>
         <translation>A quale batch appartiene questa revisione?</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="594"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="608"/>
         <source>Review data loaded and merged successfully!</source>
         <translation>Dati di revisione caricati e uniti con successo!</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="600"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="614"/>
         <source>Failed to load review data.</source>
         <translation>Impossibile caricare i dati di revisione.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="620"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="634"/>
         <source>Consolidated results exported to:
 {path}</source>
         <translation>Risultati consolidati esportati in:
 {path}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="623"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="637"/>
         <source>Failed to export results.</source>
         <translation>Impossibile esportare i risultati.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="649"/>
+        <location filename="../app/core/controllers/coordinator/CoordinatorWindow.py" line="663"/>
         <source>{value}%</source>
         <translation>{value}%</translation>
     </message>
@@ -4515,35 +4638,40 @@ Area totale: {area}{skip_info}</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="85"/>
+        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="115"/>
+        <source>{name} ({code})</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="124"/>
         <source>Feed: {feed}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="102"/>
+        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="132"/>
+        <source>Aircraft serial: {sn}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="150"/>
         <source>no
 thumb</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="108"/>
+        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="156"/>
         <source>bad
 thumb</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="171"/>
+        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="224"/>
         <source>Detection</source>
         <translation type="unfinished">Rilevamento</translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="183"/>
-        <source>Thumbnail could not be decoded.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="185"/>
-        <source>No thumbnail available.</source>
+        <location filename="../app/core/views/flight/DetectionRowWidget.py" line="283"/>
+        <source>No image available.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4597,7 +4725,7 @@ thumb</source>
     </message>
     <message>
         <location filename="../resources/views/flight/flight_pairing.ui" line="27"/>
-        <source>Ask the drone operator to read out the 6-character pairing code shown on their tablet.</source>
+        <source>Ask the drone operator to read out the 6-character pairing code shown on their controller.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4606,173 +4734,193 @@ thumb</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="87"/>
+        <location filename="../resources/views/flight/flight_pairing.ui" line="85"/>
         <source>Pairing…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="100"/>
+        <location filename="../resources/views/flight/flight_pairing.ui" line="98"/>
         <source>Looking up code, exchanging keys, gathering ICE candidates.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="137"/>
-        <source>Confirm pairing phrase</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="150"/>
-        <source>Both screens should show the same four words. Only accept if they match exactly.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="160"/>
-        <source>----</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="195"/>
-        <source>Do Not Match</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="202"/>
-        <source>Words Match</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="231"/>
+        <location filename="../resources/views/flight/flight_pairing.ui" line="135"/>
         <source>Pairing failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="75"/>
-        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="79"/>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="296"/>
+        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="69"/>
+        <location filename="../resources/views/flight/flight_pairing.ui" line="200"/>
         <source>Cancel</source>
         <translation type="unfinished">Annulla</translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_pairing.ui" line="303"/>
+        <location filename="../resources/views/flight/flight_pairing.ui" line="207"/>
         <source>Connect</source>
         <translation type="unfinished">Connetti</translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="77"/>
+        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="67"/>
         <source>Close</source>
         <translation type="unfinished">Chiudi</translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="102"/>
+        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="85"/>
         <source>drone has {current}/{limit} viewers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="118"/>
+        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="98"/>
         <source>known device — same fingerprint as last pair</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="121"/>
-        <source>new device — verify SAS carefully</source>
+        <location filename="../app/core/views/flight/FlightPairingDialog.py" line="101"/>
+        <source>new device</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>FlightTile</name>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="56"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="460"/>
         <source>Feed {code}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="173"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="298"/>
         <source>Choose recording directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="203"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="328"/>
         <source>REC ● {filename}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="208"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="333"/>
         <source>REC error: {msg}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="216"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="341"/>
         <source>REC failed to start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="231"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="355"/>
         <source>Recording saved</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="239"/>
-        <location filename="../app/core/views/flight/FlightTile.py" line="254"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="364"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="383"/>
         <source>Network: {state}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="249"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="377"/>
         <source>latency: {ms:.0f}ms</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="251"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="379"/>
         <source>latency: --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="258"/>
-        <source>SAS: --</source>
+        <location filename="../app/core/views/flight/FlightTile.py" line="457"/>
+        <source>{name} · {code}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="260"/>
-        <source>SAS: {phrase}</source>
+        <location filename="../app/core/views/flight/FlightTile.py" line="482"/>
+        <source>Aircraft serial: {sn}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="292"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="520"/>
+        <source>Rename Feed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="522"/>
+        <source>Nickname for this drone (persists across new pairing codes via the aircraft serial number). Leave blank to clear.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="554"/>
+        <source>Initializing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="555"/>
+        <source>Connecting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="556"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="557"/>
+        <source>Connected</source>
+        <translation type="unfinished">Connesso</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="558"/>
+        <source>Disconnected</source>
+        <translation type="unfinished">Disconnesso</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="559"/>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="560"/>
+        <source>Closed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="574"/>
+        <source>Rename Feed...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="591"/>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="595"/>
+        <source>Maximize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightTile.py" line="580"/>
         <source>Full Screen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="297"/>
-        <source>Dock</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="297"/>
-        <source>Float</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="305"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="601"/>
         <source>Mute Detections in Gallery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="321"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="617"/>
         <source>Stop Recording</source>
         <translation type="unfinished">Interrompi Registrazione</translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="325"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="621"/>
         <source>Start Recording…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="329"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="625"/>
         <source>Reconnect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/FlightTile.py" line="335"/>
+        <location filename="../app/core/views/flight/FlightTile.py" line="631"/>
         <source>Close</source>
         <translation type="unfinished">Chiudi</translation>
     </message>
@@ -4780,83 +4928,112 @@ thumb</source>
 <context>
     <name>FlightTileContents</name>
     <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="42"/>
+        <location filename="../resources/views/flight/flight_tile.ui" line="44"/>
         <source>Waiting for video…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="83"/>
-        <source>Detections</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="127"/>
+        <location filename="../resources/views/flight/flight_tile.ui" line="90"/>
         <source>Network: new</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="134"/>
+        <location filename="../resources/views/flight/flight_tile.ui" line="97"/>
         <source>0x0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="141"/>
+        <location filename="../resources/views/flight/flight_tile.ui" line="104"/>
         <source>0 fps</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="148"/>
+        <location filename="../resources/views/flight/flight_tile.ui" line="111"/>
         <source>0 kbps</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="155"/>
+        <location filename="../resources/views/flight/flight_tile.ui" line="118"/>
         <source>latency: --</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_tile.ui" line="175"/>
-        <source>SAS: --</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>FlightTileController</name>
     <message>
-        <location filename="../app/core/controllers/flight/FlightTileController.py" line="111"/>
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="191"/>
         <source>Looking up code {code} and connecting to the drone.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/flight/FlightTileController.py" line="190"/>
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="266"/>
         <source>Name this device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/flight/FlightTileController.py" line="192"/>
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="268"/>
         <source>Give this publisher a name so you can recognise it next time (e.g. &apos;Operator A&apos;s M4E&apos;).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/flight/FlightTileController.py" line="210"/>
-        <source>Device &apos;{label}&apos; presented a different DTLS fingerprint than the last time you paired with it. This could mean the tablet was reset, a different tablet is using the label, or somebody is impersonating it.
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="286"/>
+        <source>Device &apos;{label}&apos; presented a different DTLS fingerprint than the last time you paired with it. This could mean the controller was reset, a different controller is using the label, or somebody is impersonating it.
 
 Reject if you weren&apos;t expecting this.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/flight/FlightTileController.py" line="218"/>
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="453"/>
+        <source>Pairing ended before video could start. Ask the operator to generate a new code and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="294"/>
         <source>Fingerprint mismatch — &apos;{label}&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/flight/FlightTileController.py" line="227"/>
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="303"/>
         <source>Fingerprint changed on {ts}; previous identity was overwritten after operator review.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/flight/FlightTileController.py" line="311"/>
+        <location filename="../app/core/controllers/flight/FlightTileController.py" line="395"/>
         <source>This drone already has {current} viewers connected (maximum {limit}). Ask one to disconnect, or try again later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>FlightViewerController</name>
+    <message>
+        <location filename="../app/core/controllers/flight/FlightViewerController.py" line="499"/>
+        <source>New flight session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/flight/FlightViewerController.py" line="501"/>
+        <source>Mobile started a new flight under code {code}. The previous session&apos;s detections are still saved on this computer. Discard them, or keep them archived?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/flight/FlightViewerController.py" line="627"/>
+        <source>Image Analysis</source>
+        <translation type="unfinished">Analisi Immagini</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/flight/FlightViewerController.py" line="650"/>
+        <source>Streaming Detector</source>
+        <translation type="unfinished">Rilevatore Streaming</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/flight/FlightViewerController.py" line="667"/>
+        <source>Error</source>
+        <translation type="unfinished">Errore</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/flight/FlightViewerController.py" line="668"/>
+        <source>Failed to open {target}:
+{error}</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4873,58 +5050,108 @@ Reject if you weren&apos;t expecting this.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="49"/>
-        <source>Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="64"/>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="76"/>
         <source>Main Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="80"/>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="97"/>
         <source>+ Add Feed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="83"/>
-        <source>Pair with an ADIAT Mobile drone tablet using a 6-character code.</source>
-        <translation type="unfinished"></translation>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="49"/>
+        <source>Menu</source>
+        <translation type="unfinished">Menu</translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="88"/>
-        <source>Mission Gallery</source>
-        <translation type="unfinished"></translation>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="66"/>
+        <source>Help</source>
+        <translation type="unfinished">Aiuto</translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="97"/>
-        <source>Show or hide the aggregate Mission Gallery panel.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="102"/>
-        <source>Save Layout</source>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="100"/>
+        <source>Pair with an ADIAT Mobile drone controller using a 6-character code.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../resources/views/flight/flight_viewer.ui" line="105"/>
+        <source>Mission Gallery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="114"/>
+        <source>Show or hide the aggregate Mission Gallery panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="119"/>
+        <source>Save Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="122"/>
         <source>Save the current dock arrangement for next session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="110"/>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="127"/>
         <source>Restore Layout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="113"/>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="130"/>
         <source>Apply the last saved dock arrangement.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/flight/flight_viewer.ui" line="118"/>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="135"/>
         <source>Close Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="140"/>
+        <source>Map</source>
+        <translation type="unfinished">Mappa</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="149"/>
+        <source>Show or hide the detection map dock.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="154"/>
+        <source>Open Image Analysis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="157"/>
+        <source>Switch to the Image Analysis window for post-flight image review.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="162"/>
+        <source>Open Streaming Detector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="165"/>
+        <source>Switch to the Streaming Detector window for RTMP / HDMI capture sessions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="170"/>
+        <source>ADIAT Help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/flight/flight_viewer.ui" line="173"/>
+        <source>Open the ADIAT documentation in your browser.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/FlightViewerWindow.py" line="274"/>
+        <source>Rename Feed...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5091,7 +5318,7 @@ Vuoi continuare?</translation>
         <translation>Nessun dato GPS trovato nelle immagini</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/GPSMapController.py" line="363"/>
+        <location filename="../app/core/controllers/images/viewer/GPSMapController.py" line="366"/>
         <source>GPS coordinate not in any images</source>
         <translation>Coordinata GPS non presente in nessuna immagine</translation>
     </message>
@@ -5162,12 +5389,13 @@ La mappa continuerà a funzionare con i tasselli memorizzati nella cache, ove di
 <context>
     <name>GPSMapView</name>
     <message>
-        <location filename="../app/core/views/images/viewer/widgets/GPSMapView.py" line="1128"/>
+        <location filename="../app/core/views/images/viewer/widgets/GPSMapView.py" line="1129"/>
         <source>Copy Data</source>
         <translation>Copia Dati</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/widgets/GPSMapView.py" line="1708"/>
+        <location filename="../app/core/views/images/viewer/widgets/GPSMapView.py" line="1669"/>
+        <location filename="../app/core/views/images/viewer/widgets/GPSMapView.py" line="1770"/>
         <source>Zoom FOV</source>
         <translation>Zoom FOV</translation>
     </message>
@@ -5175,33 +5403,33 @@ La mappa continuerà a funzionare con i tasselli memorizzati nella cache, ove di
 <context>
     <name>GalleryUIComponent</name>
     <message>
-        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="306"/>
+        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="340"/>
         <source>0 AOIs</source>
         <translation>0 AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="347"/>
+        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="381"/>
         <source>AOI</source>
         <translation>AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="347"/>
+        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="381"/>
         <source>AOIs</source>
         <translation>AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="349"/>
-        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="372"/>
+        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="383"/>
+        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="406"/>
         <source>{count} {label}</source>
         <translation>{count} {label}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="367"/>
+        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="401"/>
         <source>Area of Interest</source>
         <translation>Area di Interesse</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="369"/>
+        <location filename="../app/core/controllers/images/viewer/gallery/GalleryUIComponent.py" line="403"/>
         <source>Areas of Interest</source>
         <translation>Aree di Interesse</translation>
     </message>
@@ -6992,12 +7220,12 @@ li.checked::marker { content: &quot;\2612&quot;; }
 <context>
     <name>ImageLoadController</name>
     <message>
-        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="112"/>
+        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="118"/>
         <source>(Image {current} of {total})</source>
         <translation>(Immagine {current} di {total})</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="426"/>
+        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="432"/>
         <source>Error Loading Image</source>
         <translation>Errore durante il caricamento dell&apos;immagine</translation>
     </message>
@@ -7722,116 +7950,116 @@ Risoluzioni più basse = elaborazione più veloce ma possono perdere oggetti pic
         <translation>Risoluzione Elaborazione:</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="75"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="79"/>
         <source>Automated Drone Image Analysis Tool v{version} - Sponsored by TEXSAR</source>
         <translation>Strumento Automatico di Analisi Immagini Drone v{version} - Sponsorizzato da TEXSAR</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="538"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="580"/>
         <source>Please set the input and output directories.</source>
         <translation>Imposta le cartelle di input e output.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="544"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="586"/>
         <source>--- Starting image processing ---</source>
         <translation>--- Inizio elaborazione immagini ---</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="661"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="854"/>
         <source>--- Image Processing Completed ---</source>
         <translation>--- Elaborazione Immagini Completata ---</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="664"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="858"/>
         <source>{count} images with areas of interest identified</source>
         <translation>{count} immagini con aree di interesse identificate</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="670"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="864"/>
         <source>No areas of interest identified</source>
         <translation>Nessuna area di interesse identificata</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="689"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1102"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1125"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1148"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1164"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1180"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1196"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="939"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1352"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1375"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1398"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1414"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1430"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1446"/>
         <source>Error</source>
         <translation>Errore</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="867"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1117"/>
         <source>The selected file is not a valid XML file: {path}</source>
         <translation>Il file selezionato non è un file XML valido: {path}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1048"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1298"/>
         <source>Error Loading Results</source>
         <translation>Errore Caricamento Risultati</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1049"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1299"/>
         <source>Failed to load results file:
 {error}</source>
         <translation>Impossibile caricare il file dei risultati:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1103"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1353"/>
         <source>Failed to open Streaming Detector:
 {error}</source>
         <translation>Impossibile aprire il Rilevatore Streaming:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1126"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1376"/>
         <source>Failed to open Flight Viewer:
 {error}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1149"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1399"/>
         <source>Failed to open Search Coordinator:
 {error}</source>
         <translation>Impossibile aprire il Coordinatore di Ricerca:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1165"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1415"/>
         <source>Failed to open Help documentation:
 {error}</source>
         <translation>Impossibile aprire la documentazione di Aiuto:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1181"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1431"/>
         <source>Failed to open Community Help:
 {error}</source>
         <translation>Impossibile aprire l&apos;Aiuto della Community:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1197"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1447"/>
         <source>Failed to open YouTube Channel:
 {error}</source>
         <translation>Impossibile aprire il canale YouTube:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="1322"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1572"/>
         <source>Invalid Value</source>
         <translation>Valore Non Valido</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="327"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="333"/>
         <source>Select AOI Highlight Color</source>
         <translation>Seleziona Colore Evidenziazione AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="248"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="254"/>
         <source>Select the detection algorithm for your image analysis task:
 
 HSV COLOR RANGE: Detects brightly colored objects (clothing, vehicles, tents)
@@ -7908,93 +8136,98 @@ AI PERSON DETECTOR: modello di deep learning per il rilevamento accurato di pers
   • Limite: rileva solo persone, elaborazione più lenta</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="341"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="359"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="347"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="365"/>
         <source>Select Directory</source>
         <translation>Seleziona Cartella</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="376"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="382"/>
         <source>Select a Reference Image</source>
         <translation>Seleziona un&apos;Immagine di Riferimento</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="378"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="384"/>
         <source>Images (*.png *.jpg)</source>
         <translation>Immagini (*.png *.jpg)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="426"/>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="458"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="432"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="464"/>
         <source>Value Adjusted</source>
         <translation>Valore Regolato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="428"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="434"/>
         <source>Maximum area has been adjusted to {value} pixels to maintain valid range.
 (Minimum area must be less than maximum area)</source>
         <translation>L&apos;area massima è stata regolata a {value} pixel per mantenere un intervallo valido.
 (L&apos;area minima deve essere inferiore all&apos;area massima)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="460"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="466"/>
         <source>Minimum area has been adjusted to {value} pixels to maintain valid range.
 (Maximum area must be greater than minimum area)</source>
         <translation>L&apos;area minima è stata regolata a {value} pixel per mantenere un intervallo valido.
 (L&apos;area massima deve essere maggiore dell&apos;area minima)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="634"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="799"/>
         <source>Area of Interest Limit ({limit}) exceeded. Continue?</source>
         <translation>Limite Area di Interesse ({limit}) superato. Continuare?</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="637"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="802"/>
         <source>Area of Interest Limit Exceeded</source>
         <translation>Limite Area di Interesse Superato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="699"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="855"/>
+        <source>Image processing complete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="949"/>
         <source>Select File</source>
         <translation>Seleziona File</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="699"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="949"/>
         <source>XML Files (*.xml);;All Files (*)</source>
         <translation>File XML (*.xml);;Tutti i File (*)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="720"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="970"/>
         <source>Select Results Folder</source>
         <translation>Seleziona Cartella Risultati</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="753"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1003"/>
         <source>Failed to scan folder: {error}</source>
         <translation>Impossibile scansionare la cartella: {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="775"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1025"/>
         <source>No Results Found</source>
         <translation>Nessun Risultato Trovato</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="776"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1026"/>
         <source>No ADIAT_DATA.XML files were found in the selected folder.</source>
         <translation>Nessun file ADIAT_DATA.XML trovato nella cartella selezionata.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="793"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1043"/>
         <source>Failed to display results: {error}</source>
         <translation>Impossibile visualizzare i risultati: {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="804"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1054"/>
         <source>Scan failed: {error}</source>
         <translation>Scansione fallita: {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="847"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="1097"/>
         <source>Failed to open viewer: {error}</source>
         <translation>Impossibile aprire il visualizzatore: {error}</translation>
     </message>
@@ -8653,7 +8886,7 @@ Usa per preparare le riprese video per l&apos;analisi basata su immagini.</trans
     </message>
     <message>
         <location filename="../resources/views/images/MainWindow.ui" line="1221"/>
-        <source>Open the Flight Viewer to pair with ADIAT Mobile drone tablets and watch their live feeds.</source>
+        <source>Open the Flight Viewer to pair with ADIAT Mobile drone controllers and watch their live feeds.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8763,7 +8996,7 @@ Fai domande, segnala problemi e suggerisci nuove funzionalità.</translation>
         <translation>Canale YouTube</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/MainWindow.py" line="611"/>
+        <location filename="../app/core/controllers/images/MainWindow.py" line="776"/>
         <source>Could not parse XML file. Check file paths in &quot;{file_name}&quot;</source>
         <translation>Impossibile analizzare il file XML. Controlla i percorsi dei file in &quot;{file_name}&quot;</translation>
     </message>
@@ -8771,12 +9004,12 @@ Fai domande, segnala problemi e suggerisci nuove funzionalità.</translation>
 <context>
     <name>MapDock</name>
     <message>
-        <location filename="../app/core/views/flight/MapDock.py" line="172"/>
+        <location filename="../app/core/views/flight/MapDock.py" line="263"/>
         <source>Map</source>
         <translation type="unfinished">Mappa</translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/MapDock.py" line="264"/>
+        <location filename="../app/core/views/flight/MapDock.py" line="360"/>
         <source>QtWebEngine not available — install PySide6-Addons for the interactive map. Showing list view instead.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8973,64 +9206,112 @@ Usalo per vedere quali colori verranno rilevati e ottimizzare le soglie prima de
 <context>
     <name>MeasureDialog</name>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="62"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="71"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="228"/>
         <source>Measure Distance</source>
         <translation>Misura Distanza</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="75"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="85"/>
+        <source>Measure Shadow</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="87"/>
+        <source>When checked, the two clicks estimate the height of a vertical object from its shadow. Click the base of the object first, then the tip of its shadow.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="94"/>
         <source>Ground Sample Distance</source>
         <translation>Distanza di Campionamento al Suolo</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="78"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="97"/>
         <source>GSD:</source>
         <translation>GSD:</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="80"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="99"/>
         <source>Enter GSD value</source>
         <translation>Inserisci valore GSD</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="84"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="103"/>
         <source>cm/px</source>
         <translation>cm/px</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="92"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="111"/>
         <source>Measurement</source>
         <translation>Misurazione</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="95"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="114"/>
         <source>Distance:</source>
         <translation>Distanza:</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="96"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="115"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="126"/>
         <source>--</source>
         <translation>--</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="107"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="124"/>
+        <source>Shadow Height Estimate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="135"/>
+        <source>Use Anyway</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="137"/>
+        <source>Force the estimate with the current base/tip clicks even though the drawn line doesn&apos;t match the expected shadow direction. Use only when you&apos;re confident the geometry is correct.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="181"/>
+        <source>Click the BASE of the object first, then the TIP of its shadow.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="185"/>
         <source>Click on the image to place the first point,
 then click again to place the second point.</source>
         <translation>Clicca sull&apos;immagine per posizionare il primo punto,
 poi clicca di nuovo per posizionare il secondo punto.</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="115"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="158"/>
         <source>Clear</source>
         <translation>Cancella</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="117"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="160"/>
         <source>Close</source>
         <translation>Chiudi</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="269"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="228"/>
+        <source>Measure Shadow Height</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="415"/>
+        <source>Image metadata unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="464"/>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="550"/>
+        <source>Rejected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/MeasureDialog.py" line="574"/>
         <source>No GSD value</source>
         <translation>Nessun valore GSD</translation>
     </message>
@@ -9044,28 +9325,28 @@ poi clicca di nuovo per posizionare il secondo punto.</translation>
     </message>
     <message>
         <location filename="../resources/views/SelectionDialog.ui" line="31"/>
-        <source>What type of media are you working with?</source>
-        <translation>Con quale tipo di media stai lavorando?</translation>
+        <source>What would you like to do?</source>
+        <translation type="unfinished">Cosa vorresti fare?</translation>
     </message>
     <message>
         <location filename="../resources/views/SelectionDialog.ui" line="86"/>
-        <source>Images</source>
-        <translation>Immagini</translation>
+        <source>Image Analysis</source>
+        <translation type="unfinished">Analisi Immagini</translation>
+    </message>
+    <message>
+        <location filename="../resources/views/SelectionDialog.ui" line="169"/>
+        <source>Stream Analysis</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/SelectionDialog.ui" line="246"/>
+        <source>Pair with ADIAT Mobile drone controllers to receive their live camera feeds with detections.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../resources/views/SelectionDialog.ui" line="163"/>
         <source>RTMP, Video Files, HDMI Capture</source>
         <translation>RTMP, File Video, Acquisizione HDMI</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/SelectionDialog.ui" line="169"/>
-        <source>Streaming</source>
-        <translation>Streaming</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/SelectionDialog.ui" line="246"/>
-        <source>Pair with ADIAT Mobile drone tablets to receive their live camera feeds with detections.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../resources/views/SelectionDialog.ui" line="252"/>
@@ -9087,12 +9368,12 @@ poi clicca di nuovo per posizionare il secondo punto.</translation>
     </message>
     <message>
         <location filename="../resources/views/flight/mission_gallery_dock.ui" line="48"/>
-        <source>Class</source>
+        <source>Detector</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../resources/views/flight/mission_gallery_dock.ui" line="58"/>
-        <source>Min confidence</source>
+        <source>Min score</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9119,22 +9400,22 @@ poi clicca di nuovo per posizionare il secondo punto.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="50"/>
+        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="53"/>
         <source>All feeds</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="51"/>
-        <source>All classes</source>
+        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="59"/>
+        <source>All detectors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="104"/>
+        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="126"/>
         <source>0 detections</source>
         <translation type="unfinished">0 rilevamenti</translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="119"/>
+        <location filename="../app/core/views/flight/MissionGalleryDock.py" line="151"/>
         <source>{n} detections</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9466,80 +9747,148 @@ Ancora mancanti:
 <context>
     <name>PersonReferenceDialog</name>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="474"/>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="262"/>
         <source>Person Size Reference</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="481"/>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="269"/>
         <source>Reference Person</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="506"/>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="284"/>
+        <source>Standing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="286"/>
+        <source>Lying down</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="288"/>
+        <source>Sitting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="297"/>
+        <source>Show shadows (from capture time)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="300"/>
+        <source>Use terrain elevation (DEM)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="309"/>
+        <source>Rotate the person on the ground to line it up with an object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="314"/>
         <source>Click to choose overlay color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="515"/>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="322"/>
         <source>Size:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="516"/>
-        <source>Position:</source>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="323"/>
+        <source>Show:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="517"/>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="324"/>
+        <source>Rotation:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="340"/>
+        <source>Drag the white handle to position the reference person. The silhouettes are projected at true perspective scale for this image&apos;s camera angle - they foreshorten toward oblique edges.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="327"/>
         <source>Color:</source>
         <translation type="unfinished">Colore:</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="521"/>
-        <source>On-image Footprint</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="530"/>
-        <source>Length:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="531"/>
-        <source>Width:</source>
-        <translation type="unfinished">Larghezza:</translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="532"/>
-        <source>GSD:</source>
-        <translation type="unfinished">GSD:</translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="536"/>
-        <source>Click and drag the silhouette on the image to move it.
-Sizes are drawn to scale using the image&apos;s Ground Sample Distance.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="544"/>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="348"/>
         <source>Recenter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="545"/>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="349"/>
         <source>Close</source>
         <translation type="unfinished">Chiudi</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="592"/>
-        <source>Choose Overlay Color</source>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="404"/>
+        <source>Perspective overlay unavailable: this image is missing the altitude or lens metadata needed to project a person.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="651"/>
-        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="794"/>
-        <source>GSD unavailable</source>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="421"/>
+        <source>no image loaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="426"/>
+        <source>image metadata could not be read</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="430"/>
+        <source>image has no GPS coordinates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="441"/>
+        <source>capture time / timezone not in metadata</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="446"/>
+        <source>sun position could not be computed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="455"/>
+        <source>Sun at capture: {elev:.0f}° above horizon, azimuth {az:.0f}°.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="461"/>
+        <source>the sun was below the horizon at capture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="463"/>
+        <source>sun position unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="464"/>
+        <source>Shadow unavailable: {reason}.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="555"/>
+        <source>Place the person and shadow on the DEM terrain surface</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="559"/>
+        <source>Terrain (DEM) data is not available for this image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/PersonReferenceDialog.py" line="812"/>
+        <source>Choose Overlay Color</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12546,7 +12895,12 @@ Clicca sui marker, oppure usa la Selezione Rettangolare per selezionare un&apos;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/views/flight/TelemetryHud.py" line="195"/>
+        <location filename="../app/core/views/flight/TelemetryHud.py" line="200"/>
+        <source>SPD {value} mph</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/flight/TelemetryHud.py" line="203"/>
         <source>SPD {value} m/s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -13909,8 +14263,8 @@ Mostra il totale dei fotogrammi estratti al termine.</translation>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="112"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="133"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="951"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1122"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="963"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1134"/>
         <source>TextLabel</source>
         <translation>TextLabel</translation>
     </message>
@@ -13931,13 +14285,13 @@ Quando disabilitato, mostra l&apos;immagine originale non elaborata.
 Usa per confrontare l&apos;immagine originale con i risultati del rilevamento.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="427"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="437"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="205"/>
         <source>Show Overlay</source>
         <translation>Mostra Overlay</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1124"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1151"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="225"/>
         <source>Toggle Gallery Mode (G)
 Shows all AOIs from all images in a grid view</source>
@@ -13955,7 +14309,7 @@ Mostra tutte le AOI di tutte le immagini in una vista a griglia</translation>
         <translation>Mostra AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1144"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1171"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="299"/>
         <source>Open Histogram</source>
         <translation>Apri Istogramma</translation>
@@ -13983,7 +14337,6 @@ Mostra tutte le AOI di tutte le immagini in una vista a griglia</translation>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="485"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="522"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="564"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="601"/>
         <source>...</source>
         <translation>...</translation>
     </message>
@@ -14003,7 +14356,7 @@ Mostra tutte le AOI di tutte le immagini in una vista a griglia</translation>
         <translation>ruler.png</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1816"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1863"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="405"/>
         <source>Person Size Reference (Ctrl+P)</source>
         <translation type="unfinished"></translation>
@@ -14054,12 +14407,7 @@ Mostra tutte le AOI di tutte le immagini in una vista a griglia</translation>
         <translation>zip.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="584"/>
-        <source>Plan Verification (T)</source>
-        <translation>Verifica del Piano (T)</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="632"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="602"/>
         <source>Skip hidden images when navigating.
 When enabled, Previous/Next buttons will skip over images marked as hidden.
 Use to focus on images that haven&apos;t been reviewed or marked for exclusion.
@@ -14070,12 +14418,12 @@ Usa per concentrarti su immagini non ancora revisionate o contrassegnate per l&a
 Scorciatoia da tastiera: H per nascondere/mostrare l&apos;immagine corrente</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="638"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="608"/>
         <source>Skip Hidden</source>
         <translation>Salta Nascoste</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="677"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="647"/>
         <source>Mark current image as hidden.
 Hidden images can be excluded from reports, exports, and navigation.
 Use to remove images with false positives or no relevant detections.
@@ -14088,13 +14436,13 @@ Quando &quot;Salta Nascoste&quot; è abilitato, le immagini nascoste vengono sal
 Scorciatoia da tastiera: H</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="684"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="704"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="654"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="674"/>
         <source>Hide Image</source>
         <translation>Nascondi Immagine</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="696"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="666"/>
         <source>Displays the name of the currently hidden image.
 When an image is marked as hidden, its filename appears here.
 Hidden images are excluded from navigation when &quot;Skip Hidden&quot; is enabled.</source>
@@ -14103,7 +14451,7 @@ Quando un&apos;immagine è contrassegnata come nascosta, il suo nome file appare
 Le immagini nascoste sono escluse dalla navigazione quando &quot;Salta Nascoste&quot; è abilitato.</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="732"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="702"/>
         <source>Jump directly to a specific image number.
 Enter an image number and press Enter to navigate instantly.
 Useful for reviewing specific images or returning to a noted location.</source>
@@ -14112,12 +14460,12 @@ Inserisci un numero immagine e premi Invio per navigare istantaneamente.
 Utile per rivedere immagini specifiche o tornare a una posizione annotata.</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="737"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="707"/>
         <source>Jump To:</source>
         <translation>Vai a:</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="762"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="732"/>
         <source>Enter an image number (1 to total) and press Enter.
 Quickly navigate to any image in the analysis results.
 Example: Type &quot;25&quot; and press Enter to jump to image #25</source>
@@ -14126,37 +14474,54 @@ Naviga rapidamente a qualsiasi immagine nei risultati dell&apos;analisi.
 Esempio: digita &quot;25&quot; e premi Invio per andare all&apos;immagine n. 25</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="776"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="746"/>
+        <source>Jump to a specific AOI by its run-wide number.
+Enter an AOI number and press Enter to select and scroll to it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="750"/>
+        <source>Go to AOI #:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="775"/>
+        <source>Enter an AOI number and press Enter.
+Selects that AOI and scrolls it into view in the gallery or single-image list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="788"/>
         <source>Previous Image</source>
         <translation>Immagine Precedente</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="783"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="795"/>
         <source>previous.png</source>
         <translation>previous.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="798"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="810"/>
         <source>Next Image</source>
         <translation>Immagine Successiva</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="805"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="817"/>
         <source>next.png</source>
         <translation>next.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="961"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="973"/>
         <source>Filter AOIs by color and pixel area</source>
         <translation>Filtra AOI per colore e area in pixel</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1033"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1045"/>
         <source>Sort By</source>
         <translation>Ordina per</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1045"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1057"/>
         <source>Sort Areas of Interest (AOIs) in the list.
 Choose how to order the detected objects:
 • Pixel Area: Sort by size (largest to smallest)
@@ -14173,37 +14538,37 @@ Scegli come ordinare gli oggetti rilevati:
 L&apos;ordinamento aiuta a dare priorità alla revisione di oggetti più grandi o più vicini.</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1133"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1145"/>
         <source>Open</source>
         <translation>Apri</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="128"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="130"/>
         <source>Automated Drone Image Analysis Tool v{version} - Sponsored by TEXSAR</source>
         <translation>Strumento Automatico di Analisi Immagini Drone v{version} - Sponsorizzato da TEXSAR</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="140"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="142"/>
         <source>Reading result file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="150"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="159"/>
         <source>Checking image dimensions ({n} images)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="160"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="169"/>
         <source>Validating image paths...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="167"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="176"/>
         <source>Load Results Failed</source>
         <translation>Caricamento Risultati Non Riuscito</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="169"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="178"/>
         <source>Cannot load results without valid image and mask locations.
 
 The viewer will now close.</source>
@@ -14212,60 +14577,60 @@ The viewer will now close.</source>
 Il visualizzatore verrà chiuso.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="176"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="185"/>
         <source>Scanning source folder for full flight...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="192"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="201"/>
         <source>Initialising controllers...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="203"/>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1321"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="212"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1353"/>
         <source>Skip Hidden ({count}) </source>
         <translation>Salta Nascoste ({count}) </translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="232"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="242"/>
         <source>Loading detection results from {n} images...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="271"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="281"/>
         <source>Image metadata and information.
 Click on GPS Coordinates to copy, share, or open in mapping applications.</source>
         <translation>Metadati e informazioni dell&apos;immagine.
 Clicca su Coordinate GPS per copiare, condividere o aprire in applicazioni di mappatura.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="303"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="313"/>
         <source>Loading first image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="318"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="328"/>
         <source>Preparing thumbnails...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="586"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="596"/>
         <source>No Dataset</source>
         <translation>Nessun Dataset</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="587"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="597"/>
         <source>No dataset is currently loaded.</source>
         <translation>Nessun dataset è attualmente caricato.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="594"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="604"/>
         <source>Generate Cache</source>
         <translation>Genera Cache</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="596"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="606"/>
         <source>This will regenerate thumbnail and color caches for all AOIs in this dataset.
 
 This may take a few minutes depending on the dataset size.
@@ -14278,39 +14643,39 @@ Questo potrebbe richiedere alcuni minuti a seconda della dimensione del dataset.
 Continuare?</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="609"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="619"/>
         <source>Initializing cache generation...</source>
         <translation>Inizializzazione generazione cache...</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="610"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="620"/>
         <source>Cancel</source>
         <translation>Annulla</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="615"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="625"/>
         <source>Generating Cache</source>
         <translation>Generazione Cache</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="652"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="662"/>
         <source>Error</source>
         <translation>Errore</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="653"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="663"/>
         <source>Failed to start cache generation:
 {error}</source>
         <translation>Impossibile avviare la generazione della cache:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="671"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="681"/>
         <source>Cache Generated</source>
         <translation>Cache Generata</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="673"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="683"/>
         <source>Cache generation complete!
 
 Processed {images} images with {aois} AOIs.
@@ -14323,12 +14688,12 @@ Elaborate {images} immagini con {aois} AOI.
 Il visualizzatore ora caricherà miniature e colori molto più velocemente.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="704"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="714"/>
         <source>Cache Generation Error</source>
         <translation>Errore Generazione Cache</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="706"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="716"/>
         <source>An error occurred during cache generation:
 
 {error}</source>
@@ -14337,12 +14702,12 @@ Il visualizzatore ora caricherà miniature e colori molto più velocemente.</tra
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="886"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="896"/>
         <source>AOI Not Visible</source>
         <translation>AOI Non Visibile</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="888"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="898"/>
         <source>The AOI at the cursor position cannot be selected because it is currently hidden due to active filters.
 
 To select this AOI, please clear or adjust your filters.</source>
@@ -14351,12 +14716,12 @@ To select this AOI, please clear or adjust your filters.</source>
 Per selezionare questa AOI, cancella o regola i tuoi filtri.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1013"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1032"/>
         <source>Update Image Dimensions</source>
         <translation>Aggiorna Dimensioni Immagini</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1015"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1034"/>
         <source>This dataset is missing image dimensions needed for heatmap filtering ({count} images).
 
 Would you like to read dimensions from the image files and update the results file?</source>
@@ -14365,51 +14730,56 @@ Would you like to read dimensions from the image files and update the results fi
 Vuoi leggere le dimensioni dai file immagine e aggiornare il file dei risultati?</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1135"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1073"/>
+        <source>Reading image dimensions ({done}/{total})...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1162"/>
         <source>Show Pixels of Interest (H or Ctrl+I)</source>
         <translation>Mostra Pixel di Interesse (H o Ctrl+I)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1150"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1177"/>
         <source>Toggle AOI Circles</source>
         <translation>Attiva/disattiva Cerchi AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1493"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1528"/>
         <source>Missing Dependency</source>
         <translation>Dipendenza Mancante</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1495"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1530"/>
         <source>The qimage2ndarray module is required for the upscale feature.
 Please install it using: pip install qimage2ndarray</source>
         <translation>Il modulo qimage2ndarray è richiesto per la funzione di upscale.
 Installalo usando: pip install qimage2ndarray</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1504"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1539"/>
         <source>Upscale Error</source>
         <translation>Errore di Upscale</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1506"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1541"/>
         <source>An error occurred while opening the upscale dialog:
 {error}</source>
         <translation>Si è verificato un errore durante l&apos;apertura della finestra di upscale:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1820"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1867"/>
         <source>Person Size Reference is unavailable: no GSD for this image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1896"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1964"/>
         <source>Unknown Reviewer</source>
         <translation>Revisore Sconosciuto</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1959"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="2027"/>
         <source>Loading gallery...</source>
         <translation>Caricamento galleria...</translation>
     </message>

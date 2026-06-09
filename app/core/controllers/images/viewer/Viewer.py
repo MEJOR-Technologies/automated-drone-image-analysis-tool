@@ -916,8 +916,6 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if e.key() == Qt.Key_M and e.modifiers() == Qt.NoModifier:
             # Show GPS map with 'M' key
             self.gps_map_controller.show_map()
-        if e.key() == Qt.Key_T and e.modifiers() == Qt.NoModifier:
-            self._team_planning_button_clicked()
         if e.key() == Qt.Key_O and e.modifiers() == Qt.ShiftModifier:
             # Manual altitude override with 'Shift+O' key
             self._manual_altitude_override()
@@ -1021,18 +1019,29 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if missingCount == 0:
             return
 
-        reply = QMessageBox.question(
-            self,
-            self.tr("Update Image Dimensions"),
-            self.tr(
-                "This dataset is missing image dimensions needed for heatmap filtering "
-                "({count} images).\n\n"
-                "Would you like to read dimensions from the image files and update "
-                "the results file?"
-            ).format(count=missingCount),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes
-        )
+        # The heartbeat loading dialog is always-on-top (WindowStaysOnTopHint),
+        # so a modal QMessageBox shown underneath it is hidden from the user and
+        # the app appears frozen. Hide the loading dialog while the modal prompt
+        # is up, then restore it (mirrors the WALDO pre-pass handling above).
+        loading_dialog = getattr(self, '_loading_dialog', None)
+        if loading_dialog is not None:
+            loading_dialog.hide()
+        try:
+            reply = QMessageBox.question(
+                self,
+                self.tr("Update Image Dimensions"),
+                self.tr(
+                    "This dataset is missing image dimensions needed for heatmap filtering "
+                    "({count} images).\n\n"
+                    "Would you like to read dimensions from the image files and update "
+                    "the results file?"
+                ).format(count=missingCount),
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
+        finally:
+            if loading_dialog is not None:
+                loading_dialog.show()
 
         if reply != QMessageBox.Yes:
             return
@@ -1059,6 +1068,12 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
                         xmlElement.set('width', str(width))
                         xmlElement.set('height', str(height))
                     updatedCount += 1
+                    if loading_dialog is not None:
+                        loading_dialog.set_status(
+                            self.tr("Reading image dimensions ({done}/{total})...").format(
+                                done=updatedCount, total=missingCount
+                            )
+                        )
             except Exception:
                 continue
 
@@ -1118,7 +1133,6 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.adjustmentsButton.clicked.connect(self._open_image_adjustment_dialog)
             self.magnifyButton.clicked.connect(self._magnifyButton_clicked)
             self.GPSMapButton.clicked.connect(self._gps_map_button_clicked)
-            self.teamPlanningButton.clicked.connect(self._team_planning_button_clicked)
             self.rotateImageButton.clicked.connect(self._rotate_image_button_clicked)
             # Initialize button styling
             self._update_magnify_button_style()
@@ -2069,7 +2083,6 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if hasattr(self, 'thermalHistogramButton'):
             self.thermalHistogramButton.setIcon(IconHelper.create_icon('fa6s.chart-line', self.theme))
         self.GPSMapButton.setIcon(IconHelper.create_icon('fa6s.map-location-dot', self.theme))
-        self.teamPlanningButton.setIcon(IconHelper.create_icon('fa6s.people-group', self.theme))
         self.rotateImageButton.setIcon(IconHelper.create_icon('fa6s.compass', self.theme))
 
     # Qt event filter for viewport resize events and middle mouse button
