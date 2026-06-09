@@ -14,7 +14,7 @@ from core.services.LoggerService import LoggerService
 from core.services.color.CustomColorsService import get_custom_colors_service
 from core.services.color.RecentColorsService import get_recent_colors_service
 from algorithms.Shared.views import ColorPickerDialog
-from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from helpers.IconHelper import IconHelper
 from helpers.TranslationMixin import TranslationMixin
 

@@ -13,7 +13,7 @@ from algorithms.AlgorithmController import AlgorithmController
 from algorithms.images.MatchedFilter.views.MatchedFilterWizard_ui import Ui_MatchedFilterWizard
 from algorithms.images.MatchedFilter.views.MatchedFilterRowWizardWidget import MatchedFilterRowWizardWidget
 from algorithms.images.MatchedFilter.controllers.MatchedFilterRangeViewerController import MatchedFilterRangeViewer
-from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from helpers.IconHelper import IconHelper
 from helpers.TranslationMixin import TranslationMixin
 

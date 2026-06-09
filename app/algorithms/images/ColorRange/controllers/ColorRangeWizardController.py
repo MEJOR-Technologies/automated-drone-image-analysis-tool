@@ -15,7 +15,7 @@ from algorithms.images.ColorRange.views.ColorRowWizardWidget import ColorRowWiza
 from algorithms.images.ColorRange.controllers.ColorRangeRangeViewerController import ColorRangeRangeViewer
 from core.services.color.CustomColorsService import get_custom_colors_service
 from algorithms.Shared.views import ColorPickerDialog
-from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from helpers.IconHelper import IconHelper
 from helpers.TranslationMixin import TranslationMixin
 

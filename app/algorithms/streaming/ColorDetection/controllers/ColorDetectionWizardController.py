@@ -15,7 +15,7 @@ from ast import literal_eval
 from algorithms.streaming.ColorDetection.views.ColorDetectionWizard_ui import Ui_ColorDetectionWizard
 from algorithms.Shared.views.HSVColorRowWizardWidget import HSVColorRowWizardWidget
 from algorithms.Shared.views.HSVColorRangeRangeViewer import HSVColorRangeRangeViewer
-from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from helpers.IconHelper import IconHelper
 from core.services.color.RecentColorsService import get_recent_colors_service
 from helpers.TranslationMixin import TranslationMixin

@@ -7,7 +7,7 @@ from algorithms.images.HSVColorRange.views.HSVColorRange_ui import Ui_HSVColorRa
 from algorithms.Shared.views import HSVColorRowWidget
 from algorithms.images.HSVColorRange.controllers.HSVColorRangeViewerController import HSVColorRangeRangeViewer
 from core.services.LoggerService import LoggerService
-from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from core.services.color.CustomColorsService import get_custom_colors_service
 from core.services.color.RecentColorsService import get_recent_colors_service
 from helpers.IconHelper import IconHelper

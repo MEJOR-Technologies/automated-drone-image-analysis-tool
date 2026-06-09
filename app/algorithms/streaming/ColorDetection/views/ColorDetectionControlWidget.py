@@ -19,7 +19,7 @@ from core.views.streaming.components import InputProcessingTab, RenderingTab, Cl
 from algorithms.streaming.ColorDetection.views.HSVControlWidget_ui import Ui_HSVControlWidget
 from algorithms.Shared.views import HSVColorRowWidget
 from algorithms.Shared.views.HSVColorRangeRangeViewer import HSVColorRangeRangeViewer
-from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from core.services.color.RecentColorsService import get_recent_colors_service
 from helpers.TranslationMixin import TranslationMixin
 

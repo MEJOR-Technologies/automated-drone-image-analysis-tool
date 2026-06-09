@@ -15,7 +15,6 @@ from .SignalingChannel import (
 )
 from .HttpSignalingChannel import DEFAULT_WORKER_URL, HttpSignalingChannel
 from .InMemorySignalingChannel import InMemorySignalingChannel
-from .QRSignalingChannel import QRSignalingChannel
 from . import pairing
 
 __all__ = [
@@ -24,7 +23,6 @@ __all__ = [
     "DEFAULT_WORKER_URL",
     "HttpSignalingChannel",
     "InMemorySignalingChannel",
-    "QRSignalingChannel",
     "SessionState",
     "SignalingChannel",
     "ViewerCapReached",

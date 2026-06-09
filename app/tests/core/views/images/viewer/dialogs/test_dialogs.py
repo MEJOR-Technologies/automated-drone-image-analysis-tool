@@ -15,7 +15,6 @@ from core.views.images.viewer.dialogs.AOIFilterDialog import AOIFilterDialog
 from core.views.images.viewer.dialogs.BearingRecoveryDialog import BearingRecoveryDialog
 from core.views.images.viewer.dialogs.CacheLocationDialog import CacheLocationDialog
 from core.views.images.viewer.dialogs.CalTopoAuthDialog import CalTopoAuthDialog
-from core.views.images.viewer.dialogs.CalTopoMapDialog import CalTopoMapDialog
 from core.views.images.viewer.dialogs.ColorHistogramDialog import ColorHistogramDialog
 from core.views.images.viewer.dialogs.ExportProgressDialog import ExportProgressDialog
 from core.views.images.viewer.dialogs.GPSMapDialog import GPSMapDialog
@@ -74,12 +73,6 @@ def test_cache_location_dialog_initialization(app):
 def test_caltopo_auth_dialog_initialization(app):
     """Test CalTopoAuthDialog initialization."""
     dialog = CalTopoAuthDialog(None)
-    assert dialog is not None
-
-
-def test_caltopo_map_dialog_initialization(app):
-    """Test CalTopoMapDialog initialization."""
-    dialog = CalTopoMapDialog(None)
     assert dialog is not None
 
 

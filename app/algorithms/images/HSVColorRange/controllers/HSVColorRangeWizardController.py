@@ -17,7 +17,7 @@ from algorithms.AlgorithmController import AlgorithmController
 from algorithms.images.HSVColorRange.views.HSVColorRangeWizard_ui import Ui_HSVColorRangeWizard
 from algorithms.images.HSVColorRange.views.HSVColorRowWizardWidget import HSVColorRowWizardWidget
 from algorithms.images.HSVColorRange.controllers.HSVColorRangeViewerController import HSVColorRangeRangeViewer
-from algorithms.images.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
 from helpers.IconHelper import IconHelper
 from helpers.TranslationMixin import TranslationMixin
 
