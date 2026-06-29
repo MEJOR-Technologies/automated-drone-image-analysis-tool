@@ -23,6 +23,9 @@ class TestAIPersonStreamingService:
         assert cfg.enable_temporal_voting is False
         assert cfg.enable_aspect_ratio_filter is False
         assert cfg.max_aspect_ratio == 5.0
+        # SAR default: tile + letterbox on (no whole-frame stretch-to-square).
+        assert cfg.enable_tiled_inference is True
+        assert cfg.use_letterbox_preprocessing is True
 
     def test_process_frame_converts_raw_boxes_to_detections(self):
         """Service should convert model boxes into streaming detection objects."""
@@ -195,6 +198,45 @@ class TestAIPersonStreamingService:
             service.process_frame(frame, 0.0)
 
         assert captured["shape"] == (480, 640, 3)
+
+    def test_process_frame_tiling_with_letterbox_preserves_frame_coordinates(self):
+        """Tiling + letterbox (the new defaults) must map detections back to correct frame
+        coordinates. process_frame uses scale 1.0 on the un-resized source while each tile's
+        letterbox scale/offset is inverted inside _infer_single_frame, then offset to frame
+        space. Regression for the flipped defaults: verifies the two transforms COMPOSE,
+        not double-apply."""
+        service = AIPersonStreamingService()
+        service.update_config(
+            AIPersonStreamingConfig(
+                confidence_threshold=0.5,
+                render_text=False,
+                enable_temporal_voting=False,
+                enable_tiled_inference=True,
+                use_letterbox_preprocessing=True,
+                high_resolution_model=False,  # 640 model -> tile_size 960
+            )
+        )
+        # 960x1600 frame -> tiles at x={0,640}, y={0}; each 960x960 square tile letterboxes
+        # to 640 at scale 640/960 with zero pad.
+        frame = np.zeros((960, 1600, 3), dtype=np.uint8)
+
+        input_meta = Mock()
+        input_meta.name = "images"
+        mock_session = Mock()
+        mock_session.get_inputs.return_value = [input_meta]
+        # model-space box (96,96,192,192) -> tile coords (144,144,288,288) at 1.5x inverse scale
+        preds = np.array([[[96.0, 96.0, 192.0, 192.0, 0.9, 0.0]]], dtype=np.float32)
+        mock_session.run.return_value = [preds]
+
+        with patch(
+            "algorithms.streaming.AIPersonDetector.services.AIPersonStreamingService.ONNXRUNTIME_AVAILABLE",
+            True,
+        ), patch.object(service, "_get_session", return_value=mock_session):
+            _, detections, _ = service.process_frame(frame, 0.0)
+
+        # tile0 offset (0,0) -> (144,144,144,144); tile1 offset (640,0) -> (784,144,144,144)
+        boxes = sorted(d.bbox for d in detections)
+        assert boxes == [(144, 144, 144, 144), (784, 144, 144, 144)]
 
     def test_tiled_inference_fallback_disables_tiles_after_slow_window(self):
         """Sustained slow tiled inference should auto-disable tiles until reset."""

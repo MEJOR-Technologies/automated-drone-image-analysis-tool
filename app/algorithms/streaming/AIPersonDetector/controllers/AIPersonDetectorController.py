@@ -35,6 +35,9 @@ class AIPersonDetectorController(TranslationMixin, StreamAlgorithmController):
         super().__init__(algorithm_config, theme, parent)
         self.logger = LoggerService()
         self.provides_custom_rendering = False
+        # Source type ("File"/"RTMP Stream"/"HDMI Capture") threaded from the wizard via
+        # set_config; used to auto-select the 1024 model for file sources. None until applied.
+        self._stream_type: Optional[str] = None
 
         # IMPORTANT: no parent so this QObject can move to the worker thread.
         self.person_detector = AIPersonStreamingService(parent=None)
@@ -111,10 +114,21 @@ class AIPersonDetectorController(TranslationMixin, StreamAlgorithmController):
         processing_height = self._normalize_optional_positive_int(config.get("processing_height"))
         target_fps = self._normalize_optional_positive_int(config.get("target_fps"))
 
+        cpu_only = bool(config.get("cpu_only", False))
+        # Auto-engage the 1024 model on GPU for the detail-first usecases: a file source
+        # (high-res recording for deep analysis, threaded in as stream_type) or an explicit
+        # full/native processing resolution (Input tab -> "Original", processing_width=None).
+        # Downscaled live feeds (720P/1080P) keep the faster 640 model. The explicit
+        # "Use 1024 model" checkbox still forces it on.
+        is_file_source = str(config.get("stream_type") or self._stream_type or "").strip().lower() == "file"
+        high_resolution_model = bool(config.get("high_resolution_model", False)) or (
+            not cpu_only and (is_file_source or processing_width is None)
+        )
+
         return AIPersonStreamingConfig(
             confidence_threshold=confidence,
-            cpu_only=bool(config.get("cpu_only", False)),
-            high_resolution_model=bool(config.get("high_resolution_model", False)),
+            cpu_only=cpu_only,
+            high_resolution_model=high_resolution_model,
             render_text=render_text,
             max_detections_to_render=max_detections,
             processing_width=processing_width,
@@ -164,6 +178,10 @@ class AIPersonDetectorController(TranslationMixin, StreamAlgorithmController):
     def set_config(self, config: Dict[str, Any]):
         """Apply configuration into controls/service."""
         filtered_config = dict(config or {})
+        # Source type isn't a widget control, so it would be lost in the control-widget
+        # round-trip below; capture it for model auto-selection in _to_service_config.
+        if filtered_config.get("stream_type") is not None:
+            self._stream_type = filtered_config.pop("stream_type")
         for unsupported_key in (
             "render_at_processing_res",
             "render_contours",

@@ -50,10 +50,14 @@ class AIPersonStreamingConfig:
     min_aspect_ratio: float = 0.2
     max_aspect_ratio: float = 5.0
     nms_iou_threshold: float = 0.45
-    enable_tiled_inference: bool = False
+    # Default ON for SAR. The old default whole-frame stretch-resized to a square model
+    # input, which crushed targets (~0.33x) and aspect-distorted them. Tiling preserves
+    # per-target resolution; letterbox preserves aspect. Frames larger than the tile are
+    # tiled at full source resolution; smaller frames take the (now letterboxed) single pass.
+    enable_tiled_inference: bool = True
     tile_size_px: Optional[int] = None
     tile_overlap_ratio: float = 0.20
-    use_letterbox_preprocessing: bool = False
+    use_letterbox_preprocessing: bool = True
     # Backward compatibility aliases for older persisted configs/tests.
     show_labels: Optional[bool] = None
     max_detections: Optional[int] = None
@@ -676,7 +680,7 @@ class AIPersonStreamingService(QObject):
 
     def _resolve_model_path(self, cfg: AIPersonStreamingConfig) -> str:
         """Resolve ONNX model path for source and frozen builds."""
-        model_name = "ai_person_model_V3_1024.onnx" if cfg.high_resolution_model else "ai_person_model_V3_640.onnx"
+        model_name = "ai_person_model_V4_1024.onnx" if cfg.high_resolution_model else "ai_person_model_V4_640.onnx"
         if getattr(sys, "frozen", False):
             return os.path.join(
                 sys._MEIPASS,

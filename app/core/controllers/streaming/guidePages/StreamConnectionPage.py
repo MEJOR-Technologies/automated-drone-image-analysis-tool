@@ -141,13 +141,19 @@ class StreamConnectionPage(BasePage):
 
         self._apply_stream_type_settings()
 
-        # Load resolution preference
-        default_resolution_str = self.settings_service.get_setting("StreamingProcessingResolution", "75%")
+        # Load resolution preference. File sources are high-res recordings meant for deep
+        # analysis -> default to max detail (4K, capped to native on first frame) so the
+        # tiling+letterbox pass isn't fed a pre-downscaled frame. Live sources (RTMP/HDMI)
+        # keep a framerate-friendly 1080p default. An explicit saved preference still wins.
+        stream_type = self.wizard_data.get("stream_type", "File")
+        fallback_resolution = 100 if stream_type == "File" else 75
+        default_resolution_str = self.settings_service.get_setting(
+            "StreamingProcessingResolution", f"{fallback_resolution}%")
         # Convert "75%" to 75
         try:
             default_resolution = int(default_resolution_str.rstrip('%'))
         except (ValueError, AttributeError):
-            default_resolution = 75
+            default_resolution = fallback_resolution
 
         # Get current resolution from wizard_data (as integer) or use default
         current_resolution = self.wizard_data.get("processing_resolution")

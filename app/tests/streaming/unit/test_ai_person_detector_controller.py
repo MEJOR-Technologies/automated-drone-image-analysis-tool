@@ -83,6 +83,47 @@ class TestAIPersonDetectorController:
         assert widget_cfg["target_fps"] == 15
         assert controller.person_detector.update_config.call_count >= 1
 
+    def test_file_source_auto_selects_high_resolution_model(self, qapp, algorithm_config, mock_logger):
+        """File sources on GPU auto-engage the 1024 model; live feeds and CPU stay 640.
+        processing_width is set (not None) so only stream_type drives the choice here."""
+        with patch(
+            "algorithms.streaming.AIPersonDetector.controllers.AIPersonDetectorController.LoggerService",
+            return_value=mock_logger,
+        ):
+            controller = AIPersonDetectorController(algorithm_config, "dark")
+
+        base = {"cpu_only": False, "processing_width": 1280, "processing_height": 720}
+
+        # File source on GPU -> 1024 (via persisted self._stream_type)
+        controller._stream_type = "File"
+        assert controller._to_service_config(base).high_resolution_model is True
+
+        # Live source on GPU -> 640
+        controller._stream_type = "RTMP Stream"
+        assert controller._to_service_config(base).high_resolution_model is False
+
+        # File source on CPU -> 640 (CPU runs the 640 export)
+        controller._stream_type = "File"
+        assert controller._to_service_config({**base, "cpu_only": True}).high_resolution_model is False
+
+        # stream_type carried directly in the config dict also works (no persisted value)
+        controller._stream_type = None
+        assert controller._to_service_config({**base, "stream_type": "File"}).high_resolution_model is True
+
+    def test_set_config_captures_stream_type_without_leaking_to_widget(self, qapp, algorithm_config, mock_logger):
+        """set_config should persist stream_type for model selection and not pass it to the widget."""
+        with patch(
+            "algorithms.streaming.AIPersonDetector.controllers.AIPersonDetectorController.LoggerService",
+            return_value=mock_logger,
+        ):
+            controller = AIPersonDetectorController(algorithm_config, "dark")
+        controller.person_detector.update_config = Mock()
+
+        controller.set_config({"stream_type": "File", "cpu_only": False, "person_detector_confidence": 50})
+
+        assert controller._stream_type == "File"
+        assert "stream_type" not in controller.get_config()
+
     def test_capabilities_hide_unsupported_shared_controls(self, qapp, algorithm_config, mock_logger):
         """AIPerson should explicitly disable unsupported shared rendering controls."""
         with patch(

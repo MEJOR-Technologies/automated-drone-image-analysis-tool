@@ -528,7 +528,12 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         self.settings.sync()
 
         algorithm = wizard_data.get("algorithm")
-        algorithm_options = wizard_data.get("algorithm_options") or {}
+        algorithm_options = dict(wizard_data.get("algorithm_options") or {})
+        # Thread the source type to the algorithm controller so it can pick a
+        # usecase-appropriate model (the AI person detector auto-selects the 1024 model
+        # for file sources and keeps the 640 model for live feeds).
+        if stream_type:
+            algorithm_options["stream_type"] = stream_type
 
         # Calculate and set min/max area from object size and GSD (like MainWindow does)
         # GSD is stored in gsd_list as a list of sensor GSD values
@@ -2089,7 +2094,8 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         if not self._maximized_applied:
             self._maximized_applied = True
             self.showMaximized()
-        self.update_controller.schedule_startup_check()
+        # The automatic startup update check runs on the initial SelectionDialog;
+        # here we only keep the manual "Check for Updates" menu action wired up.
 
     def closeEvent(self, event):
         """Handle window close event."""
