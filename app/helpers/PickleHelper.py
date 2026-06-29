@@ -180,19 +180,28 @@ class PickleHelper:
 
     @staticmethod
     def version_to_int(version_str):
-        """Convert a version string like '1.6.0 Beta' to a comparable integer."""
-        major, minor, patch, label_val = PickleHelper._version_to_tuple(version_str)
-        return major * 10**6 + minor * 10**4 + patch * 10**2 + label_val
+        """Convert a version string like '1.6.0 Beta 3' to a comparable integer."""
+        major, minor, patch, label_val, build = PickleHelper._version_to_tuple(version_str)
+        # Build is capped to two digits so it occupies the least-significant slot
+        # without overflowing into the label field.
+        build = min(build, 99)
+        return major * 10**8 + minor * 10**6 + patch * 10**4 + label_val * 10**2 + build
 
     @staticmethod
     def _version_to_tuple(version_str):
-        """Convert a version string to (major, minor, patch, label_value)."""
-        m = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:\s*(\w+))?', version_str.strip())
+        """Convert a version string to (major, minor, patch, label_value, build).
+
+        Supports an optional pre-release label and an optional trailing build
+        number, e.g. '2.1.0', '2.1.0 Beta', or '2.1.0 Beta 5'. Strings without
+        a build number yield build 0 for backward compatibility.
+        """
+        m = re.match(r'^(\d+)\.(\d+)\.(\d+)(?:\s*([A-Za-z]+))?(?:\s*(\d+))?', version_str.strip())
         if not m:
             raise ValueError(f"Invalid version string: {version_str}")
 
         major, minor, patch = map(int, m.group(1, 2, 3))
         label = (m.group(4) or "").lower()
+        build = int(m.group(5)) if m.group(5) else 0
 
         # Lower label_val == more stable. Unknown suffixes sort last.
         label_order = {
@@ -203,7 +212,7 @@ class PickleHelper:
         }
         label_val = label_order.get(label, 99)
 
-        return (major, minor, patch, label_val)
+        return (major, minor, patch, label_val, build)
 
     @staticmethod
     def _get_destination_path():

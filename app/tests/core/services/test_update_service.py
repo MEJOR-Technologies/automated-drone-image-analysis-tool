@@ -40,7 +40,7 @@ def test_parse_available_releases_supports_nested_installers():
 def test_fetch_available_releases_rejects_non_json_response():
     response = MagicMock()
     response.headers = {"content-type": "text/html; charset=utf-8"}
-    response.url = "https://adiat.texsar.org/"
+    response.url = "https://desktop.adiat.app/"
     response.raise_for_status.return_value = None
 
     session = MagicMock()
@@ -159,6 +159,42 @@ def test_download_release_streams_file_and_reports_progress(tmp_path):
     assert tmp_path.joinpath("ADIAT-2.2.0.exe").read_bytes() == b"abcdef"
     assert path.endswith("ADIAT-2.2.0.exe")
     assert progress_calls == [(3, 6), (6, 6)]
+
+
+def test_is_newer_version_compares_beta_build_numbers():
+    # A later beta build of the same numeric version is an update...
+    assert UpdateService.is_newer_version("2.1.0 Beta 2", "2.1.0 Beta 1") is True
+    # ...and an earlier or equal beta build is not.
+    assert UpdateService.is_newer_version("2.1.0 Beta 1", "2.1.0 Beta 2") is False
+    assert UpdateService.is_newer_version("2.1.0 Beta 1", "2.1.0 Beta 1") is False
+
+
+def test_is_newer_version_release_supersedes_beta_build():
+    # A same-numbered final release is newer than any beta build of it.
+    assert UpdateService.is_newer_version("2.1.0", "2.1.0 Beta 9") is True
+    assert UpdateService.is_newer_version("2.1.0 Beta 9", "2.1.0") is False
+
+
+def test_is_newer_version_numeric_bump_ignores_build():
+    # A higher numeric version wins regardless of build numbers.
+    assert UpdateService.is_newer_version("2.1.1 Beta 1", "2.1.0 Beta 9") is True
+
+
+def test_get_latest_available_release_picks_highest_beta_build():
+    service = UpdateService(session=MagicMock(), logger=MagicMock())
+    releases = [
+        UpdateRelease(version="2.1.0 Beta 1", installer_url="https://example.com/b1.exe", platforms=("windows",), arch="x64"),
+        UpdateRelease(version="2.1.0 Beta 3", installer_url="https://example.com/b3.exe", platforms=("windows",), arch="x64"),
+        UpdateRelease(version="2.1.0 Beta 2", installer_url="https://example.com/b2.exe", platforms=("windows",), arch="x64"),
+    ]
+
+    with patch.object(service, "current_platform", return_value="windows"), \
+            patch.object(service, "current_arch", return_value="x64"), \
+            patch.object(service, "fetch_available_releases", return_value=releases):
+        release = service.get_latest_available_release("2.1.0 Beta 1")
+
+    assert release is not None
+    assert release.version == "2.1.0 Beta 3"
 
 
 @pytest.mark.skipif(not hasattr(__import__("os"), "startfile"), reason="Windows-specific launcher")

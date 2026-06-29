@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 from core.services.LoggerService import LoggerService
 from core.services.SettingsService import SettingsService
 from core.services.UpdateService import UpdateRelease, UpdateService
+from helpers.FormatHelper import FormatHelper
 
 
 class UpdateController(QObject):
@@ -182,11 +183,16 @@ class UpdateController(QObject):
                 progress.setRange(0, total)
             if total > 0:
                 progress.setValue(downloaded)
+            downloaded_display = self.tr("{value} MB").format(value=FormatHelper.format_megabytes(downloaded))
+            total_display = (
+                self.tr("{value} MB").format(value=FormatHelper.format_megabytes(total))
+                if total > 0 else self.tr("unknown")
+            )
             progress.setLabelText(
-                self.tr("Downloading ADIAT {version}...\n{downloaded} of {total} bytes").format(
+                self.tr("Downloading ADIAT {version}...\n{downloaded} of {total}").format(
                     version=release.version,
-                    downloaded=downloaded,
-                    total=total or self.tr("unknown"),
+                    downloaded=downloaded_display,
+                    total=total_display,
                 )
             )
             QApplication.processEvents()

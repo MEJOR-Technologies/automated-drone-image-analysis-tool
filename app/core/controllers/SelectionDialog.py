@@ -1,6 +1,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialog
 
+from core.controllers.UpdateController import UpdateController
 from core.views.SelectionDialog_ui import Ui_MediaSelector
 from core.services.SettingsService import SettingsService
 from helpers.IconHelper import IconHelper
@@ -64,6 +65,14 @@ class SelectionDialog(QDialog, Ui_MediaSelector):
             self.flightButton.clicked.connect(self._on_flight_clicked)
 
         self._apply_icons(theme)
+
+        # Run the startup update check here, on the initial selection dialog,
+        # so any "Update Available" prompt is shown before the user commits to
+        # Images, Real-time, or Flight Viewer. The check is deferred via a timer
+        # and guarded to run once per session (see UpdateController).
+        self.app_version = self.settings_service.get_setting('app_version', '2.0.0') or '2.0.0'
+        self.update_controller = UpdateController(self, settings_service=self.settings_service)
+        self.update_controller.schedule_startup_check()
 
     def _on_image_clicked(self) -> None:
         """Handle click on the Images button.

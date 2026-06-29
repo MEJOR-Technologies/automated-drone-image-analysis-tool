@@ -54,7 +54,7 @@ class UpdateService:
 
     DEFAULT_FEED_URL = os.environ.get(
         "ADIAT_UPDATE_FEED_URL",
-        "https://adiat.texsar.org/updates.json"
+        "https://desktop.adiat.app/version.json"
     )
 
     def __init__(
@@ -254,16 +254,22 @@ class UpdateService:
             return candidate_numeric > current_numeric
 
         # Lower label values are more stable: release < rc < beta < alpha.
-        return candidate_tuple[3] < current_tuple[3]
+        if candidate_tuple[3] != current_tuple[3]:
+            return candidate_tuple[3] < current_tuple[3]
+
+        # Same numeric version and label: a higher build number is newer. This
+        # lets successive beta builds (e.g. 2.1.0 Beta 1 -> 2.1.0 Beta 2) be
+        # offered without bumping the numeric version.
+        return candidate_tuple[4] > current_tuple[4]
 
     @staticmethod
-    def _version_sort_key(version: str) -> Tuple[int, int, int, int]:
+    def _version_sort_key(version: str) -> Tuple[int, int, int, int, int]:
         """Return a sortable key for ADIAT versions."""
         try:
-            major, minor, patch, label_value = PickleHelper._version_to_tuple(version)
+            major, minor, patch, label_value, build = PickleHelper._version_to_tuple(version)
         except ValueError:
-            return (0, 0, 0, -1)
-        return (major, minor, patch, -label_value)
+            return (0, 0, 0, -1, -1)
+        return (major, minor, patch, -label_value, build)
 
     @staticmethod
     def _coerce_release_items(payload) -> Sequence[dict]:

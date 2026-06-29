@@ -179,7 +179,8 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
 
         # Create the batch-mode checkbox below the directory pickers
         self._create_batch_mode_checkbox()
-        self.update_controller.schedule_startup_check()
+        # The automatic startup update check runs on the initial SelectionDialog;
+        # here we only keep the manual "Check for Updates" menu action wired up.
 
     def setStylesheets(self):
         """
