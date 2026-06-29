@@ -92,9 +92,13 @@ class AOIOverlayController(QObject):
             return
 
         radius = aoi.get('radius', 0) or 0
-        ruler_model = build_ruler_model(
-            radius, self._current_gsd_cm(), self._distance_unit()
-        )
+        # The ruler can be toggled off on its own (Show Ruler button) while the
+        # circle and number badge stay; a None model draws the badge alone.
+        ruler_model = None
+        if self._ruler_visible():
+            ruler_model = build_ruler_model(
+                radius, self._current_gsd_cm(), self._distance_unit()
+            )
         self._overlay_item.configure(
             aoi.get('center'), radius, aoi.get('number'), ruler_model
         )
@@ -230,6 +234,16 @@ class AOIOverlayController(QObject):
     def _aoi_circles_visible(self):
         """Return True when AOI circles are currently shown on the image."""
         button = getattr(self.parent, 'showAOIsButton', None)
+        if button is None:
+            return True
+        try:
+            return button.isChecked()
+        except Exception:
+            return True
+
+    def _ruler_visible(self):
+        """Return True when the AOI ruler is enabled (defaults True when absent)."""
+        button = getattr(self.parent, 'showRulerButton', None)
         if button is None:
             return True
         try:

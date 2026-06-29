@@ -103,10 +103,15 @@ class AOIController(TranslationMixin):
                     self._cached_image_index == current_image_idx):
                 return self._cached_aoi_service
 
-            # Create new service for current image
+            # Create new service for current image. Reuse the viewer's already
+            # built ImageService when available so the AOI colour/geometry path
+            # does not re-decode the image and re-read its metadata each load.
             if current_image_idx < len(self.parent.images):
                 image = self.parent.images[current_image_idx]
-                self._cached_aoi_service = AOIService(image)
+                self._cached_aoi_service = AOIService(
+                    image,
+                    image_service=getattr(self.parent, 'current_image_service', None)
+                )
                 self._cached_image_index = current_image_idx
                 return self._cached_aoi_service
 

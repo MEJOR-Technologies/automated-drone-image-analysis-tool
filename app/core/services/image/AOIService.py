@@ -66,20 +66,28 @@ class AOIService:
     # Convergence threshold in meters
     CONVERGENCE_THRESHOLD_M = 1.0
 
-    def __init__(self, image, img_array=None):
+    def __init__(self, image, img_array=None, image_service=None):
         """
         Args:
             image (dict): Image metadata dict (must include 'path', optionally 'mask_path', etc.)
             img_array (np.ndarray, optional): Pre-loaded image array (RGB format).
                                               If provided, avoids reloading from disk.
+            image_service (ImageService, optional): An already-built ImageService for
+                                              this image. When provided it is reused
+                                              as-is, avoiding a redundant disk decode
+                                              and metadata read. Must correspond to the
+                                              same image as ``image``.
         """
         self.logger = LoggerService()
-        self.image_service = ImageService(
-            image['path'],
-            image.get('mask_path', ''),
-            img_array=img_array,
-            calculated_bearing=image.get('bearing')
-        )
+        if image_service is not None:
+            self.image_service = image_service
+        else:
+            self.image_service = ImageService(
+                image['path'],
+                image.get('mask_path', ''),
+                img_array=img_array,
+                calculated_bearing=image.get('bearing')
+            )
 
     def estimate_aoi_gps(self, image, aoi, agl_override_m=None, use_terrain=True):
         """

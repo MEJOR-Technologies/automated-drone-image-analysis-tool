@@ -153,6 +153,7 @@ def test_viewer_toolbar_buttons(main_window, testData, qtbot):
     expected_controls = {
         'galleryModeButton': 'Gallery Mode button',
         'showAOIsButton': 'Show AOIs button',
+        'showRulerButton': 'Show AOI Ruler button',
         'showPOIsButton': 'Show POIs button',
         'GPSMapButton': 'GPS Map button',
         'rotateImageButton': 'North View button',

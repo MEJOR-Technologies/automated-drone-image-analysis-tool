@@ -124,6 +124,15 @@ class UIStyleController:
                 "buttonActive"
             )
 
+    def update_show_ruler_button_style(self):
+        """Update the Show Ruler button styling based on its checked state."""
+        if hasattr(self.parent, 'showRulerButton'):
+            self.update_toolbutton_style(
+                self.parent.showRulerButton,
+                self.parent.showRulerButton.isChecked(),
+                "buttonActive"
+            )
+
     def update_adjustments_button_style(self):
         """Update the adjustments button styling based on dialog state."""
         if hasattr(self.parent, 'adjustmentsButton') and hasattr(self.parent, 'adjustments_dialog_open'):

@@ -430,7 +430,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         font = QFont()
         font.setPointSize(10)
 
-        # Show Overlay toggle with label
+        # Show Overlay toggle with label. Mirror hideImageToggle exactly (same
+        # fixed width, natural height) so the two toggles render identically;
+        # the header height is sized to fit it in _setup_splitter_layout.
         self.showOverlayToggle = Toggle()
         self.showOverlayToggle.setContentsMargins(4, 0, 4, 0)
         self.showOverlayToggle.setFixedWidth(50)
@@ -450,6 +452,36 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.showOverlayToggle.setChecked(True)
         self.showOverlayToggle.clicked.connect(self._show_overlay_change)
 
+    @staticmethod
+    def _tighten_header(header_layout, index_label):
+        """Shrink the viewer header so it fits the screen without clipping text.
+
+        The header toolbar is dense. With the default 6px spacing its minimum
+        width exceeds 1920px on 1080p displays, so Qt cannot honor the window
+        geometry and logs "Unable to set geometry ...". Tightening the spacing
+        and letting the index label shrink under width pressure (it otherwise
+        reports its full text width as its minimum) keeps the window's minimum
+        width well below the screen edge. The top/bottom margins are also
+        dropped so the 16pt file-name glyphs have the full header height and are
+        not clipped at the bottom.
+
+        Args:
+            header_layout (QHBoxLayout): The main header layout (horizontalLayout_5).
+            index_label (QLabel): The image-index label.
+        """
+        header_layout.setSpacing(2)
+
+        # Give the labels the full header height so descenders aren't clipped.
+        margins = header_layout.contentsMargins()
+        header_layout.setContentsMargins(margins.left(), 0, margins.right(), 0)
+
+        # Let the index label shrink under width pressure rather than forcing
+        # the window minimum width past the screen edge. (The file-name label
+        # already pins its minimum width to 10px in the .ui.)
+        index_label.setMinimumWidth(10)
+        index_label.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
+
     def _setup_gallery_mode_ui(self):
         """Set up the gallery mode toggle and stacked widget for AOI display."""
         # Delegate to GalleryController
@@ -462,6 +494,11 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         try:
             # Use the splitter defined in the UI
             self.image_gallery_splitter = self.mainSplitter
+
+            # Header row height. Sized to fit the Toggle widgets at their natural
+            # 45px height so the header "Show Overlay" toggle renders identically
+            # to the "Hide Image" toggle in the button bar.
+            header_height = 46
 
             # Reduce left/right margins and spacing for tighter layout
             self.verticalLayout.setContentsMargins(2, 2, 2, 2)
@@ -476,17 +513,21 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.verticalLayout_4.removeWidget(self.aoiHeaderWidget)
 
             # Remove aoiHeaderWidget max-width constraint and update size policy
-            self.aoiHeaderWidget.setMaximumSize(QSize(16777215, 35))
-            self.aoiHeaderWidget.setMinimumHeight(35)
+            self.aoiHeaderWidget.setMaximumSize(QSize(16777215, header_height))
+            self.aoiHeaderWidget.setMinimumHeight(header_height)
             self.aoiHeaderWidget.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed))
 
-            # Constrain mainHeaderWidget height to icon size
-            self.mainHeaderWidget.setMinimumHeight(35)
-            self.mainHeaderWidget.setMaximumHeight(35)
+            # Constrain mainHeaderWidget height
+            self.mainHeaderWidget.setMinimumHeight(header_height)
+            self.mainHeaderWidget.setMaximumHeight(header_height)
+
+            # Tighten the dense toolbar so its minimum width stays below the
+            # screen (see _tighten_header).
+            self._tighten_header(self.horizontalLayout_5, self.indexLabel)
 
             # Create header row with both headers side by side
             self._header_row = QWidget()
-            self._header_row.setFixedHeight(35)
+            self._header_row.setFixedHeight(header_height)
             self._header_layout = QHBoxLayout(self._header_row)
             self._header_layout.setContentsMargins(0, 0, 0, 0)
             self._header_layout.setSpacing(0)
@@ -1178,6 +1219,13 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
                 # Initialize button styling
                 self._update_show_aois_button_style()
 
+            # Connect the AOI ruler button
+            if hasattr(self, 'showRulerButton'):
+                self.showRulerButton.clicked.connect(self._on_show_ruler_clicked)
+                self.showRulerButton.setToolTip(self.tr("Toggle AOI Ruler"))
+                # Initialize button styling
+                self._update_show_ruler_button_style()
+
             self.jumpToLine.setValidator(QIntValidator(1, len(self.images), self))
             self.jumpToLine.editingFinished.connect(self._jumpToLine_changed)
             self.aoiJumpLine.setValidator(QIntValidator(1, 9999999, self))
@@ -1394,6 +1442,17 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         """Handle Show AOIs button click - update styling and toggle circles."""
         self._update_show_aois_button_style()
         self._draw_aoi_circle_change(self.showAOIsButton.isChecked())
+
+    def _on_show_ruler_clicked(self):
+        """Handle Show Ruler button click - toggle the selected-AOI ruler.
+
+        Only the ruler is affected; the AOI circle and number badge are
+        controlled by the Show AOIs button. The overlay controller rebuilds
+        the decoration on refresh, re-reading this button's state.
+        """
+        self._update_show_ruler_button_style()
+        if hasattr(self, 'aoi_overlay_controller'):
+            self.aoi_overlay_controller.refresh()
 
     def _highlight_pixels_change(self, state):
         """Toggles highlighting of pixels of interest.
@@ -1656,6 +1715,11 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         """Update the Show AOIs button styling based on its checked state."""
         # Delegate to UIStyleController
         self.ui_style_controller.update_show_aois_button_style()
+
+    def _update_show_ruler_button_style(self):
+        """Update the Show Ruler button styling based on its checked state."""
+        # Delegate to UIStyleController
+        self.ui_style_controller.update_show_ruler_button_style()
 
     def _update_gallery_mode_button_style(self):
         """Update the Gallery Mode button styling based on gallery mode state."""
@@ -2080,6 +2144,8 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.galleryModeButton.setIcon(IconHelper.create_icon('fa5s.th-large', self.theme))
         self.showPOIsButton.setIcon(IconHelper.create_icon('mdi.scatter-plot', self.theme))
         self.showAOIsButton.setIcon(IconHelper.create_icon('fa6.circle', self.theme))
+        if hasattr(self, 'showRulerButton'):
+            self.showRulerButton.setIcon(IconHelper.create_icon('fa6s.ruler-horizontal', self.theme))
         if hasattr(self, 'thermalHistogramButton'):
             self.thermalHistogramButton.setIcon(IconHelper.create_icon('fa6s.chart-line', self.theme))
         self.GPSMapButton.setIcon(IconHelper.create_icon('fa6s.map-location-dot', self.theme))

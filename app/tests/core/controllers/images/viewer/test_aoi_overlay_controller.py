@@ -16,6 +16,7 @@ def overlay_controller():
         parent.current_image_service.get_average_gsd.return_value = 2.5
         parent.altitude_controller.get_effective_altitude.return_value = None
         parent.showAOIsButton.isChecked.return_value = True
+        parent.showRulerButton.isChecked.return_value = True
         parent.settings_service.get_setting.return_value = 'Feet'
         # Yield inside the patch context so the lazily-created overlay item
         # (built in _ensure_item during the test) is the mocked class.
@@ -58,6 +59,34 @@ def test_ruler_omitted_when_gsd_missing(overlay_controller):
     overlay_controller.show_for_aoi(_aoi())
     args = overlay_controller._overlay_item.configure.call_args.args
     assert args[3] is None  # no GSD -> no ruler, but the badge still shows
+
+
+def test_ruler_omitted_when_ruler_toggle_off(overlay_controller):
+    """Turning the ruler off drops the ruler but keeps the circle + number badge."""
+    overlay_controller.parent.showRulerButton.isChecked.return_value = False
+    overlay_controller.show_for_aoi(_aoi())
+
+    item = overlay_controller._overlay_item
+    args = item.configure.call_args.args
+    assert args[2] == 9       # number badge still configured
+    assert args[3] is None    # ruler model omitted
+    item.show.assert_called()  # overlay still shown (circles are on)
+    item.hide.assert_not_called()
+
+
+def test_ruler_shown_when_ruler_toggle_on(overlay_controller):
+    """With the ruler toggle on and a GSD available, the ruler model is built."""
+    overlay_controller.parent.showRulerButton.isChecked.return_value = True
+    overlay_controller.show_for_aoi(_aoi())
+
+    args = overlay_controller._overlay_item.configure.call_args.args
+    assert args[3] is not None
+
+
+def test_ruler_visible_defaults_true_when_button_absent(overlay_controller):
+    """Missing the button (older layout) defaults to showing the ruler."""
+    del overlay_controller.parent.showRulerButton
+    assert overlay_controller._ruler_visible() is True
 
 
 def test_refresh_hides_when_circles_off(overlay_controller):

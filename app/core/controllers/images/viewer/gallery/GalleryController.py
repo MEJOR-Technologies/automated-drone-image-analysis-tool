@@ -1255,6 +1255,9 @@ class GalleryController:
                 # Resize main image and reposition overlay
                 if hasattr(self.parent, '_resize_main_image_and_reposition_overlay'):
                     self.parent._resize_main_image_and_reposition_overlay()
+                # Keep the AOI header aligned with the (locked) AOI pane width
+                if hasattr(self.parent, '_sync_aoi_header_width'):
+                    self.parent._sync_aoi_header_width()
                 return
 
             # Gallery mode: allow resizing with snapping to column widths
@@ -1299,6 +1302,11 @@ class GalleryController:
             # Resize main image and reposition overlay when splitter moves
             if hasattr(self.parent, '_resize_main_image_and_reposition_overlay'):
                 self.parent._resize_main_image_and_reposition_overlay()
+
+            # Keep the AOI header aligned with the AOI pane as it is dragged so
+            # the "N Areas of Interest" header tracks the resized gallery pane.
+            if hasattr(self.parent, '_sync_aoi_header_width'):
+                self.parent._sync_aoi_header_width()
 
         except Exception as e:
             self.logger.error(f"Error handling splitter movement: {e}")

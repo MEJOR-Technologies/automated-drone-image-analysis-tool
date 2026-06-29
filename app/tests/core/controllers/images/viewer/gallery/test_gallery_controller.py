@@ -297,3 +297,36 @@ def test_go_to_aoi_rebuilds_stale_model(controller):
     assert controller.go_to_aoi(2, 1) is True
     controller.load_all_aois.assert_called_once()
     controller._select_and_activate_aoi.assert_called_once_with(7)
+
+
+# ---------------------------------------------------------------------------
+# on_splitter_moved — the handler wired to QSplitter.splitterMoved. It is the
+# only resize path the signal reaches, so it must keep the AOI header aligned
+# with the AOI pane (regression: header stayed put when the gallery was
+# resized because the sync lived only on the unused Viewer._on_splitter_moved).
+# ---------------------------------------------------------------------------
+
+def _splitter(sizes):
+    splitter = MagicMock()
+    splitter.sizes.return_value = list(sizes)
+    splitter.handleWidth.return_value = 4
+    return splitter
+
+
+def test_on_splitter_moved_syncs_header_in_gallery_mode(controller):
+    controller.parent.gallery_mode = True
+    controller.update_gallery_geometry = MagicMock()
+    controller.save_splitter_position = MagicMock()
+
+    controller.on_splitter_moved(0, 1, _splitter([1400, 435]), MagicMock())
+
+    controller.parent._sync_aoi_header_width.assert_called_once()
+
+
+def test_on_splitter_moved_syncs_header_in_single_image_mode(controller):
+    controller.parent.gallery_mode = False
+    controller.set_splitter_to_single_column = MagicMock()
+
+    controller.on_splitter_moved(0, 1, _splitter([1600, 250]), MagicMock())
+
+    controller.parent._sync_aoi_header_width.assert_called_once()

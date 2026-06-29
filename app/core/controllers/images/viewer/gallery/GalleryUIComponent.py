@@ -193,6 +193,36 @@ class GalleryUIComponent(TranslationMixin, QObject):
     # Emitted when the view is first laid out with a valid size
     view_ready = Signal()
 
+    @staticmethod
+    def _snap_wheel_scroll_value(scroll_up, current, scroll_amount,
+                                 minimum, maximum, grid_row_height):
+        """Compute the page-at-a-time wheel scroll target, snapped to rows.
+
+        Snaps to row boundaries for clean alignment, but always allows reaching
+        the very bottom even when the scroll range is not an exact multiple of a
+        row height. Without the bottom guard, snapping the target down to the
+        nearest row boundary strands the view a fraction of a row short of the
+        end, so the final wheel notch cannot reach the last row.
+
+        Args:
+            scroll_up (bool): True when scrolling toward the top.
+            current (int): Current scrollbar value.
+            scroll_amount (int): Pixels to advance per wheel notch.
+            minimum (int): Scrollbar minimum.
+            maximum (int): Scrollbar maximum.
+            grid_row_height (int): Height of one grid row in pixels.
+
+        Returns:
+            int: The scrollbar value to set.
+        """
+        if scroll_up:
+            target = max(minimum, current - scroll_amount)
+            return (target // grid_row_height) * grid_row_height
+        target = min(maximum, current + scroll_amount)
+        if target >= maximum:
+            return maximum
+        return (target // grid_row_height) * grid_row_height
+
     def __init__(self, gallery_controller):
         """
         Initialize the gallery UI component.
@@ -275,15 +305,14 @@ class GalleryUIComponent(TranslationMixin, QObject):
             scrollAmount = rowsPerPage * gridRowHeight
 
             scrollBar = self.gallery_view.verticalScrollBar()
-            currentValue = scrollBar.value()
-
-            if event.angleDelta().y() > 0:
-                newValue = max(scrollBar.minimum(), currentValue - scrollAmount)
-            else:
-                newValue = min(scrollBar.maximum(), currentValue + scrollAmount)
-
-            # Snap to row boundary for clean alignment
-            newValue = (newValue // gridRowHeight) * gridRowHeight
+            newValue = self._snap_wheel_scroll_value(
+                scroll_up=event.angleDelta().y() > 0,
+                current=scrollBar.value(),
+                scroll_amount=scrollAmount,
+                minimum=scrollBar.minimum(),
+                maximum=scrollBar.maximum(),
+                grid_row_height=gridRowHeight,
+            )
 
             scrollBar.setValue(newValue)
             event.accept()

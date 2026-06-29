@@ -410,6 +410,15 @@ class ImageLoadController(TranslationMixin):
                 direction,
                 avg_gsd
             )
+            # Explicitly refresh the scale bar. It is otherwise only updated on a
+            # zoomChanged signal, which (a) does NOT fire when consecutive images
+            # share the same dimensions (identical fit zoom is suppressed by the
+            # >1e-6 guard), and (b) when it does fire during the zoom reset, runs
+            # before the GSD is populated in messages. Either way the bar would
+            # stay hidden until the user manually rescaled. By now messages holds
+            # the current GSD (set in _update_metadata_displays just before this).
+            if hasattr(self.parent, '_update_scale_bar') and self.parent.main_image is not None:
+                self.parent._update_scale_bar(self.parent.main_image.getZoom())
             # Position the overlay after image is loaded and zoomed
             self.parent.overlay._place_overlay()
 

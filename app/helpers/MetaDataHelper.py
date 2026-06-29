@@ -243,8 +243,14 @@ class MetaDataHelper:
     @staticmethod
     def get_xmp_data_merged(file_path: str) -> dict:
         """
-        Get XMP data using ExifTool first (for bundled exe compatibility),
-        falling back to direct file parsing if ExifTool fails.
+        Get merged XMP data (base + extended XMP packets).
+
+        Parses the embedded XMP packet directly from the file first (fast,
+        pure-Python, no subprocess) and only falls back to ExifTool when
+        direct parsing finds no XMP -- e.g. unusual containers. This avoids
+        spawning exiftool.exe on every image load; the macOS flow has always
+        relied on the direct parser, proving it is sufficient for standard
+        drone imagery.
 
         Args:
             file_path: Path to image file.
@@ -252,7 +258,20 @@ class MetaDataHelper:
         Returns:
             dict: Merged XMP data dictionary containing all XMP fields.
         """
-        # Try using ExifTool first (works better in bundled exe)
+        xmp_data = MetaDataHelper._parse_xmp_direct(file_path)
+        if xmp_data:
+            return xmp_data
+        # Fall back to ExifTool only when direct parsing yields nothing.
+        return MetaDataHelper._parse_xmp_exiftool(file_path)
+
+    @staticmethod
+    def _parse_xmp_exiftool(file_path: str) -> dict:
+        """Read and normalize XMP via ExifTool. Returns {} on failure.
+
+        Used only as a fallback from get_xmp_data_merged, since spawning
+        exiftool.exe per image is expensive.
+        """
+        # Try using ExifTool (works around odd containers in the bundled exe)
         try:
             metadata = MetaDataHelper.get_meta_data_exiftool(file_path)
             if metadata:
@@ -314,10 +333,18 @@ class MetaDataHelper:
                 if xmp_data:
                     return xmp_data
         except Exception:
-            # If ExifTool fails, fall back to direct parsing
+            # If ExifTool also fails there is nothing more to try.
             pass
+        return {}
 
-        # Fallback to original direct parsing method
+    @staticmethod
+    def _parse_xmp_direct(file_path: str) -> dict:
+        """Parse base + extended XMP packets directly from the file bytes.
+
+        Pure-Python and subprocess-free. Returns {} when no XMP packet is
+        present, which signals get_xmp_data_merged to try the ExifTool
+        fallback.
+        """
         _XMP_EXT_HDR = b"http://ns.adobe.com/xmp/extension/\x00"
 
         def parse_base(data: bytes):
@@ -361,22 +388,26 @@ class MetaDataHelper:
                 buf[off:off + len(ch)] = ch
             return bytes(buf)
 
-        with open(file_path, 'rb') as f:
-            data = f.read()
-
-        guid, base = parse_base(data)
-        if not guid:
-            return base
-        ext_xml = collect_ext(data, guid)
-        if not ext_xml:
-            return base
         try:
-            ext_dict = MetaDataHelper._parse_xmp_xml(ext_xml.decode('utf-8', 'ignore'))
+            with open(file_path, 'rb') as f:
+                data = f.read()
+
+            guid, base = parse_base(data)
+            if not guid:
+                return base
+            ext_xml = collect_ext(data, guid)
+            if not ext_xml:
+                return base
+            try:
+                ext_dict = MetaDataHelper._parse_xmp_xml(ext_xml.decode('utf-8', 'ignore'))
+            except Exception:
+                ext_dict = {}
+            merged = dict(base)
+            merged.update(ext_dict)
+            return merged
         except Exception:
-            ext_dict = {}
-        merged = dict(base)
-        merged.update(ext_dict)
-        return merged
+            # Any IO/parse failure -> let get_xmp_data_merged try ExifTool.
+            return {}
 
     @staticmethod
     def get_xmp_data(file_path, parse=False):

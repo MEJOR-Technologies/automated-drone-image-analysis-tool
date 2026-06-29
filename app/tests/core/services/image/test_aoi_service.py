@@ -55,6 +55,18 @@ def test_aoi_service_with_preloaded_image(sample_image_data):
         assert service.image_service is not None
 
 
+def test_aoi_service_reuses_provided_image_service(sample_image_data):
+    """When an ImageService is supplied it is reused as-is, with no new
+    ImageService constructed (avoids a redundant per-transition decode +
+    metadata read)."""
+    existing = MagicMock()
+    with patch('core.services.image.AOIService.ImageService') as MockImageService:
+        service = AOIService(sample_image_data, image_service=existing)
+
+    assert service.image_service is existing
+    MockImageService.assert_not_called()
+
+
 def test_estimate_aoi_gps(sample_image_data, sample_aoi):
     """Test estimating AOI GPS coordinates."""
     with patch('core.services.image.AOIService.ImageService') as MockImageService, \
