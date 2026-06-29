@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QDialog, QVBoxLayout
 
 from core.views.images.viewer.ui.ColorHistogramDialog_ui import Ui_ColorHistogramDialog
-from core.views.images.viewer.widgets.HueWheelRangeSelector import HueWheelRangeSelector
+from core.views.components.HueRingSelector import HueRingSelector
 from core.views.images.viewer.widgets.ThermalHistogramChart import ThermalHistogramChart
 from helpers.TranslationMixin import TranslationMixin
 
@@ -33,7 +33,9 @@ class ColorHistogramDialog(TranslationMixin, QDialog, Ui_ColorHistogramDialog):
         chart_layout.setContentsMargins(0, 0, 0, 0)
         chart_layout.addWidget(self.chartWidget)
 
-        self.hueWheelSelector = HueWheelRangeSelector(self.rangeSliderContainer)
+        # Hue domain (degrees) the histogram operates in; updated by set_range.
+        self._hue_domain = (0.0, 360.0)
+        self.hueWheelSelector = HueRingSelector(self.rangeSliderContainer)
         slider_layout = QVBoxLayout(self.rangeSliderContainer)
         slider_layout.setContentsMargins(0, 0, 0, 0)
         slider_layout.addWidget(self.hueWheelSelector)
@@ -45,7 +47,7 @@ class ColorHistogramDialog(TranslationMixin, QDialog, Ui_ColorHistogramDialog):
         self.resetRangeButton.clicked.connect(self.reset_range)
         self.resetZoomButton.clicked.connect(self.reset_zoom)
         self.showAoiOnlyCheckBox.toggled.connect(self._on_aoi_only_toggled)
-        self.hueWheelSelector.valuesChanged.connect(self._on_slider_range_changed)
+        self.hueWheelSelector.valueChanged.connect(self._on_hue_ring_changed)
         self.chartWidget.hoveredRangeChanged.connect(self._on_hovered_range_changed)
         self.chartWidget.zoomRangeSelected.connect(self._on_chart_zoom_selected)
         self.chartWidget.zoomResetRequested.connect(self.reset_zoom)
@@ -70,7 +72,7 @@ class ColorHistogramDialog(TranslationMixin, QDialog, Ui_ColorHistogramDialog):
 
         self.chartWidget.set_histogram_data(histogram_data)
         self.hueWheelSelector.setEnabled(True)
-        self.hueWheelSelector.set_range(minimum, maximum)
+        self._hue_domain = (minimum, maximum)
         self.set_selected_range(minimum, maximum)
         self._update_hover_label(None)
         self._update_zoom_button_state()
@@ -80,10 +82,9 @@ class ColorHistogramDialog(TranslationMixin, QDialog, Ui_ColorHistogramDialog):
         if not self.histogram_context:
             return
 
+        h, h_minus, h_plus = self._range_to_hsv(float(minimum), float(maximum))
         self.hueWheelSelector.blockSignals(True)
-        self.hueWheelSelector.set_values(
-            float(minimum), float(maximum), emit_signal=False
-        )
+        self.hueWheelSelector.set_values(h, h_minus, h_plus)
         self.hueWheelSelector.blockSignals(False)
         self.chartWidget.set_selection_range(minimum, maximum, emit_signal=False)
         self._update_range_labels(float(minimum), float(maximum))
@@ -120,9 +121,36 @@ class ColorHistogramDialog(TranslationMixin, QDialog, Ui_ColorHistogramDialog):
         self.dialogClosed.emit()
         super().closeEvent(event)
 
-    def _on_slider_range_changed(self, minimum, maximum):
-        """Handle hue wheel updates."""
+    def _on_hue_ring_changed(self, h, h_minus, h_plus):
+        """Handle hue-ring updates (centre + range) from the shared selector."""
+        minimum, maximum = self._hsv_to_range(h, h_minus, h_plus)
         self.set_selected_range(minimum, maximum, emit_signal=True)
+
+    def _range_to_hsv(self, lower, upper):
+        """Convert an absolute [lower, upper] hue range to the ring's
+        normalized (centre, minus, plus) model (all 0-1)."""
+        dmin, dmax = self._hue_domain
+        span = dmax - dmin
+        if span <= 0:
+            return 0.0, 0.0, 0.0
+        center = (lower + upper) / 2.0
+        h = max(0.0, min(1.0, (center - dmin) / span))
+        h_minus = max(0.0, min(1.0, (center - lower) / span))
+        h_plus = max(0.0, min(1.0, (upper - center) / span))
+        return h, h_minus, h_plus
+
+    def _hsv_to_range(self, h, h_minus, h_plus):
+        """Convert the ring's normalized (centre, minus, plus) model back to an
+        absolute [lower, upper] hue range in the histogram domain."""
+        dmin, dmax = self._hue_domain
+        span = dmax - dmin
+        lower = dmin + (h - h_minus) * span
+        upper = dmin + (h + h_plus) * span
+        lower = max(dmin, min(lower, dmax))
+        upper = max(dmin, min(upper, dmax))
+        if lower > upper:
+            lower, upper = upper, lower
+        return lower, upper
 
     def _on_aoi_only_toggled(self, checked):
         """Handle toggling between full and AOI-only histogram views."""

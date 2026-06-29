@@ -109,12 +109,16 @@ def test_color_histogram_dialog_updates_range_from_hue_wheel(app, qtbot):
         }
     )
 
+    # The shared HueRingSelector emits a centre + range (h, h_minus, h_plus);
+    # the dialog converts it back to absolute degrees. Drive that signal for a
+    # range equivalent to [30, 200].
+    h, h_minus, h_plus = dialog._range_to_hsv(30.0, 200.0)
     with qtbot.waitSignal(dialog.rangeChanged):
-        dialog.hueWheelSelector.set_values(30.0, 200.0, emit_signal=True)
+        dialog.hueWheelSelector.valueChanged.emit(h, h_minus, h_plus)
 
     minimum, maximum = dialog.chartWidget.selection_range()
-    assert minimum == 30.0
-    assert maximum == 200.0
+    assert minimum == pytest.approx(30.0)
+    assert maximum == pytest.approx(200.0)
 
 
 def test_color_histogram_dialog_toggles_aoi_only_mode(app, qtbot):

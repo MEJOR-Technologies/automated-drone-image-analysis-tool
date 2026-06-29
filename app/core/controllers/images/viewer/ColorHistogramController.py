@@ -2,6 +2,7 @@
 ColorHistogramController - Orchestrates the hue histogram popup workflow.
 """
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMessageBox
 
 from core.services.LoggerService import LoggerService
@@ -29,6 +30,21 @@ class ColorHistogramController(TranslationMixin):
         self.active_range = None
         self.show_aoi_only = False
         self.hovered_range = None
+
+        # Cache for the active-range visibility mask, keyed by
+        # (image_index, active_min, active_max). Avoids recomputing the same
+        # full-image boolean mask twice per refresh (it is read both directly
+        # and inside get_hover_mask).
+        self._visibility_cache = None
+
+        # Dragging the hue range / hovering the chart fires a storm of change
+        # events, each of which would otherwise re-render the full-resolution
+        # image synchronously. Coalesce them: state updates immediately (so the
+        # dialog stays correct) but the heavy viewer refresh is debounced.
+        self._refresh_timer = QTimer()
+        self._refresh_timer.setSingleShot(True)
+        self._refresh_timer.setInterval(40)
+        self._refresh_timer.timeout.connect(self._refresh_view_from_cache)
 
     def open_dialog(self):
         """Open the hue histogram dialog for the current image."""
@@ -89,11 +105,21 @@ class ColorHistogramController(TranslationMixin):
         ):
             return None
 
-        return self.service.build_component_mask(
+        cache_key = (
+            self.current_image_index,
+            round(active_min, 6),
+            round(active_max, 6),
+        )
+        if self._visibility_cache is not None and self._visibility_cache[0] == cache_key:
+            return self._visibility_cache[1]
+
+        mask = self.service.build_component_mask(
             self.current_context['component_matrix'],
             minimum=active_min,
             maximum=active_max,
         )
+        self._visibility_cache = (cache_key, mask)
+        return mask
 
     def get_hover_mask(self):
         """Return the hover highlight mask for the current hue bin."""
@@ -120,6 +146,7 @@ class ColorHistogramController(TranslationMixin):
 
     def cleanup(self):
         """Release dialog resources on viewer shutdown."""
+        self._refresh_timer.stop()
         if self.dialog:
             try:
                 self.dialog.close()
@@ -179,7 +206,7 @@ class ColorHistogramController(TranslationMixin):
     def _on_range_changed(self, minimum, maximum):
         """Handle range selection updates from the dialog."""
         self.active_range = self._clamp_range(minimum, maximum)
-        self._refresh_view_from_cache()
+        self._schedule_refresh()
 
     def _on_aoi_only_mode_changed(self, checked):
         """Persist AOI-only chart display state."""
@@ -196,7 +223,7 @@ class ColorHistogramController(TranslationMixin):
             self.hovered_range = clamped
 
         if changed:
-            self._refresh_view_from_cache()
+            self._schedule_refresh()
 
     def _on_dialog_closed(self):
         """Reset transient histogram state when the popup closes."""
@@ -208,8 +235,13 @@ class ColorHistogramController(TranslationMixin):
         self.dialog = None
         self._refresh_view_from_cache()
 
+    def _schedule_refresh(self):
+        """Debounce viewer re-renders triggered by rapid range/hover changes."""
+        self._refresh_timer.start()
+
     def _refresh_view_from_cache(self):
         """Refresh the displayed image without reloading from disk."""
+        self._refresh_timer.stop()
         if hasattr(self.parent, 'image_load_controller'):
             self.parent.image_load_controller \
                 .refresh_image_preserving_view_from_cache()

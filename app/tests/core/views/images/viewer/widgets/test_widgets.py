@@ -14,7 +14,6 @@ from core.views.images.viewer.widgets.QtImageViewer import QtImageViewer
 from core.views.images.viewer.widgets.OverlayWidget import OverlayWidget
 from core.views.images.viewer.widgets.ScaleBarWidget import ScaleBarWidget
 from core.views.images.viewer.widgets.GPSMapView import GPSMapView
-from core.views.images.viewer.widgets.HueWheelRangeSelector import HueWheelRangeSelector
 from core.views.images.viewer.widgets.MapTileLoader import MapTileLoader
 from core.views.images.viewer.widgets.ThermalHistogramChart import ThermalHistogramChart
 from core.views.images.viewer.widgets.ThermalRangeSlider import ThermalRangeSlider
@@ -168,14 +167,3 @@ def test_thermal_range_slider_wrap_updates(app):
 
     slider.set_selection_wrap(True)
     assert slider.selection_wrap()
-
-
-def test_hue_wheel_range_selector_updates(app):
-    """Hue wheel selector should store value and wrap state changes."""
-    selector = HueWheelRangeSelector()
-    selector.set_range(0.0, 360.0)
-    selector.set_values(25.4, 140.2)
-    selector.set_selection_wrap(True)
-
-    assert selector.values() == (25, 140)
-    assert selector.selection_wrap()
