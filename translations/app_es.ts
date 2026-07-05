@@ -232,67 +232,72 @@ permisivo</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="572"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="665"/>
         <source>Comment saved</source>
         <translation>Comentario guardado</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="574"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="667"/>
         <source>Comment cleared</source>
         <translation>Comentario borrado</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="663"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="756"/>
         <source>Copy Data</source>
         <translation>Copiar datos</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="764"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="762"/>
+        <source>Find Similar AOIs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="865"/>
         <source>AOI data copied</source>
         <translation>Datos del AOI copiados</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="851"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="952"/>
         <source>Invalid image index</source>
         <translation>Índice de imagen no válido</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="856"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="957"/>
         <source>Invalid AOI index</source>
         <translation>Índice de AOI no válido</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="919"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1020"/>
         <source>Could not calculate AOI location. Diagnostic info copied to clipboard!</source>
         <translation>No se pudo calcular la ubicación del AOI. ¡Información de diagnóstico copiada al portapapeles!</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="925"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1026"/>
         <source>Could not calculate AOI location</source>
         <translation>No se pudo calcular la ubicación del AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1380"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1481"/>
         <source>Temperature sorting unavailable (no thermal data)</source>
         <translation>Ordenación por temperatura no disponible (sin datos térmicos)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1732"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1833"/>
         <source>Cannot Delete AOI</source>
         <translation>No se puede eliminar el AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1734"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1835"/>
         <source>Only manually created AOIs can be deleted. Algorithm-detected AOIs cannot be deleted.</source>
         <translation>Solo se pueden eliminar los AOI creados manualmente. Los AOI detectados por algoritmo no se pueden eliminar.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1743"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1844"/>
         <source>Delete AOI</source>
         <translation>Eliminar AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1745"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1846"/>
         <source>Are you sure you want to delete this AOI? This action cannot be undone.</source>
         <translation>¿Está seguro de que desea eliminar este AOI? Esta acción no se puede deshacer.</translation>
     </message>
@@ -715,6 +720,183 @@ Puede deberse a la falta de metadatos de imagen (GPS, altitud o información de 
 {error}</source>
         <translation>Se produjo un error al mostrar los resultados:
 {error}</translation>
+    </message>
+</context>
+<context>
+    <name>AOISimilarityController</name>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="134"/>
+        <source>No AOI Selected</source>
+        <translation type="unfinished">Ningún AOI seleccionado</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="135"/>
+        <source>Please select an AOI first by clicking on it in the thumbnail panel.</source>
+        <translation type="unfinished">Primero seleccione un AOI haciendo clic sobre él en el panel de miniaturas.</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="164"/>
+        <source>Analyzing AOIs for visual similarity...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="165"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="169"/>
+        <source>Find Similar AOIs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="152"/>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="246"/>
+        <source>Similarity Search Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="153"/>
+        <source>An error occurred while starting the similarity search:
+{error}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="200"/>
+        <source>Analyzing AOI {done} of {total}...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="215"/>
+        <source>No Similar AOIs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="216"/>
+        <source>No other AOIs could be analyzed for similarity.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="247"/>
+        <source>The similarity search could not be completed:
+{error}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="314"/>
+        <source>Display Error</source>
+        <translation type="unfinished">Error de visualización</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="315"/>
+        <source>An error occurred while displaying results:
+{error}</source>
+        <translation type="unfinished">Se produjo un error al mostrar los resultados:
+{error}</translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="367"/>
+        <source>Flagged {count} AOI(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="370"/>
+        <source>Removed flag from {count} AOI(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="402"/>
+        <source>Comment saved on {count} AOI(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/controllers/images/viewer/similarity/AOISimilarityController.py" line="405"/>
+        <source>Comment cleared on {count} AOI(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AOISimilarityResultsDialog</name>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="442"/>
+        <source>Similar AOIs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="470"/>
+        <source>Top {shown} of {total} AOIs ranked by similarity to {reference}. Use mouse wheel to zoom, right-click drag to pan. Click a thumbnail to jump to that AOI.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="491"/>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="495"/>
+        <source>Clear Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="499"/>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="547"/>
+        <source>{count} selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="505"/>
+        <source>Flag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="506"/>
+        <source>Flag all checked AOIs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="511"/>
+        <source>Unflag</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="512"/>
+        <source>Remove the flag from all checked AOIs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="517"/>
+        <source>Comment...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="518"/>
+        <source>Add or edit the comment on all checked AOIs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="529"/>
+        <source>Reset View</source>
+        <translation type="unfinished">Restablecer vista</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="532"/>
+        <source>Reset zoom and fit all thumbnails in view</source>
+        <translation type="unfinished">Restablecer el zoom y ajustar todas las miniaturas a la vista</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="537"/>
+        <source>Close</source>
+        <translation type="unfinished">Cerrar</translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="572"/>
+        <source>AOI #{number}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="573"/>
+        <source>the selected AOI</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2144,39 +2326,6 @@ Los elementos deberían estar ahora visibles en su mapa.</translation>
     </message>
 </context>
 <context>
-    <name>CalTopoMapDialog</name>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/CalTopoMapDialog.py" line="35"/>
-        <source>Select CalTopo Map</source>
-        <translation>Seleccionar mapa de CalTopo</translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/CalTopoMapDialog.py" line="51"/>
-        <source>Select a CalTopo map to export flagged AOIs:</source>
-        <translation>Seleccione un mapa de CalTopo para exportar los AOI marcados:</translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/CalTopoMapDialog.py" line="60"/>
-        <source>Search:</source>
-        <translation>Búsqueda:</translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/CalTopoMapDialog.py" line="62"/>
-        <source>Filter maps by name...</source>
-        <translation>Filtrar mapas por nombre...</translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/CalTopoMapDialog.py" line="83"/>
-        <source>Select Map</source>
-        <translation>Seleccionar mapa</translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/images/viewer/dialogs/CalTopoMapDialog.py" line="87"/>
-        <source>Cancel</source>
-        <translation>Cancelar</translation>
-    </message>
-</context>
-<context>
     <name>CalTopoMethodDialog</name>
     <message>
         <location filename="../app/core/views/images/viewer/dialogs/CalTopoMethodDialog.py" line="34"/>
@@ -3337,55 +3486,44 @@ Recomendado: 50% para un filtrado equilibrado, 30% para más detecciones, 70% pa
 <context>
     <name>ColorListDialog</name>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="30"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="30"/>
         <source>Select Color from List</source>
         <translation>Seleccionar color desde lista</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="42"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="42"/>
         <source>Search:</source>
         <translation>Búsqueda:</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="44"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="44"/>
         <source>Filter by name or uses…</source>
         <translation>Filtrar por nombre o usos…</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="56"/>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="61"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="56"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="61"/>
         <source>Name</source>
         <translation>Nombre</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="56"/>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="61"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="56"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="61"/>
         <source>RGB</source>
         <translation>RGB</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="56"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="56"/>
         <source>HSV</source>
         <translation>HSV</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="56"/>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="61"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="56"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="61"/>
         <source>Uses</source>
         <translation>Usos</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorListDialog.py" line="73"/>
         <location filename="../app/algorithms/Shared/views/ColorListDialog.py" line="73"/>
         <source>Use Color</source>
         <translation>Usar color</translation>
@@ -3394,13 +3532,11 @@ Recomendado: 50% para un filtrado equilibrado, 30% para más detecciones, 70% pa
 <context>
     <name>ColorPickerDialog</name>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerDialog.py" line="35"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerDialog.py" line="35"/>
         <source>Select Color from Image</source>
         <translation>Seleccionar color desde imagen</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerDialog.py" line="55"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerDialog.py" line="55"/>
         <source>Use Color</source>
         <translation>Usar color</translation>
@@ -3409,29 +3545,22 @@ Recomendado: 50% para un filtrado equilibrado, 30% para más detecciones, 70% pa
 <context>
     <name>ColorPickerImageViewer</name>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="97"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="97"/>
         <source>Load Image</source>
         <translation>Cargar imagen</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="102"/>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="290"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="102"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="290"/>
         <source>Color Selector</source>
         <translation>Selector de color</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="159"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="159"/>
         <source>Select Image</source>
         <translation>Seleccionar imagen</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="173"/>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="230"/>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="588"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="173"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="230"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="588"/>
@@ -3439,37 +3568,31 @@ Recomendado: 50% para un filtrado equilibrado, 30% para más detecciones, 70% pa
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="174"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="174"/>
         <source>Could not load image: {path}</source>
         <translation>No se pudo cargar la imagen: {path}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="231"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="231"/>
         <source>Error loading image: {error}</source>
         <translation>Error al cargar la imagen: {error}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="286"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="286"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="358"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="358"/>
         <source>RGB: ({r}, {g}, {b}) {hex} | HSV: ({h}°, {s}%, {v}%)</source>
         <translation>RGB: ({r}, {g}, {b}) {hex} | HSV: ({h}°, {s}%, {v}%)</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="445"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="445"/>
         <source>RGB: ({r}, {g}, {b}) {hex} | HSV: {h}°, {s}%, {v}% (hover)</source>
         <translation>RGB: ({r}, {g}, {b}) {hex} | HSV: {h}°, {s}%, {v}% (cursor)</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/ColorPickerImageViewer.py" line="589"/>
         <location filename="../app/algorithms/Shared/views/ColorPickerImageViewer.py" line="589"/>
         <source>Error setting image: {error}</source>
         <translation>Error al establecer la imagen: {error}</translation>
@@ -9025,89 +9148,6 @@ y luego vuelva a hacer clic para colocar el segundo punto.</translation>
     </message>
 </context>
 <context>
-    <name>MotionDetectionWizard</name>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="12"/>
-        <source>Detection Mode</source>
-        <translation>Modo de detección</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="16"/>
-        <source>Mode:</source>
-        <translation>Modo:</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="22"/>
-        <source>Auto</source>
-        <translation>Automático</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="25"/>
-        <source>Static Camera</source>
-        <translation>Cámara estática</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="28"/>
-        <source>Moving Camera</source>
-        <translation>Cámara en movimiento</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="37"/>
-        <source>Algorithm</source>
-        <translation>Algoritmo</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="41"/>
-        <source>Algorithm:</source>
-        <translation>Algoritmo:</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="47"/>
-        <source>Frame Difference</source>
-        <translation>Diferencia de fotograma</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="50"/>
-        <source>MOG2 Background</source>
-        <translation>Fondo MOG2</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="53"/>
-        <source>KNN Background</source>
-        <translation>Fondo KNN</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="56"/>
-        <source>Optical Flow</source>
-        <translation>Flujo óptico</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="59"/>
-        <source>Feature Matching</source>
-        <translation>Coincidencia de características</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="68"/>
-        <source>Detection Parameters</source>
-        <translation>Parámetros de detección</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="72"/>
-        <source>Sensitivity: 50%</source>
-        <translation>Sensibilidad: 50%</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="87"/>
-        <source>Min Area:</source>
-        <translation>Área mín.:</translation>
-    </message>
-    <message>
-        <location filename="../resources/views/algorithms/MotionDetectionWizard.ui" line="103"/>
-        <source>Max Area:</source>
-        <translation>Área máx.:</translation>
-    </message>
-</context>
-<context>
     <name>PDFExportController</name>
     <message>
         <location filename="../app/core/controllers/images/viewer/exports/PDFExportController.py" line="151"/>
@@ -10212,42 +10252,42 @@ agresivo</translation>
 <context>
     <name>RecentColorWidget</name>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="68"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="68"/>
         <source>&lt;b&gt;RGB:&lt;/b&gt; ({r}, {g}, {b})</source>
         <translation>&lt;b&gt;RGB:&lt;/b&gt; ({r}, {g}, {b})</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="97"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="97"/>
         <source>&lt;br&gt;&lt;b&gt;H (°):&lt;/b&gt; {min}-{max}</source>
         <translation>&lt;br&gt;&lt;b&gt;H (°):&lt;/b&gt; {min}-{max}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="100"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="100"/>
         <source> &lt;b&gt;S (%):&lt;/b&gt; {min}-{max}</source>
         <translation> &lt;b&gt;S (%):&lt;/b&gt; {min}-{max}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="103"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="103"/>
         <source> &lt;b&gt;V (%):&lt;/b&gt; {min}-{max}</source>
         <translation> &lt;b&gt;V (%):&lt;/b&gt; {min}-{max}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="112"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="112"/>
         <source>&lt;br&gt;&lt;b&gt;R:&lt;/b&gt; {min}-{max}</source>
         <translation>&lt;br&gt;&lt;b&gt;R:&lt;/b&gt; {min}-{max}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="115"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="115"/>
         <source> &lt;b&gt;G:&lt;/b&gt; {min}-{max}</source>
         <translation> &lt;b&gt;G:&lt;/b&gt; {min}-{max}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="118"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="118"/>
         <source> &lt;b&gt;B:&lt;/b&gt; {min}-{max}</source>
         <translation> &lt;b&gt;B:&lt;/b&gt; {min}-{max}</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="124"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="124"/>
         <source>&lt;br&gt;&lt;b&gt;Threshold:&lt;/b&gt; {value}</source>
         <translation>&lt;br&gt;&lt;b&gt;Umbral:&lt;/b&gt; {value}</translation>
     </message>
@@ -10255,22 +10295,22 @@ agresivo</translation>
 <context>
     <name>RecentColorsDialog</name>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="151"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="151"/>
         <source>Recent Colors</source>
         <translation>Colores recientes</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="162"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="162"/>
         <source>Select a recently used color:</source>
         <translation>Seleccione un color usado recientemente:</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="178"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="178"/>
         <source>No recent colors found</source>
         <translation>No se encontraron colores recientes</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/Shared/views/RecentColorsDialog.py" line="204"/>
+        <location filename="../app/algorithms/Shared/views/RecentColorsDialog.py" line="204"/>
         <source>Cancel</source>
         <translation type="unfinished">Cancelar</translation>
     </message>
@@ -10702,6 +10742,29 @@ Puede cambiarlo más tarde en Preferencias o haciendo clic en el nombre del revi
         <location filename="../app/core/views/images/viewer/dialogs/ResultsFolderDialog.py" line="51"/>
         <source>Scanning for Results</source>
         <translation>Escaneando en busca de resultados</translation>
+    </message>
+</context>
+<context>
+    <name>SimilarityGalleryView</name>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="172"/>
+        <source>Reference</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="181"/>
+        <source>Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="190"/>
+        <source>AOI #{number}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../app/core/views/images/viewer/dialogs/AOISimilarityResultsDialog.py" line="192"/>
+        <source>AOI {index}</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11338,14 +11401,6 @@ Formatos compatibles: MP4, AVI, MOV, MKV, FLV, WMV, M4V, 3GP, WebM</translation>
         <location filename="../app/core/controllers/streaming/shared_widgets.py" line="1340"/>
         <source>Video Files (*.mp4 *.avi *.mov *.mkv *.flv *.wmv *.m4v *.3gp *.webm *.mpg *.mpeg *.ts *.mts *.m2ts);;All Files (*)</source>
         <translation>Archivos de vídeo (*.mp4 *.avi *.mov *.mkv *.flv *.wmv *.m4v *.3gp *.webm *.mpg *.mpeg *.ts *.mts *.m2ts);;Todos los archivos (*)</translation>
-    </message>
-</context>
-<context>
-    <name>StreamGeneralPage</name>
-    <message>
-        <location filename="../app/core/controllers/streaming/guidePages/StreamGeneralPage.py" line="55"/>
-        <source>Select Recording Folder</source>
-        <translation>Seleccionar carpeta de grabación</translation>
     </message>
 </context>
 <context>
@@ -13787,29 +13842,6 @@ Muestra el total de fotogramas extraídos al completarse.</translation>
     </message>
 </context>
 <context>
-    <name>VideoTimelineWidget</name>
-    <message>
-        <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="46"/>
-        <source>Play/Pause (Space)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="59"/>
-        <source>Drag to seek through video</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="100"/>
-        <source>Pause (Space)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../app/core/views/streaming/components/VideoTimelineWidget.py" line="100"/>
-        <source>Play (Space)</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>Viewer</name>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="14"/>
@@ -13841,13 +13873,13 @@ Cuando está deshabilitada, muestra la imagen original sin procesar.
 Úselo para comparar la imagen original con los resultados de detección.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="437"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="443"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="205"/>
         <source>Show Overlay</source>
         <translation>Mostrar superposición</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1151"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1188"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="225"/>
         <source>Toggle Gallery Mode (G)
 Shows all AOIs from all images in a grid view</source>
@@ -13865,7 +13897,7 @@ Muestra todos los AOI de todas las imágenes en una vista de cuadrícula</transl
         <translation>Mostrar AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1171"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1208"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="299"/>
         <source>Open Histogram</source>
         <translation>Abrir histograma</translation>
@@ -13912,7 +13944,7 @@ Muestra todos los AOI de todas las imágenes en una vista de cuadrícula</transl
         <translation>ruler.png</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1863"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1900"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="405"/>
         <source>Person Size Reference (Ctrl+P)</source>
         <translation type="unfinished"></translation>
@@ -14099,32 +14131,32 @@ La ordenación ayuda a priorizar la revisión de objetos más grandes o más cer
         <translation>Abrir</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="130"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="131"/>
         <source>Automated Drone Image Analysis Tool v{version} - Sponsored by TEXSAR</source>
         <translation>Herramienta automatizada de análisis de imágenes de dron v{version} - Patrocinado por TEXSAR</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="142"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="143"/>
         <source>Reading result file...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="159"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="160"/>
         <source>Checking image dimensions ({n} images)...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="169"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="170"/>
         <source>Validating image paths...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="176"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="177"/>
         <source>Load Results Failed</source>
         <translation>Error al cargar los resultados</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="178"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="179"/>
         <source>Cannot load results without valid image and mask locations.
 
 The viewer will now close.</source>
@@ -14133,60 +14165,60 @@ The viewer will now close.</source>
 El visor se cerrará ahora.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="185"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="186"/>
         <source>Scanning source folder for full flight...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="201"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="202"/>
         <source>Initialising controllers...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="212"/>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1353"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="213"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1390"/>
         <source>Skip Hidden ({count}) </source>
         <translation>Omitir ocultas ({count}) </translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="242"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="244"/>
         <source>Loading detection results from {n} images...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="281"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="283"/>
         <source>Image metadata and information.
 Click on GPS Coordinates to copy, share, or open in mapping applications.</source>
         <translation>Metadatos e información de la imagen.
 Haga clic en las coordenadas GPS para copiar, compartir o abrir en aplicaciones de mapas.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="313"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="315"/>
         <source>Loading first image...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="328"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="330"/>
         <source>Preparing thumbnails...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="596"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="602"/>
         <source>No Dataset</source>
         <translation>Sin conjunto de datos</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="597"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="603"/>
         <source>No dataset is currently loaded.</source>
         <translation>Actualmente no hay ningún conjunto de datos cargado.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="604"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="610"/>
         <source>Generate Cache</source>
         <translation>Generar caché</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="606"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="612"/>
         <source>This will regenerate thumbnail and color caches for all AOIs in this dataset.
 
 This may take a few minutes depending on the dataset size.
@@ -14199,39 +14231,39 @@ Esto puede tardar varios minutos según el tamaño del conjunto de datos.
 ¿Continuar?</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="619"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="625"/>
         <source>Initializing cache generation...</source>
         <translation>Inicializando generación de caché...</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="620"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="626"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="625"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="631"/>
         <source>Generating Cache</source>
         <translation>Generando caché</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="662"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="668"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="663"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="669"/>
         <source>Failed to start cache generation:
 {error}</source>
         <translation>Error al iniciar la generación de caché:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="681"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="687"/>
         <source>Cache Generated</source>
         <translation>Caché generada</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="683"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="689"/>
         <source>Cache generation complete!
 
 Processed {images} images with {aois} AOIs.
@@ -14244,12 +14276,12 @@ Se procesaron {images} imágenes con {aois} AOI.
 El visor cargará ahora miniaturas y colores mucho más rápido.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="714"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="720"/>
         <source>Cache Generation Error</source>
         <translation>Error de generación de caché</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="716"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="722"/>
         <source>An error occurred during cache generation:
 
 {error}</source>
@@ -14258,12 +14290,12 @@ El visor cargará ahora miniaturas y colores mucho más rápido.</translation>
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="896"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="902"/>
         <source>AOI Not Visible</source>
         <translation>AOI no visible</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="898"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="904"/>
         <source>The AOI at the cursor position cannot be selected because it is currently hidden due to active filters.
 
 To select this AOI, please clear or adjust your filters.</source>
@@ -14272,12 +14304,12 @@ To select this AOI, please clear or adjust your filters.</source>
 Para seleccionar este AOI, borre o ajuste sus filtros.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1032"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1069"/>
         <source>Update Image Dimensions</source>
         <translation>Actualizar dimensiones de imagen</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1034"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1071"/>
         <source>This dataset is missing image dimensions needed for heatmap filtering ({count} images).
 
 Would you like to read dimensions from the image files and update the results file?</source>
@@ -14286,56 +14318,56 @@ Would you like to read dimensions from the image files and update the results fi
 ¿Desea leer las dimensiones desde los archivos de imagen y actualizar el archivo de resultados?</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1073"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1110"/>
         <source>Reading image dimensions ({done}/{total})...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1162"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1199"/>
         <source>Show Pixels of Interest (H or Ctrl+I)</source>
         <translation>Mostrar píxeles de interés (H o Ctrl+I)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1177"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1214"/>
         <source>Toggle AOI Circles</source>
         <translation>Alternar círculos de AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1528"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1565"/>
         <source>Missing Dependency</source>
         <translation>Dependencia faltante</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1530"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1567"/>
         <source>The qimage2ndarray module is required for the upscale feature.
 Please install it using: pip install qimage2ndarray</source>
         <translation>El módulo qimage2ndarray es necesario para la función de escalado.
 Instálelo usando: pip install qimage2ndarray</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1539"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1576"/>
         <source>Upscale Error</source>
         <translation>Error de escalado</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1541"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1578"/>
         <source>An error occurred while opening the upscale dialog:
 {error}</source>
         <translation>Se produjo un error al abrir el diálogo de escalado:
 {error}</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1867"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1904"/>
         <source>Person Size Reference is unavailable: no GSD for this image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1964"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="2001"/>
         <source>Unknown Reviewer</source>
         <translation>Revisor desconocido</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="2027"/>
+        <location filename="../app/core/controllers/images/viewer/Viewer.py" line="2064"/>
         <source>Loading gallery...</source>
         <translation>Cargando galería...</translation>
     </message>
