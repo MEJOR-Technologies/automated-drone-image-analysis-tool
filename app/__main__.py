@@ -1,10 +1,10 @@
 # Set environment variable to avoid numpy._core issues - MUST be first
 import traceback
-from PySide6.QtCore import QTranslator, QLocale
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 from multiprocessing import freeze_support
 from helpers.PickleHelper import PickleHelper
+from helpers.TranslationHelper import install_translator
 from core.services.LoggerService import LoggerService
 from core.services.SettingsService import SettingsService
 from core.controllers.streaming.StreamingGuide import StreamingGuide
@@ -189,45 +189,15 @@ def main():
     """
     app = QApplication(sys.argv)
 
-    # Load translation
+    # Load translation. Priority: the saved Language preference, then the OS
+    # locale, then English. Resolves the .qm location via sys._MEIPASS so it
+    # works identically from source and from a PyInstaller build on Windows
+    # and macOS (see helpers.TranslationHelper).
     settings_service = SettingsService()
-    lang = settings_service.get_setting('Language', 'en')
-    if lang != 'en':
-        translator = QTranslator(app)
-        # Resolve translations path for source vs PyInstaller builds
-        if getattr(sys, "frozen", False):
-            base_dir = path.dirname(sys.executable)
-            translations_path = path.join(base_dir, "_internal", "translations")
-            if not path.exists(translations_path):
-                translations_path = path.join(base_dir, "translations")
-        else:
-            # app/ is the directory of __main__.py, so translations/ is at ../translations
-            translations_path = path.abspath(path.join(path.dirname(__file__), "..", "translations"))
-        try:
-            os.listdir(translations_path)
-        except Exception:
-            pass
-        qm_name = f"app_{lang}.qm"
-        if translator.load(qm_name, translations_path):
-            app.installTranslator(translator)
-            # Store translator to prevent garbage collection
-            app._translator = translator
+    install_translator(app, settings_service.get_setting('Language', None))
 
     qdarktheme.setup_theme()
     app.setWindowIcon(QIcon(path.abspath(path.join(path.dirname(__file__), 'ADIAT.ico'))))
-
-    # Load translations
-    translator = QTranslator(app)
-    # Get system locale (e.g., "es_ES", "fr_FR") or use a setting
-    locale = QLocale.system().name()  # e.g., "en_US", "es_ES"
-    translations_path = path.abspath(path.join(path.dirname(__file__), '..', 'translations'))
-
-    # Try to load translation for system locale (e.g., app_es.qm for Spanish)
-    lang_code = locale.split('_')[0]  # "es_ES" -> "es"
-    if translator.load(f"app_{lang_code}", translations_path):
-        app.installTranslator(translator)
-        # Keep translator reference alive
-        app._translator = translator
 
     # Initialize default settings early (before any windows are created)
     initialize_default_settings()
@@ -436,9 +406,15 @@ if __name__ == "__main__":
 
     freeze_support()
 
-    # Headless batch mode: "python app batch --input <parent> --output <root>".
+    # Headless batch mode: "python app batch --input <parent> --output <root>"
+    # (or "ADIAT.exe batch ..." in the packaged build).
     # Falls through to the normal GUI startup when no batch subcommand is given.
     if len(sys.argv) > 1 and sys.argv[1] == 'batch':
+        # The packaged Windows exe is windowed (console=False): attach to the
+        # calling terminal so CLI progress/errors are visible. No-op for GUI
+        # launches and on macOS/Linux.
+        from helpers.ConsoleHelper import attach_parent_console
+        attach_parent_console()
         from core.services.cli.BatchCLI import run_batch_cli
         sys.exit(run_batch_cli(sys.argv[2:]))
 
