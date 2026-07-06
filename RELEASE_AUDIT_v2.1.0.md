@@ -1,14 +1,12 @@
-# ADIAT Capability Audit — `main` (2.0.3) → `dev` (2.1.0 Beta 1)
+# ADIAT Capability Audit — `main` (2.0.3) → `dev` (2.1.0)
 
 **Purpose:** Inventory of everything added/changed since the last production release, organized so you can pick Release Notes highlights.
 
 **Scope of comparison**
 - **Baseline:** `origin/main` @ `5e59822` (matches the `adiat_main` checkout) — last production release, app version `2.0.3_BETA`.
-- **Current:** `dev` @ `7a7259b` — app version now **`2.1.0 Beta 1`**.
-- **Diff size:** 104 commits, 627 files changed.
+- **Current:** `dev` @ `1f58e4d` — shipping app version **`2.1.0`**.
+- **Diff size:** 111 commits, 646 files changed.
 - **Method:** Capabilities below were verified against the actual code on `dev` (not just commit messages). Each entry notes its **headline potential** (⭐ High / ◐ Medium / · Low) as a suggestion only.
-
-> ⚠️ **Version label note:** the version-bump commit set `2.1.0 Alpha`, but `app/__main__.py` HEAD currently reads `2.1.0 Beta 1`. Pick the label you intend to ship.
 
 ---
 
@@ -16,91 +14,27 @@
 
 These are the biggest, most user-visible, most novel additions — the strongest candidates for the top of the release notes:
 
-1. **Flight Viewer — live WebRTC drone feeds.** A brand-new real-time operational mode: watch live, low-latency video from field tablets, with telemetry, a detection map, and an aggregated detection gallery.
-2. **AI Person Detector.** Neural-network (ONNX) person detection, available both as an image-analysis algorithm and as a live-streaming algorithm.
-3. **Temperature Residual Anomaly.** A new thermal algorithm that finds people standing out from their *local* surroundings rather than a whole-image average.
-4. **Terrain / DEM integration.** Real elevation data (USGS 3DEP local GeoTIFF or online) drives terrain-corrected AOI GPS coordinates and terrain-conforming field-of-view boxes.
-5. **Person Size Reference + Shadow Height Estimation.** Photogrammetry tools to judge whether a detection could be a person — perspective-correct silhouette overlay and shadow-based height measurement.
-6. **Batch Processing + headless CLI.** Analyze every subfolder as its own run, with timeouts/ETAs/resume, scriptable from the command line, auto-linked into a Search Coordinator project.
-7. **Platform maturity:** in-app auto-update and multi-language support (English, Italian, Spanish, Dutch).
+1. **AI Person Detector.** Neural-network person detection (latest V4 ONNX models, 640 + high-quality 1024), available both as an image-analysis algorithm and as a live-streaming algorithm — tiled, aspect-preserving inference keeps small/distant targets detectable, and high-resolution sources automatically engage the 1024 model.
+2. **Temperature Residual Anomaly.** A new thermal algorithm that finds people standing out from their *local* surroundings rather than a whole-image average.
+3. **Terrain / DEM integration.** Real elevation data (USGS 3DEP local GeoTIFF or online) drives terrain-corrected AOI GPS coordinates and terrain-conforming field-of-view boxes.
+4. **Person Size Reference + Shadow Height Estimation.** Photogrammetry tools to judge whether a detection could be a person — perspective-correct silhouette overlay and shadow-based height measurement.
+5. **Align Image tool.** Hand-pin a photo to satellite imagery when drone orientation metadata is unreliable — every detection in that image then gets trustworthy GPS coordinates for ground teams.
+6. **Color & Thermal Histogram tools.** Interactive hue and temperature histograms with band isolation — black out everything except a red jacket's hues, or isolate a body-heat temperature band in thermal imagery.
+7. **Batch Processing + headless CLI.** Analyze every subfolder as its own run, with timeouts/ETAs/resume, scriptable from the command line, auto-linked into a Search Coordinator project.
+8. **Faster, smarter detection review.** Run-wide AOI numbers with jump-to-AOI and an on-image ruler; heatmap, color, and image-mask filters to cut recurring false positives; keyboard-driven review — plus major viewer responsiveness fixes (the one-click-zoom freeze is gone, image transitions are much faster on Windows).
+9. **Platform maturity:** in-app auto-update and multi-language support (English, Italian, Spanish, Dutch).
 
 ---
 
-## 1. Live Operations — Flight Viewer (live WebRTC drone feeds) — *new subsystem*
-
-A completely new window for watching live drone video streamed peer-to-peer from ADIAT Mobile tablets in the field. Launched from the startup Selection dialog and from menus in the Image Analysis and Streaming windows.
-
-### ⭐ Live WebRTC drone video feeds
-- **Type:** New feature
-- **What it does:** Watch live, low-latency video streamed peer-to-peer (WebRTC) from one or more paired field tablets — over the internet, cellular included, with no LAN or HDMI capture needed. Multiple feeds run side-by-side, each in its own resizable tile inside an MDI workspace.
-- **Where:** New **Flight Viewer** window (drone icon in the startup Selection dialog; also in Image Analysis and Streaming menus).
-- **Key files:** `app/core/controllers/flight/FlightViewerController.py`, `app/core/views/flight/FlightViewerWindow.py`, `WebRTCStreamService.py` · commit `c6ea452`
-
-### ⭐ Pairing-code connection
-- **Type:** New feature
-- **What it does:** Click "Add Feed" and type the 6-character code shown on the tablet. The desktop looks it up on the signaling service, negotiates the connection, and the dialog dismisses itself the moment video starts. Plain-language status and actionable failures replace WebRTC jargon; a viewer-cap message appears when a drone already has the maximum number of viewers.
-- **Where:** Flight Viewer → "Add Feed" pairing dialog.
-- **Key files:** `app/core/views/flight/FlightPairingDialog.py`, `signaling/pairing.py` · commits `c6ea452`, `b1d1055`
-
-### ⭐ Session continuity — auto-resume after disconnect
-- **Type:** New feature
-- **What it does:** If the connection drops or the app is closed, the next launch restores that drone's prior detections (thumbnails + map pins) from a local SQLite store and, if the tablet is still waiting, silently re-pairs with the same code — no retyping. If the tablet has started a new flight under the same code, the operator is prompted to archive or discard the old session. Brief blips recover on their own via reconnect-with-backoff and ICE-restart.
-- **Where:** Flight Viewer (automatic on launch).
-- **Key files:** `FlightSessionStore.py`, `FlightViewerController._try_auto_resume` · commit `b1d1055`
-
-### ⭐ Mission Gallery — aggregated detection list
-- **Type:** New feature
-- **What it does:** A dock that collects every detection from all feeds into one newest-first list — thumbnail, class, confidence, GPS (DD/DM/MGRS per preference), timestamp, source drone, plus "View" and "Copy GPS". Filter by feed, detector type, and minimum score; a moving target stays a single row. The whole gallery can be exported to ADIAT's standard image-results folder so it reopens in the Image Analysis window.
-- **Where:** Flight Viewer → "Mission Gallery" dock.
-- **Key files:** `MissionGalleryController.py`, `MissionGalleryDock.py`, `DetectionRowWidget.py` · commits `c6ea452`, `c2f0ce9`, `b1d1055`
-
-### ◐ Live detection overlays on the video
-- **Type:** New feature
-- **What it does:** Detector bounding boxes are drawn on the live video, time-locked to the exact frame they were computed from (box stays on the moving target) and space-locked to the letterboxed video area. Boxes clear within ~0.5 s of the target leaving the frame, so a lingering box reliably means "still tracking."
-- **Where:** Flight Viewer — each feed tile.
-- **Key files:** `DetectionOverlayWidget.py` · commits `c6ea452`, `c2f0ce9`, `1dca7d4`
-
-### ◐ Telemetry HUD on each feed
-- **Type:** New feature
-- **What it does:** A compact strip per tile shows the drone's live state at ~4 Hz: GPS lat/lon, altitude (MSL/AGL), heading with compass cardinal, horizontal/vertical speed, color-coded battery chip, and flight mode. Units follow the Meters/Feet preference; dims with a "stale Ns" badge if telemetry stops.
-- **Where:** Flight Viewer — bottom overlay of each tile.
-- **Key files:** `TelemetryHud.py`, `TelemetryFeedService.py` · commit `c6ea452`
-
-### ◐ Interactive detection map
-- **Type:** New feature
-- **What it does:** Plots every GPS-tagged detection as a color-matched pin. Switch Road/Satellite/Hybrid basemaps; clicking a gallery row centers the map, clicking a pin highlights the row. Degrades gracefully when offline / no mapping engine.
-- **Where:** Flight Viewer — "Map" dock.
-- **Key files:** `MapDock.py` · commits `c6ea452`, `c2f0ce9`
-
-### ◐ Desktop-side thumbnail cropping (cellular data saver)
-- **Type:** Enhancement
-- **What it does:** Detection thumbnails are cropped on the desktop from the live video instead of sent over the network by the tablet, cutting cellular data use substantially (~300–750 KB/s) with visually identical results. Crops persist across tile reopen and app restart.
-- **Where:** Flight Viewer — Mission Gallery (behind the scenes).
-- **Key files:** `DetectionThumbCropper.py` · commit `c2f0ce9`
-
-### · Per-feed tools: rename, record, mute, maximize, layout save
-- **Type:** New feature
-- **What it does:** Right-click a tile to rename the drone (nickname persists across sessions via aircraft serial; propagates everywhere), start/stop MP4 recording, mute a feed's detections, maximize the tile, reconnect, and save/restore the window layout.
-- **Where:** Flight Viewer — tile context menu / toolbar.
-- **Key files:** `FlightTile.py`, `FlightViewerController.save_layout` · commits `c6ea452`, `c2f0ce9`, `b1d1055`
-
-### · Operator-friendly network status + device-trust hints
-- **Type:** Enhancement
-- **What it does:** Per-feed strip translates raw WebRTC states into plain labels (Initializing / Connecting / Connected / Disconnected / Failed) with live resolution, FPS, bitrate, latency. On pairing, the desktop remembers each tablet's security fingerprint (trust-on-first-use) and flags "known device" vs a changed fingerprint, warning of a possible different/spoofed controller.
-- **Where:** Flight Viewer — status strip + pairing dialog.
-- **Key files:** `FingerprintStore.py`, `FlightTile._friendly_ice_state` · commits `7f8bb04`, `c6ea452`, `b1d1055`
-
----
-
-## 2. Live Operations — Streaming Detection (HDMI / RTSP / capture-device viewer)
+## 1. Live Operations — Streaming Detection (HDMI / RTSP / capture-device viewer)
 
 The existing Streaming viewer was substantially upgraded.
 
 ### ⭐ AI Person Detector — live person detection
 - **Type:** New feature
-- **What it does:** An ONNX-based AI person detector selectable as a live-streaming algorithm. Automatically detects and highlights people in each frame, with a confidence slider, GPU acceleration (DirectML) + CPU fallback, and a higher-quality 1024 model option. Built for SAR: defaults to tiled, aspect-preserving inference so small/distant targets aren't lost to whole-frame downscaling, with auto-fallback to single-pass if tiling is slow. Optional aspect-ratio filtering and temporal voting reduce false positives.
+- **What it does:** An ONNX-based AI person detector selectable as a live-streaming algorithm, now running the latest **V4 models**. Automatically detects and highlights people in each frame, with a confidence slider, GPU acceleration (DirectML) + CPU fallback. Built for SAR: tiled, aspect-preserving (letterbox) inference is on by default so small/distant targets aren't crushed by whole-frame downscaling, with auto-fallback to single-pass if tiling is slow. Model selection is source-aware: high-res file sources and native-resolution processing auto-engage the higher-quality 1024 model on GPU, while downscaled live feeds (RTMP/HDMI) keep the faster 640 model (a checkbox still forces 1024). Optional aspect-ratio filtering and temporal voting reduce false positives.
 - **Where:** Streaming viewer — selectable streaming algorithm.
-- **Key files:** `app/algorithms/streaming/AIPersonDetector/**`, model files `ai_person_model_V3_{640,1024}.onnx` · commits `51dfff7`, `0e674da`
+- **Key files:** `app/algorithms/streaming/AIPersonDetector/**`, model files `ai_person_model_V4_{640,1024}.onnx` · commits `51dfff7`, `0e674da`, `c1a72dc`
 
 ### ◐ Unified controls across all live algorithms
 - **Type:** Enhancement
@@ -143,13 +77,19 @@ The existing Streaming viewer was substantially upgraded.
 
 ---
 
-## 3. Detection Algorithms (image analysis)
+## 2. Detection Algorithms (image analysis)
 
 ### ⭐ AI Person Detector — image algorithm
 - **Type:** New feature
 - **What it does:** A neural-network (ONNX) algorithm that detects people directly in still drone imagery, instead of relying on color/temperature heuristics — directly targeting the search objective.
 - **Where:** Algorithm selection / wizard when starting a new image analysis. Registered for **Windows and macOS**.
-- **Key files:** `algorithms.conf` (`AIPersonDetector`, label "AI Person Detector"), bundled `*.onnx` V3 640 & 1024 models. *(Shares the model family with the streaming variant.)*
+- **Key files:** `algorithms.conf` (`AIPersonDetector`, label "AI Person Detector"), bundled `*.onnx` **V4** 640 & 1024 models (V3 retained in-tree). *(Shares the model family with the streaming variant.)* · commit `c1a72dc`
+
+### · AI Person Detector wizard fixes
+- **Type:** Bug fix
+- **What it does:** The guided wizard now saves the confidence preset in the percent form the detector expects (it previously wrote a 0–1 fraction, skewing analyses configured through the wizard), and the streaming wizard now offers the same simplified single-slider guided interface as the image wizard. The streaming connection page also defaults file sources to native (100%) processing resolution and live sources to 1080p.
+- **Where:** AI Person Detector setup wizards (image + streaming); streaming connection page.
+- **Key files:** image + streaming `AIPersonDetectorWizardController.py`, `StreamConnectionPage.py` · commits `1f58e4d`, `c1a72dc`
 
 ### ⭐ Temperature Residual Anomaly — thermal algorithm
 - **Type:** New feature
@@ -171,7 +111,7 @@ The existing Streaming viewer was substantially upgraded.
 
 ---
 
-## 4. Measurement & Photogrammetry (image Results Viewer)
+## 3. Measurement & Photogrammetry (image Results Viewer)
 
 ### ⭐ Person Size Reference tool
 - **Type:** New feature
@@ -213,7 +153,7 @@ The existing Streaming viewer was substantially upgraded.
 
 ---
 
-## 5. Terrain & Mapping (DEM, GPS Map, FOV)
+## 4. Terrain & Mapping (DEM, GPS Map, FOV)
 
 ### ⭐ Pluggable terrain elevation source (USGS 3DEP + Terrarium)
 - **Type:** New feature
@@ -258,7 +198,7 @@ The existing Streaming viewer was substantially upgraded.
 
 ---
 
-## 6. Results Viewer & Review Tools
+## 5. Results Viewer & Review Tools
 
 ### ⭐ Color Histogram with hue isolation
 - **Type:** New feature
@@ -290,6 +230,12 @@ The existing Streaming viewer was substantially upgraded.
 - **Where:** Results Viewer — AOI filter dialog.
 - **Key files:** `AOIFilterDialog.py`, `AOIController.py` · commits `5f84a2e`, `2a0f554`
 
+### ◐ Faster, steadier Results Viewer
+- **Type:** Enhancement / Bug fix
+- **What it does:** Image-to-image transitions are dramatically faster on Windows (XMP metadata is parsed directly instead of spawning an ExifTool subprocess per image), the GUI freeze at the one-click-zoom threshold is eliminated (a Qt scrollbar/fit feedback loop), and thumbnail generation no longer stalls the interface. Also: hold spacebar to drag-pan the image, a new Show Ruler toolbar toggle gates the on-image AOI ruler, the AOI header now tracks its pane when the splitter moves, gallery scrolling reaches the final row, and the GSD scale bar appears on load without a manual rescale.
+- **Where:** Image Results Viewer.
+- **Key files:** `QtImageViewer.py`, `MetaDataHelper.get_xmp_data_merged`, `ThumbnailCacheService.py`, `GalleryController.py`, `AOIOverlayController.py` · commits `253a0ae`, `72167d4`
+
 ### · Keyboard-driven AOI review in the gallery
 - **Type:** Enhancement
 - **What it does:** Left/Right arrows step through detections one at a time (main image loads and zooms to each, wrapping at ends). Single-key shortcuts (G/Z/C/R/H/M/E/F…) now fire while the gallery has focus.
@@ -317,7 +263,7 @@ The existing Streaming viewer was substantially upgraded.
 
 ---
 
-## 7. Batch Processing & Automation
+## 6. Batch Processing & Automation
 
 ### ⭐ Batch processing (GUI) — analyze every subfolder as its own run
 - **Type:** New feature
@@ -327,9 +273,9 @@ The existing Streaming viewer was substantially upgraded.
 
 ### ⭐ Headless Batch CLI
 - **Type:** New feature
-- **What it does:** Run full batch analysis with no GUI: `python app batch --input <parent> --output <root>`. Settings can come from flags, be inherited from a prior run's `ADIAT_Data.xml` (`--config`), or both (per-algorithm `--option NAME=VALUE`). Exit code 0/1 makes it scriptable for overnight processing. Supports `--resume`, `--no-coordinator`, `--project-name`, `--resolution`, etc.
-- **Where:** Command line (`python app batch …`).
-- **Key files:** `app/core/services/cli/BatchCLI.py`, `app/__main__.py` · commit `f008bbe`
+- **What it does:** Run full batch analysis with no GUI: `ADIAT.exe batch --input <parent> --output <root>` (or `python app batch …` from source). Settings can come from flags, be inherited from a prior run's `ADIAT_Data.xml` (`--config`), or both (per-algorithm `--option NAME=VALUE`). Exit code 0/1 makes it scriptable for overnight processing. Supports `--resume`, `--no-coordinator`, `--project-name`, `--resolution`, etc. On Windows the packaged (windowed) exe attaches to the calling terminal so progress and errors are visible; on macOS/Linux the binary behaves as a normal CLI. Runs with no display server (QCoreApplication only) — suitable for headless boxes.
+- **Where:** Command line (`ADIAT.exe batch …` / `python app batch …`).
+- **Key files:** `app/core/services/cli/BatchCLI.py`, `app/helpers/ConsoleHelper.py`, `app/__main__.py` · commit `f008bbe`
 
 ### ⭐ Auto-built Search Coordinator project links all batches
 - **Type:** New feature
@@ -360,7 +306,7 @@ The existing Streaming viewer was substantially upgraded.
 
 ---
 
-## 8. Data Import & Compatibility
+## 7. Data Import & Compatibility
 
 ### ⭐ Skydio X10 CSV flight-log import (Video Parser)
 - **Type:** New feature
@@ -388,13 +334,13 @@ The existing Streaming viewer was substantially upgraded.
 
 ---
 
-## 9. Platform & Infrastructure
+## 8. Platform & Infrastructure
 
 ### ⭐ In-app update system (check + auto-update on launch)
 - **Type:** New feature
-- **What it does:** Checks an online feed (`desktop.adiat.app/version.json`) for a newer installer matching the user's OS/architecture. On launch it checks automatically (once per session) and, if newer, shows an "Update Available" prompt with release notes; "Download and Install" downloads with a progress bar and launches the installer. Also a manual "Check for Updates." Respects an "Offline Only" preference and understands prerelease ordering (Beta 1 → Beta 2).
+- **What it does:** Checks an online feed (`desktop.adiat.app/version.json`) for a newer installer matching the user's OS/architecture. On launch it checks automatically (once per session) and, if newer, shows an "Update Available" prompt with release notes; "Download and Install" downloads with a progress bar and launches the installer. The automatic check runs on the startup Selection dialog so the prompt appears before the user commits to a mode; download progress is shown in MB. Also a manual "Check for Updates." Respects an "Offline Only" preference, and version comparison understands prerelease labels *and* build numbers, so successive builds of the same version (Beta 1 → Beta 2) are offered without a numeric bump.
 - **Where:** Auto-check from the startup Selection dialog; manual via Images window "Check for Updates."
-- **Key files:** `UpdateService.py`, `UpdateController.py`, `__main__.py` · commit `36881c6`
+- **Key files:** `UpdateService.py`, `UpdateController.py`, `SelectionDialog.py`, `__main__.py` · commits `36881c6`, `506770b`
 
 ### ⭐ Multi-language support (English, Italian, Spanish, Dutch)
 - **Type:** New feature
@@ -409,7 +355,7 @@ The existing Streaming viewer was substantially upgraded.
 
 ### · Version bump to 2.1.0 + optional TOML app-config
 - **Type:** Enhancement
-- **What it does:** Version advanced from `2.0.3_BETA` to the 2.1.0 line (HEAD reads `2.1.0 Beta 1`). A new optional `config.toml` in the app-data dir lets operators override settings (e.g. Flight Viewer signaling base URL) without code changes; missing/malformed file falls back safely. Version comparison now understands prerelease labels and build numbers (release < rc < beta < alpha).
+- **What it does:** Version advanced from `2.0.3_BETA` to **`2.1.0`** (final label at HEAD). A new optional `config.toml` in the app-data dir lets operators override settings without code changes; missing/malformed file falls back safely. Version comparison now understands prerelease labels and build numbers (release < rc < beta < alpha).
 - **Key files:** `__main__.py`, `AppConfig.py` · commit `d8b9b47`
 
 ---
@@ -418,13 +364,16 @@ The existing Streaming viewer was substantially upgraded.
 
 These don't affect the feature list but are worth knowing before you publish:
 
-- **Version label:** confirm whether you ship as `2.1.0 Beta 1` (current HEAD) vs `2.1.0 Alpha` (bump commit). `app/__main__.py:23` currently says `2.1.0 Beta 1`.
+- **Version label:** resolved — `app/__main__.py` now ships **`2.1.0`**.
+- **Deferred features:** the Flight Viewer (live WebRTC drone feeds) is code-complete but **disabled for this release** via `FeatureFlags.FLIGHT_VIEWER_ENABLED = False` — its Selection-dialog button and the menu entries in the Images/Streaming windows are hidden. Do not include it in release notes; it ships in a later release by flipping the flag.
 - **Test coverage gaps:** the PDF map-tile dropdown shipped without added automated tests (per the auditing pass).
 - **i18n gaps:** several newer user-facing features were translated for English/Italian but not yet Spanish/Dutch — worth a translation sweep (`python scripts/extract_translations.py`) before release if multi-language parity matters.
+- **Offline Only now covers terrain (fixed):** previously "Offline Only" mode disabled the update check and map basemap tiles but **not** DEM/geoid downloads — AOI GPS and FOV calculations still fetched AWS Terrarium elevation tiles over the network. `TerrainService` now has an `offline_only` floor set from the preference in `AOIService._get_terrain_service()`, so no elevation/geoid data is downloaded while offline mode is on (cached data is still used). Runtime toggling is honored.
+- **Language selection (fixed):** startup now picks the UI language by priority — saved `Language` preference → OS locale → English — via `helpers/TranslationHelper.py`, resolving the `.qm` directory through `sys._MEIPASS` so it works identically from source and in the packaged app on Windows and macOS. Previously two conflicting load paths meant the system-locale default never worked in the compiled build, the Preferences choice could be overridden by the OS locale, and English couldn't be forced on a non-English OS. `app_nl.qm` (Dutch) is now bundled in `app.spec` (was shipped only from source).
 - **Platform availability varies by feature:** Temperature Residual Anomaly is **Windows-only**; AI Person Detector image algorithm is **Windows + macOS**; the streaming AI Person Detector adds **Linux**. Mention platform support where relevant in the notes.
 - **Behavior change to call out:** the standalone live **Motion Detection** streaming algorithm was removed (folded into "Color Anomaly & Motion Detection") — existing users will notice the menu entry is gone.
 - **Backward compatibility:** `drones.pkl`/`xmp.pkl` → `drones.csv`/`xmp.csv` migration is automatic; user results (`ADIAT_Data.xml`) are unaffected, and legacy result files are backfilled (AOI numbers, image dimensions) on open.
 
 ---
 
-*Generated by an automated capability audit comparing `dev` (`7a7259b`) against `origin/main` (`5e59822`). Every entry was verified against the source on `dev`. Headline-potential marks (⭐/◐/·) are suggestions — adjust to taste.*
+*Generated by an automated capability audit comparing `dev` against `origin/main` (`5e59822`); originally audited at `7a7259b`, refreshed 2026-07-06 at `1f58e4d` (V4 detector models, update-system polish, viewer responsiveness fixes; Team Planning and Flight Viewer removed as not shipping). Every entry was verified against the source on `dev`. Headline-potential marks (⭐/◐/·) are suggestions — adjust to taste.*
