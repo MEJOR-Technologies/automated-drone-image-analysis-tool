@@ -21,6 +21,15 @@ def test_dialog_uses_shared_hue_ring_selector(dialog):
     assert isinstance(dialog.hueWheelSelector, HueRingSelector)
 
 
+def test_hue_ring_is_visible_in_layout(dialog):
+    """Regression: the hue-ring range selector did not appear because it had no
+    size hint and collapsed to zero height inside the range group box."""
+    ring = dialog.hueWheelSelector
+    assert ring.minimumSizeHint().height() > 0
+    # The group box hosting the ring must reserve real vertical space for it.
+    assert dialog.rangeSliderContainer.minimumSizeHint().height() > 0
+
+
 @pytest.mark.parametrize("lo,hi", [(0, 360), (30, 90), (0, 45), (200, 360), (175, 185)])
 def test_range_hsv_round_trip(dialog, lo, hi):
     """Absolute degrees -> ring (centre,+/-) -> absolute degrees is lossless."""

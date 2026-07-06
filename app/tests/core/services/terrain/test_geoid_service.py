@@ -129,6 +129,39 @@ class TestGeoidService:
             N = service.get_undulation(0, 361)  # Will be normalized
             # After normalization, this becomes valid
 
+    def test_get_undulation_offline_only_skips_grid_download(self):
+        """Freeze regression: offline_only must never download or synthesize
+        the grid on the calling (GUI) thread. With no local grid it returns
+        None so the map zoom-FOV redraw cannot block on a network download."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            service = GeoidService(cache_dir=tmpdir)
+
+            with patch.object(service, '_download_grid') as mock_dl, \
+                    patch.object(service, '_generate_simplified_grid') as mock_gen:
+                N = service.get_undulation(40.7128, -74.0060, offline_only=True)
+
+            assert N is None
+            mock_dl.assert_not_called()
+            mock_gen.assert_not_called()
+            assert service._grid_loaded is False
+
+    def test_get_undulation_offline_only_uses_already_loaded_grid(self):
+        """offline_only still returns a value once the grid is available."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            service = GeoidService(cache_dir=tmpdir)
+
+            # Prime the grid via the normal (download/synthesize-allowed) path.
+            primed = service.get_undulation(40.7128, -74.0060)
+            assert primed is not None
+            assert service._grid_loaded is True
+
+            # Now an offline-only lookup reuses it with no download/synthesis.
+            with patch.object(service, '_download_grid') as mock_dl:
+                N = service.get_undulation(40.7128, -74.0060, offline_only=True)
+
+            assert N is not None
+            mock_dl.assert_not_called()
+
     def test_ellipsoidal_to_orthometric(self):
         """Test ellipsoidal to orthometric conversion."""
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -77,6 +77,11 @@ class GalleryController:
         # Progress dialog for color calculation
         self.color_calc_progress_dialog = None
 
+        # Tracks whether we currently hold a connection to the model's
+        # color_calc_complete signal, so we only disconnect when connected
+        # (Qt warns when disconnecting a slot that was never connected).
+        self._color_calc_complete_connected = False
+
         # Gallery column width constants (thumbnail + spacing)
         self.GALLERY_COLUMN_WIDTH = 200  # 190px thumbnail + 10px spacing
         # Gallery overhead (margins + scrollbar + padding)
@@ -164,6 +169,7 @@ class GalleryController:
             # Loading overlay is already shown in load_all_aois()
             # Just connect model signals (no progress updates needed for overlay)
             self.model.color_calc_complete.connect(self._on_color_calc_complete)
+            self._color_calc_complete_connected = True
 
             # Start color calculation
             self.model._precalculate_color_info()
@@ -179,44 +185,28 @@ class GalleryController:
             self.model._precalculate_color_info()
             self._finalize_gallery_load()
 
-    def _on_color_calc_progress(self, current, total):
-        """Handle color calculation progress update."""
-        # Progress updates no longer needed with overlay
-        # Keep method for compatibility but don't do anything
-        pass
-
-    def _on_color_calc_message(self, message):
-        """Handle color calculation status message."""
-        # Message updates no longer needed with overlay
-        # Keep method for compatibility but don't do anything
-        pass
-
     def _disconnect_color_calc_signals(self):
-        """Disconnect all color calculation signal connections."""
-        try:
-            # Disconnect model signals
-            try:
-                self.model.color_calc_progress.disconnect(self._on_color_calc_progress)
-            except Exception:
-                pass
-            try:
-                self.model.color_calc_message.disconnect(self._on_color_calc_message)
-            except Exception:
-                pass
+        """Disconnect color calculation signal connections.
+
+        Only ``color_calc_complete`` is ever connected (the progress/message
+        signals drive the overlay via the model and are never wired here), and
+        only while ``_color_calc_complete_connected`` is set. Guarding on that
+        flag avoids Qt's RuntimeWarning for disconnecting a slot that was never
+        connected -- a warning that a try/except cannot suppress.
+        """
+        if self._color_calc_complete_connected:
             try:
                 self.model.color_calc_complete.disconnect(self._on_color_calc_complete)
-            except Exception:
+            except (RuntimeError, TypeError):
                 pass
+            self._color_calc_complete_connected = False
 
-            # Disconnect dialog signals
-            if self.color_calc_progress_dialog:
-                try:
-                    self.color_calc_progress_dialog.canceled.disconnect(self._on_color_calc_cancelled)
-                except Exception:
-                    pass
-        except Exception:
-            # self.logger.debug(f"Error disconnecting signals: {e}")
-            pass
+        # Disconnect dialog signals (legacy progress-dialog path)
+        if self.color_calc_progress_dialog:
+            try:
+                self.color_calc_progress_dialog.canceled.disconnect(self._on_color_calc_cancelled)
+            except (RuntimeError, TypeError):
+                pass
 
     def _on_color_calc_complete(self):
         """Handle color calculation completion."""
@@ -726,62 +716,72 @@ class GalleryController:
                                 pass
 
                 # Connect to viewChanged signal BEFORE loading (critical for race condition)
+                connected_viewer = None
                 if hasattr(self.parent, 'main_image') and self.parent.main_image:
                     try:
                         self.parent.main_image.viewChanged.connect(zoom_when_ready)
                         zoom_handler = zoom_when_ready
+                        connected_viewer = self.parent.main_image
                     except Exception:
                         # self.logger.debug(f"Could not connect to viewChanged: {e}")
                         pass
 
-                # Now load the image - this will emit viewChanged signals which our handler will catch
-                if hasattr(self.parent, '_load_image'):
-                    self.parent._load_image()
+                try:
+                    # Now load the image - this will emit viewChanged signals which our handler will catch
+                    if hasattr(self.parent, '_load_image'):
+                        self.parent._load_image()
 
-                # Check if image is ready and zoom stack is cleared but signal handler hasn't executed
-                # Only check if zoom hasn't already executed via the signal
-                if (not zoom_executed and
-                        hasattr(self.parent, 'main_image') and
-                        self.parent.main_image and
-                        self.parent.main_image.hasImage()):
-                    # Check if recursion guard is active - if so, wait for signal handler
-                    recursion_guard_active = False
-                    if hasattr(self.parent.main_image, '_recursion_guard'):
-                        recursion_guard_active = self.parent.main_image._recursion_guard
-
-                    # Check if zoom stack is cleared (resetZoom has been called)
-                    zoom_stack_cleared = False
-                    if hasattr(self.parent.main_image, 'zoomStack'):
-                        zoom_stack_cleared = len(self.parent.main_image.zoomStack) == 0
-
-                    # Only zoom if recursion guard is not active and zoom stack is cleared
-                    if not recursion_guard_active and zoom_stack_cleared:
-                        # Disconnect the signal handler to prevent double-zoom
-                        if zoom_handler:
-                            try:
-                                self.parent.main_image.viewChanged.disconnect(zoom_handler)
-                            except Exception:
-                                pass
-                        # Zoom directly since image is ready and zoom is reset
-                        zoom_executed = True
-                        self._zoom_to_aoi(aoi_data)
-                elif not zoom_handler:
-                    # Couldn't connect to signal, try zooming directly if image is ready and zoom is reset
-                    if (hasattr(self.parent, 'main_image') and
+                    # Check if image is ready and zoom stack is cleared but signal handler hasn't executed
+                    # Only check if zoom hasn't already executed via the signal
+                    if (not zoom_executed and
+                            hasattr(self.parent, 'main_image') and
                             self.parent.main_image and
                             self.parent.main_image.hasImage()):
-                        # Check if recursion guard is active
+                        # Check if recursion guard is active - if so, wait for signal handler
                         recursion_guard_active = False
                         if hasattr(self.parent.main_image, '_recursion_guard'):
                             recursion_guard_active = self.parent.main_image._recursion_guard
 
-                        # Check if zoom stack is cleared before zooming
+                        # Check if zoom stack is cleared (resetZoom has been called)
                         zoom_stack_cleared = False
                         if hasattr(self.parent.main_image, 'zoomStack'):
                             zoom_stack_cleared = len(self.parent.main_image.zoomStack) == 0
 
+                        # Only zoom if recursion guard is not active and zoom stack is cleared
                         if not recursion_guard_active and zoom_stack_cleared:
+                            # Zoom directly since image is ready and zoom is reset
+                            zoom_executed = True
                             self._zoom_to_aoi(aoi_data)
+                    elif not zoom_handler:
+                        # Couldn't connect to signal, try zooming directly if image is ready and zoom is reset
+                        if (hasattr(self.parent, 'main_image') and
+                                self.parent.main_image and
+                                self.parent.main_image.hasImage()):
+                            # Check if recursion guard is active
+                            recursion_guard_active = False
+                            if hasattr(self.parent.main_image, '_recursion_guard'):
+                                recursion_guard_active = self.parent.main_image._recursion_guard
+
+                            # Check if zoom stack is cleared before zooming
+                            zoom_stack_cleared = False
+                            if hasattr(self.parent.main_image, 'zoomStack'):
+                                zoom_stack_cleared = len(self.parent.main_image.zoomStack) == 0
+
+                            if not recursion_guard_active and zoom_stack_cleared:
+                                self._zoom_to_aoi(aoi_data)
+                finally:
+                    # _load_image() is synchronous, so every viewChanged it can
+                    # emit has already fired by now. Unconditionally drop the
+                    # transient handler: a failed or early-returning load (missing
+                    # file, destroyed viewer) otherwise leaves it armed on the
+                    # viewChanged signal, where a later wheel zoom would re-enter
+                    # zoomToArea against a stale AOI. Disconnect from the exact
+                    # viewer we connected to.
+                    if zoom_handler is not None and connected_viewer is not None:
+                        try:
+                            connected_viewer.viewChanged.disconnect(zoom_handler)
+                        except Exception:
+                            pass
             else:
                 # Same image - zoom immediately
                 self._zoom_to_aoi(aoi_data)

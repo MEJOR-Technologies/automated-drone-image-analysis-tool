@@ -43,6 +43,18 @@ class GPSMapController(QObject):
         self.map_dialog = None
         self.gps_data = []
 
+        # Coalesce zoom-FOV updates. Viewer.viewChanged fires up to twice per
+        # wheel notch, and each forward reruns the map's terrain-projected FOV
+        # redraw synchronously on the GUI thread. A leading-edge + trailing
+        # throttle bounds that to roughly one redraw per interval during a
+        # continuous zoom/pan while still drawing the final position.
+        self._fov_throttle = QTimer(self)
+        self._fov_throttle.setSingleShot(True)
+        self._fov_throttle.setInterval(100)
+        self._fov_throttle.timeout.connect(self._flush_zoom_fov)
+        self._pending_fov_rect = None
+        self._has_pending_fov = False
+
     def show_map(self):
         """
         Show the GPS map window.
@@ -287,13 +299,34 @@ class GPSMapController(QObject):
 
     def update_zoom_fov(self, visible_rect):
         """
-        Update the zoom FOV box on the GPS map.
+        Update the zoom FOV box on the GPS map (throttled).
+
+        Coalesces the burst of viewChanged emissions a single wheel notch
+        produces into at most one map redraw per throttle interval, so the
+        terrain-projected FOV redraw cannot saturate the GUI thread.
 
         Args:
             visible_rect: QRectF in image pixel coordinates, or None to clear.
         """
+        if not (self.map_dialog and self.map_dialog.isVisible()):
+            return
+
+        self._pending_fov_rect = visible_rect
+        self._has_pending_fov = True
+
+        if not self._fov_throttle.isActive():
+            # Leading edge: draw the first update immediately for
+            # responsiveness, then coalesce any that arrive during the window.
+            self._flush_zoom_fov()
+            self._fov_throttle.start()
+
+    def _flush_zoom_fov(self):
+        """Forward the most recent pending FOV rect to the map dialog."""
+        if not self._has_pending_fov:
+            return
+        self._has_pending_fov = False
         if self.map_dialog and self.map_dialog.isVisible():
-            self.map_dialog.update_zoom_fov(visible_rect)
+            self.map_dialog.update_zoom_fov(self._pending_fov_rect)
 
     def on_map_gps_clicked(self, lat, lon):
         """
@@ -307,10 +340,11 @@ class GPSMapController(QObject):
         try:
             neighbor_service = AOINeighborService()
             terrain_service = None
-            try:
-                terrain_service = _get_terrain_service()
-            except Exception:
-                pass
+            if getattr(self.parent, 'use_terrain_elevation', True):
+                try:
+                    terrain_service = _get_terrain_service()
+                except Exception:
+                    pass
 
             # Try current image first, then search others sorted by distance
             candidates = []
@@ -408,6 +442,10 @@ class GPSMapController(QObject):
 
     def on_map_dialog_closed(self):
         """Handle map dialog close event."""
+        # Drop any queued FOV redraw so the throttle timer cannot wake after
+        # the dialog is gone.
+        self._fov_throttle.stop()
+        self._has_pending_fov = False
         if hasattr(self.parent, 'gps_map_open'):
             self.parent.gps_map_open = False
             if hasattr(self.parent, 'ui_style_controller'):
@@ -449,8 +487,12 @@ class GPSMapController(QObject):
             if custom_alt_ft is None:
                 custom_alt_ft = current_image.get('wingtra_agl_ft')
 
+            # Honor the terrain-elevation preference so the map marker matches
+            # the viewer's AOI label and the exports
+            use_terrain = getattr(self.parent, 'use_terrain_elevation', True)
+
             # Calculate AOI GPS coordinates with metadata using the convenience method
-            aoi_gps = aoi_service.get_aoi_gps_with_metadata(current_image, aoi, aoi_index, custom_alt_ft)
+            aoi_gps = aoi_service.get_aoi_gps_with_metadata(current_image, aoi, aoi_index, custom_alt_ft, use_terrain)
 
             if not aoi_gps:
                 return None

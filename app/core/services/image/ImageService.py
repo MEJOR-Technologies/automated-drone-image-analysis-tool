@@ -385,6 +385,30 @@ class ImageService:
 
         return gsd_service.compute_gsd(irow, icol, altitude_override=effective_agl_m)
 
+    def get_effective_agl_at_pixel(self, col, row, use_terrain=True, custom_altitude_ft=None):
+        """Public accessor for the DEM-corrected effective AGL at a pixel.
+
+        Args:
+            col: Image column (x pixel coordinate).
+            row: Image row (y pixel coordinate).
+            use_terrain (bool): Honor DEM data when available. Default True.
+            custom_altitude_ft (float, optional): User-supplied AGL override
+                in feet.
+
+        Returns:
+            Effective AGL in meters when terrain data is available (and
+            use_terrain is True), otherwise None — callers should fall back
+            to the reported/flat AGL.
+        """
+        if not use_terrain:
+            return None
+        gsd_service = self.get_gsd_service(custom_altitude_ft=custom_altitude_ft)
+        if gsd_service is None:
+            return None
+        return self._effective_agl_at_pixel(
+            int(round(col)), int(round(row)), gsd_service, custom_altitude_ft=custom_altitude_ft
+        )
+
     # ---------------- terrain helpers ----------------
 
     def _get_projection_context(self, custom_altitude_ft=None):

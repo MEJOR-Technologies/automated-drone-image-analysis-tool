@@ -1321,6 +1321,19 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                 edge_pixels.append((x0 + t * dx, y0 + t * dy))
         return edge_pixels
 
+    def _use_terrain_enabled(self):
+        """Read the viewer's terrain-elevation preference (default True).
+
+        Walks the same parent chain used for custom_agl_altitude_ft so the
+        FOV/zoom boxes honor the UseTerrainElevation setting like the AOI
+        pipeline does.
+        """
+        try:
+            parent_viewer = self.parent().parent()
+            return bool(getattr(parent_viewer, 'use_terrain_elevation', True))
+        except Exception:
+            return True
+
     def update_fov_box(self, image_index):
         """
         Update the Field of View box for the current image.
@@ -1431,10 +1444,11 @@ class GPSMapView(TranslationMixin, QGraphicsView):
             drone_absolute_elev = None
 
             terrain_service = None
-            try:
-                terrain_service = _get_terrain_service()
-            except Exception:
-                pass
+            if self._use_terrain_enabled():
+                try:
+                    terrain_service = _get_terrain_service()
+                except Exception:
+                    pass
 
             # AOIService special case: unreliable low RelativeAltitude
             if (reported_agl < 10 and absolute_alt and absolute_alt > 50
@@ -1714,7 +1728,7 @@ class GPSMapView(TranslationMixin, QGraphicsView):
 
                 # Iterative per-point terrain refinement (matches AOIService convergence)
                 drone_abs = cache.get('drone_absolute_elev')
-                if raycast_ok and drone_abs:
+                if raycast_ok and drone_abs and self._use_terrain_enabled():
                     try:
                         terrain_service = _get_terrain_service()
                         if terrain_service and terrain_service.enabled:
@@ -1722,7 +1736,14 @@ class GPSMapView(TranslationMixin, QGraphicsView):
                                 try:
                                     cur_lat, cur_lon = pt_lat, pt_lon
                                     for _iteration in range(3):
-                                        pt_terrain = terrain_service.get_elevation(cur_lat, cur_lon)
+                                        # offline_only: this runs on the GUI thread for every
+                                        # viewChanged (pan/zoom). A cache miss must fall back to
+                                        # flat instantly rather than block on a network download
+                                        # (10 s timeout x fallback URLs x edge points). Footprint
+                                        # tiles are already prefetched by update_fov_box on load.
+                                        pt_terrain = terrain_service.get_elevation(
+                                            cur_lat, cur_lon, offline_only=True
+                                        )
                                         if pt_terrain.source != 'terrain' or pt_terrain.elevation_m is None:
                                             break
                                         pt_agl = max(1.0, drone_abs - pt_terrain.elevation_m)

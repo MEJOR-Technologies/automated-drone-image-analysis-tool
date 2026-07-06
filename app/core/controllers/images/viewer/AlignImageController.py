@@ -118,7 +118,8 @@ class AlignImageController(QObject):
         """
         try:
             custom_alt = getattr(self.parent, 'custom_agl_altitude_ft', None)
-            service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger)
+            use_terrain = getattr(self.parent, 'use_terrain_elevation', True)
+            service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger, use_terrain=use_terrain)
             image_for_estimate = {k: v for k, v in image.items() if k != 'fov_alignment'}
             corners = service.get_image_fov_corners(image_for_estimate)
             if corners and len(corners) == 4:

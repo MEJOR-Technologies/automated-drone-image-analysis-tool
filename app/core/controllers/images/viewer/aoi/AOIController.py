@@ -201,9 +201,24 @@ class AOIController(TranslationMixin):
                 else:
                     return None, None
 
-            # For non-thermal images, calculate average color
+            # For non-thermal images, use the representative color.
             else:
-                # Use cached AOIService for current image
+                # Prefer the color computed at analysis time from the actual
+                # detected pixels (persisted as color_info). Recomputing here is
+                # unreliable: detected_pixels are not persisted for AOIs larger
+                # than 100 px (see XmlService.save_xml), so the live path falls
+                # back to sampling the whole AOI circle -- including background --
+                # which skews the hue. The gallery already prefers color_info, so
+                # using it here keeps the AOI list and gallery swatches consistent.
+                color_info = area_of_interest.get('color_info')
+                if color_info and color_info.get('rgb') is not None:
+                    hex_color = color_info.get('hex', '')
+                    hue_degrees = int(round(float(color_info.get('hue_degrees', 0))))
+                    full_sat_rgb = tuple(color_info['rgb'])
+                    return f"Hue: {hue_degrees}° {hex_color}", full_sat_rgb
+
+                # Fall back to a live calculation when no cached color is available
+                # (e.g. user-created AOIs or legacy result files without color_info).
                 aoi_service = self._get_aoi_service()
                 if not aoi_service:
                     return None, None
@@ -1011,7 +1026,9 @@ class AOIController(TranslationMixin):
             if not aoi_service:
                 return None
 
-            color_result = aoi_service.get_aoi_representative_color(aoi)
+            # Prefer the analysis-time color so color sort/filter matches the hue
+            # shown on the AOI swatch (see get_cached_or_representative_color).
+            color_result = aoi_service.get_cached_or_representative_color(aoi)
 
             if color_result:
                 return color_result['hue_degrees']

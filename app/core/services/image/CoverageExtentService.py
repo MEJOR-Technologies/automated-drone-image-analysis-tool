@@ -25,16 +25,21 @@ class CoverageExtentService:
     then unions overlapping polygons to create consolidated coverage areas.
     """
 
-    def __init__(self, custom_altitude_ft: Optional[float] = None, logger: Optional[LoggerService] = None):
+    def __init__(self, custom_altitude_ft: Optional[float] = None, logger: Optional[LoggerService] = None,
+                 use_terrain: bool = True):
         """
         Initialize the coverage extent service.
 
         Args:
             custom_altitude_ft: Optional custom altitude in feet for GSD calculations
             logger: Optional logger instance for error reporting
+            use_terrain: Whether to use terrain (DEM) elevation data when
+                deriving each image's effective AGL/GSD, matching the
+                terrain-corrected AOI/FOV pipeline
         """
         self.custom_altitude_ft = custom_altitude_ft
         self.logger = logger or LoggerService()
+        self.use_terrain = use_terrain
         self.earth_radius = 6371000  # meters
 
     def calculate_coverage_extents(self, images: List[Dict[str, Any]], progress_callback=None, cancel_check=None) -> Dict[str, Any]:
@@ -218,18 +223,38 @@ class CoverageExtentService:
             if abs(gimbal_roll) > 90.0:
                 gimbal_roll = 0.0
 
-            # Get GSD
-            gsd_cm = image_service.get_average_gsd(custom_altitude_ft=self.custom_altitude_ft)
-            if gsd_cm is None or gsd_cm <= 0:
-                self.logger.warning(f"Image {image.get('name', 'unknown')} skipped: no valid GSD")
-                return None
-
-            # Get image dimensions
+            # Get image dimensions (needed first: terrain GSD samples the center pixel)
             img_array = image_service.img_array
             if img_array is None:
                 return None
 
             height, width = img_array.shape[:2]
+
+            # Get GSD — terrain-corrected at the image center when enabled, so
+            # the footprint size reflects DEM-derived effective AGL (matching
+            # the AOI / GPS-map FOV pipeline) instead of the drone's reported
+            # altitude. Falls back to the flat-ground average GSD.
+            gsd_cm = None
+            effective_agl_m = None
+            if self.use_terrain:
+                try:
+                    gsd_cm = image_service.compute_gsd_at_pixel(
+                        width / 2.0, height / 2.0,
+                        use_terrain=True,
+                        custom_altitude_ft=self.custom_altitude_ft,
+                    )
+                    effective_agl_m = image_service.get_effective_agl_at_pixel(
+                        width / 2.0, height / 2.0,
+                        custom_altitude_ft=self.custom_altitude_ft,
+                    )
+                except Exception:
+                    gsd_cm = None
+                    effective_agl_m = None
+            if gsd_cm is None or gsd_cm <= 0:
+                gsd_cm = image_service.get_average_gsd(custom_altitude_ft=self.custom_altitude_ft)
+            if gsd_cm is None or gsd_cm <= 0:
+                self.logger.warning(f"Image {image.get('name', 'unknown')} skipped: no valid GSD")
+                return None
 
             # Calculate image dimensions in meters
             gsd_m = gsd_cm / 100.0
@@ -247,7 +272,9 @@ class CoverageExtentService:
             # h*tan(roll); positive roll points the optical axis to the LEFT
             # of heading (matches AOIService convention), so the centroid
             # offset along the camera-X (right) axis is -h*tan(roll).
-            agl_m = image_service.get_relative_altitude('m')
+            agl_m = effective_agl_m  # DEM-corrected AGL when terrain resolved
+            if agl_m is None or agl_m <= 0:
+                agl_m = image_service.get_relative_altitude('m')
             if agl_m is None or agl_m <= 0:
                 # Custom altitude already factored into GSD; back-derive in m.
                 if self.custom_altitude_ft and self.custom_altitude_ft > 0:

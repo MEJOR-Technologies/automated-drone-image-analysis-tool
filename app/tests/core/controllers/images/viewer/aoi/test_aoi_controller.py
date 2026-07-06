@@ -291,6 +291,45 @@ def test_calculate_aoi_average_info_thermal_no_temp(controller):
     assert "N/A" in info
 
 
+def test_calculate_aoi_average_info_prefers_stored_color_info(controller):
+    """Reuse the analysis-time color_info (like the gallery) instead of recomputing.
+
+    Regression: the widget recomputed the color live, but detected_pixels are not
+    persisted for large AOIs, so the live path sampled the whole circle (background
+    included) and produced a hue/swatch that disagreed with the gallery.
+    """
+    aoi = _aoi(color_info={'rgb': (0, 85, 255), 'hex': '#0055ff', 'hue_degrees': 220.0})
+
+    with patch.object(controller, '_get_aoi_service') as mock_get_service:
+        info, rgb = controller.calculate_aoi_average_info(
+            aoi, is_thermal=False, temperature_data=None, temperature_unit="C"
+        )
+
+    # Stored values are used verbatim; hue is rendered as an integer
+    assert info == "Hue: 220° #0055ff"
+    assert rgb == (0, 85, 255)
+    # Must not trigger the live recompute when cached color_info is present
+    mock_get_service.assert_not_called()
+
+
+def test_calculate_aoi_average_info_falls_back_to_live_color(controller):
+    """With no cached color_info, fall back to the live representative-color calc."""
+    aoi = _aoi()  # no color_info (e.g. user-created AOI or legacy result file)
+    mock_service = MagicMock()
+    mock_service.get_aoi_representative_color.return_value = {
+        'rgb': (255, 0, 101), 'hex': '#ff0065', 'hue_degrees': 336
+    }
+
+    with patch.object(controller, '_get_aoi_service', return_value=mock_service):
+        info, rgb = controller.calculate_aoi_average_info(
+            aoi, is_thermal=False, temperature_data=None, temperature_unit="C"
+        )
+
+    assert info == "Hue: 336° #ff0065"
+    assert rgb == (255, 0, 101)
+    mock_service.get_aoi_representative_color.assert_called_once_with(aoi)
+
+
 # ---------------------------------------------------------------------------
 # _invalidate_mask_cache
 # ---------------------------------------------------------------------------

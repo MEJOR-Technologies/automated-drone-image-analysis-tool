@@ -330,3 +330,45 @@ def test_on_splitter_moved_syncs_header_in_single_image_mode(controller):
     controller.on_splitter_moved(0, 1, _splitter([1600, 250]), MagicMock())
 
     controller.parent._sync_aoi_header_width.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# color-calc signal lifecycle — regression: opening the gallery logged Qt
+# RuntimeWarnings because _disconnect_color_calc_signals tried to disconnect
+# slots that were never connected (color_calc_progress/message, and complete on
+# the first open). Only disconnect what we actually connected.
+# ---------------------------------------------------------------------------
+
+def test_disconnect_color_calc_skips_when_not_connected(controller):
+    controller._color_calc_complete_connected = False
+    controller.color_calc_progress_dialog = None
+
+    controller._disconnect_color_calc_signals()
+
+    controller.model.color_calc_complete.disconnect.assert_not_called()
+
+
+def test_disconnect_color_calc_disconnects_complete_and_clears_flag(controller):
+    controller._color_calc_complete_connected = True
+    controller.color_calc_progress_dialog = None
+
+    controller._disconnect_color_calc_signals()
+
+    controller.model.color_calc_complete.disconnect.assert_called_once()
+    assert controller._color_calc_complete_connected is False
+    # The overlay-only signals are never wired here, so must never be disconnected
+    controller.model.color_calc_progress.disconnect.assert_not_called()
+    controller.model.color_calc_message.disconnect.assert_not_called()
+
+
+def test_start_color_calc_connects_complete_and_sets_flag(controller):
+    controller._color_calc_complete_connected = False
+    controller.color_calc_progress_dialog = None
+    controller._finalize_gallery_load = MagicMock()
+
+    controller._start_color_calculation_with_progress([])
+
+    controller.model.color_calc_complete.connect.assert_called_once_with(
+        controller._on_color_calc_complete
+    )
+    assert controller._color_calc_complete_connected is True

@@ -173,18 +173,18 @@ class Ui_Viewer(object):
 
         self.horizontalLayout_5.addWidget(self.showRulerButton)
 
-        self.thermalHistogramButton = QToolButton(self.mainHeaderWidget)
-        self.thermalHistogramButton.setObjectName(u"thermalHistogramButton")
-        self.thermalHistogramButton.setIconSize(QSize(25, 25))
-
-        self.horizontalLayout_5.addWidget(self.thermalHistogramButton)
-
         self.line_7 = QFrame(self.mainHeaderWidget)
         self.line_7.setObjectName(u"line_7")
         self.line_7.setFrameShape(QFrame.Shape.VLine)
         self.line_7.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.horizontalLayout_5.addWidget(self.line_7)
+
+        self.thermalHistogramButton = QToolButton(self.mainHeaderWidget)
+        self.thermalHistogramButton.setObjectName(u"thermalHistogramButton")
+        self.thermalHistogramButton.setIconSize(QSize(25, 25))
+
+        self.horizontalLayout_5.addWidget(self.thermalHistogramButton)
 
         self.GPSMapButton = QToolButton(self.mainHeaderWidget)
         self.GPSMapButton.setObjectName(u"GPSMapButton")

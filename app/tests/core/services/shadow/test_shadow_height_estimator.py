@@ -469,3 +469,62 @@ def test_sigma_grows_toward_zenith(monkeypatch):
     )
 
     assert high.sigma_m > mid.sigma_m
+
+
+# ---------------------------------------------------------------------------
+# Terrain-preference propagation
+# ---------------------------------------------------------------------------
+
+def _install_recording(monkeypatch, scene: _Scene, sun_elev_deg: float, sun_az_deg: float):
+    """Like _install, but records the use_terrain kwarg of each projection."""
+    recorded = []
+
+    class _RecordingAOIService(_FakeAOIService):
+        def estimate_aoi_gps(self, _image, aoi, *args, **kwargs):
+            recorded.append(kwargs.get('use_terrain', 'MISSING'))
+            return self._scene.project(aoi['center'])
+
+    monkeypatch.setattr(
+        she_module, 'AOIService', lambda _image, *a, **k: _RecordingAOIService(scene)
+    )
+    monkeypatch.setattr(
+        she_module, 'get_solar_position', lambda *_: (sun_elev_deg, sun_az_deg)
+    )
+    return recorded
+
+
+def test_use_terrain_false_propagates_to_both_projections(monkeypatch):
+    """use_terrain=False reaches both ground projections and keeps the flat warning."""
+    base = ('b',)
+    tip = ('t',)
+    scene = _Scene({
+        base: (0.0, 0.0, 0.0),
+        tip:  (-2.0, 0.0, 0.0),
+    }, elevation_source='flat')
+    recorded = _install_recording(monkeypatch, scene, sun_elev_deg=45.0, sun_az_deg=90.0)
+
+    result = ShadowHeightEstimator().estimate(
+        {'path': '/fake'}, base_px=base, tip_px=tip, use_terrain=False
+    )
+
+    assert recorded == [False, False]
+    assert result.confidence in ('ok', 'warning')
+    assert any('flat terrain' in w.lower() for w in result.warnings)
+
+
+def test_use_terrain_defaults_to_true(monkeypatch):
+    """Omitting use_terrain projects with terrain enabled (backward compatible)."""
+    base = ('b',)
+    tip = ('t',)
+    scene = _Scene({
+        base: (0.0, 0.0, 100.0),
+        tip:  (-2.0, 0.0, 100.0),
+    })
+    recorded = _install_recording(monkeypatch, scene, sun_elev_deg=45.0, sun_az_deg=90.0)
+
+    result = ShadowHeightEstimator().estimate(
+        {'path': '/fake'}, base_px=base, tip_px=tip
+    )
+
+    assert recorded == [True, True]
+    assert result.confidence in ('ok', 'warning')

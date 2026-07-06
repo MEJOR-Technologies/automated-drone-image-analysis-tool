@@ -144,8 +144,10 @@ class AOINeighborTrackingController(TranslationMixin, QObject):
             # Calculate the GPS coordinates of the selected AOI.
             # estimate_aoi_gps returns an AOIGPSResult dataclass; the neighbor
             # service expects a plain (lat, lon) tuple, so convert here.
+            # Honor the terrain-elevation preference like the AOI label does.
+            use_terrain = getattr(self.parent, 'use_terrain_elevation', True)
             aoi_service = AOIService(current_image, img_array)
-            aoi_gps_result = aoi_service.estimate_aoi_gps(current_image, aoi_data, agl_override_m)
+            aoi_gps_result = aoi_service.estimate_aoi_gps(current_image, aoi_data, agl_override_m, use_terrain)
 
             if not aoi_gps_result:
                 QMessageBox.warning(
@@ -371,30 +373,39 @@ class AOINeighborTrackingController(TranslationMixin, QObject):
                             pass
 
                 # Connect signal before loading
+                connected_viewer = None
                 if hasattr(self.parent, 'main_image') and self.parent.main_image:
                     try:
                         self.parent.main_image.viewChanged.connect(zoom_when_ready)
                         zoom_handler = zoom_when_ready
+                        connected_viewer = self.parent.main_image
                     except Exception:
                         pass
 
-                # Load the image
-                self.parent._load_image()
+                try:
+                    # Load the image
+                    self.parent._load_image()
 
-                # Fallback: if image already loaded and zoom not executed
-                if not zoom_executed and hasattr(self.parent, 'main_image'):
-                    viewer = self.parent.main_image
-                    if viewer and viewer.hasImage():
-                        if not getattr(viewer, '_recursion_guard', False):
-                            if not viewer.zoomStack:
-                                zoom_executed = True
-                                if hasattr(viewer, 'zoomToArea'):
-                                    viewer.zoomToArea((pixel_x, pixel_y), 6)
-                                if zoom_handler:
-                                    try:
-                                        viewer.viewChanged.disconnect(zoom_handler)
-                                    except Exception:
-                                        pass
+                    # Fallback: if image already loaded and zoom not executed
+                    if not zoom_executed and hasattr(self.parent, 'main_image'):
+                        viewer = self.parent.main_image
+                        if viewer and viewer.hasImage():
+                            if not getattr(viewer, '_recursion_guard', False):
+                                if not viewer.zoomStack:
+                                    zoom_executed = True
+                                    if hasattr(viewer, 'zoomToArea'):
+                                        viewer.zoomToArea((pixel_x, pixel_y), 6)
+                finally:
+                    # _load_image() is synchronous, so any viewChanged it emits
+                    # has already fired. Unconditionally drop the transient
+                    # handler; a failed/early-returning load would otherwise
+                    # leave it armed on viewChanged, where a later wheel zoom
+                    # would re-enter zoomToArea against a stale location.
+                    if zoom_handler is not None and connected_viewer is not None:
+                        try:
+                            connected_viewer.viewChanged.disconnect(zoom_handler)
+                        except Exception:
+                            pass
             else:
                 # Simple navigation without zoom, or same image
                 if needs_load:

@@ -422,9 +422,12 @@ class MeasureDialog(TranslationMixin, QDialog):
 
         base_px = (self.first_point.x(), self.first_point.y())
         tip_px = (self.second_point.x(), self.second_point.y())
+        # Honor the viewer's terrain-elevation preference (parent is the Viewer)
+        use_terrain = bool(getattr(self.parent(), 'use_terrain_elevation', True))
         result = self.shadow_estimator.estimate(
             image_dict, base_px, tip_px,
             allow_azimuth_override=allow_azimuth_override,
+            use_terrain=use_terrain,
         )
 
         self._render_shadow_result_in_dialog(result)

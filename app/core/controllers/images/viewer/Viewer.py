@@ -2145,7 +2145,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.showPOIsButton.setIcon(IconHelper.create_icon('mdi.scatter-plot', self.theme))
         self.showAOIsButton.setIcon(IconHelper.create_icon('fa6.circle', self.theme))
         if hasattr(self, 'showRulerButton'):
-            self.showRulerButton.setIcon(IconHelper.create_icon('fa6s.ruler-horizontal', self.theme))
+            self.showRulerButton.setIcon(IconHelper.create_icon('fa6s.arrows-left-right-to-line', self.theme))
         if hasattr(self, 'thermalHistogramButton'):
             self.thermalHistogramButton.setIcon(IconHelper.create_icon('fa6s.chart-line', self.theme))
         self.GPSMapButton.setIcon(IconHelper.create_icon('fa6s.map-location-dot', self.theme))

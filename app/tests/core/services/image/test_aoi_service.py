@@ -119,6 +119,37 @@ def test_get_aoi_representative_color(sample_image_data, sample_aoi):
             assert 'hue_degrees' in color_result
 
 
+def test_get_cached_or_representative_color_prefers_cache(sample_image_data):
+    """When the AOI carries color_info, it is used verbatim and no recompute occurs."""
+    with patch('core.services.image.AOIService.ImageService'):
+        service = AOIService(sample_image_data)
+
+    aoi = {
+        'center': (100, 100),
+        'radius': 20,
+        'color_info': {'rgb': [0, 85, 255], 'hex': '#0055ff', 'hue_degrees': 220.0},
+    }
+
+    with patch.object(service, 'get_aoi_representative_color') as mock_compute:
+        result = service.get_cached_or_representative_color(aoi)
+
+    assert result == {'rgb': (0, 85, 255), 'hex': '#0055ff', 'hue_degrees': 220}
+    mock_compute.assert_not_called()
+
+
+def test_get_cached_or_representative_color_falls_back_to_compute(sample_image_data, sample_aoi):
+    """Without cached color_info, fall back to the live representative-color calc."""
+    with patch('core.services.image.AOIService.ImageService'):
+        service = AOIService(sample_image_data)
+
+    computed = {'rgb': (255, 0, 101), 'hex': '#ff0065', 'hue_degrees': 336}
+    with patch.object(service, 'get_aoi_representative_color', return_value=computed) as mock_compute:
+        result = service.get_cached_or_representative_color(sample_aoi)
+
+    assert result == computed
+    mock_compute.assert_called_once_with(sample_aoi)
+
+
 def test_calculate_gps_with_custom_altitude(sample_image_data, sample_aoi):
     """Test calculating GPS with custom altitude override."""
     with patch('core.services.image.AOIService.ImageService') as MockImageService, \

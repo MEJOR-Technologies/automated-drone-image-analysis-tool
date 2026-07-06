@@ -167,7 +167,10 @@ class CoverageExtentExportController(TranslationMixin):
             if hasattr(self.parent, 'altitude_controller'):
                 custom_alt = self.parent.altitude_controller.get_effective_altitude()
 
-            coverage_service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger)
+            # Honor the terrain-elevation preference (matches AOI/KML pipeline)
+            use_terrain = getattr(self.parent, 'use_terrain_elevation', True)
+
+            coverage_service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger, use_terrain=use_terrain)
             kml_service = KMLGeneratorService(custom_altitude_ft=custom_alt)
 
             # Create and configure thread

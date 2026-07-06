@@ -190,7 +190,7 @@ class TerrainService:
                 return self._create_flat_result(lat, lon)
             geoid_undulation = None
             if self._geoid:
-                geoid_undulation = self._geoid.get_undulation(lat, lon)
+                geoid_undulation = self._geoid.get_undulation(lat, lon, offline_only=offline_only)
             datum = self.provider.get_datum_info()
             return ElevationResult(
                 elevation_m=elevation,
@@ -227,7 +227,7 @@ class TerrainService:
         # Get geoid undulation
         geoid_undulation = None
         if self._geoid:
-            geoid_undulation = self._geoid.get_undulation(lat, lon)
+            geoid_undulation = self._geoid.get_undulation(lat, lon, offline_only=offline_only)
 
         return ElevationResult(
             elevation_m=elevation,

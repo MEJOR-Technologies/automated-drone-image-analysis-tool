@@ -16,7 +16,7 @@ each frame. This avoids rebuilding 360 colour arcs on every mouse-move repaint.
 
 import math
 
-from PySide6.QtCore import Qt, QPoint, QRect, QRectF, Signal
+from PySide6.QtCore import Qt, QPoint, QRect, QRectF, QSize, Signal
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPainterPath, QPixmap
 from PySide6.QtWidgets import QWidget
 
@@ -25,6 +25,23 @@ class HueRingSelector(QWidget):
     """Hue ring selector with range visualization."""
 
     valueChanged = Signal(float, float, float)  # h, h_minus, h_plus
+
+    # Default square footprint so the ring stays visible/usable when a caller
+    # drops it into a layout without sizing it. Sized generously so the ring
+    # and its drag handles are easy to grab. Callers that need a specific size
+    # (e.g. the HSV picker) still override via setFixedSize().
+    PREFERRED_SIZE = 300
+    MINIMUM_SIZE = 240
+
+    # Ring geometry as fractions of the widget's min dimension. Tuned so the
+    # ring fills most of its footprint -- a larger band and more widely spaced,
+    # easier-to-grab handles -- while leaving room for the range-indicator arcs
+    # drawn just outside the ring. Used by both painting and hit-testing so the
+    # two never diverge.
+    RING_MARGIN = 20
+    OUTER_RADIUS_RATIO = 0.47
+    INNER_RADIUS_RATIO = 0.31
+    HANDLE_RADIUS_RATIO = 0.39
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -41,6 +58,14 @@ class HueRingSelector(QWidget):
 
         self.setMouseTracking(True)
 
+    def sizeHint(self):
+        """Preferred square size so the ring renders sensibly by default."""
+        return QSize(self.PREFERRED_SIZE, self.PREFERRED_SIZE)
+
+    def minimumSizeHint(self):
+        """Keep the ring from collapsing to zero in a hint-driven layout."""
+        return QSize(self.MINIMUM_SIZE, self.MINIMUM_SIZE)
+
     def set_values(self, h, h_minus, h_plus):
         """Update values and repaint (does not emit a signal)."""
         self.h = h
@@ -55,10 +80,10 @@ class HueRingSelector(QWidget):
     def _metrics(self):
         """Return (center, outer_radius, inner_radius, handle_radius)."""
         center = self.rect().center()
-        size = min(self.width(), self.height()) - 20
-        outer_radius = size * 0.4
-        inner_radius = size * 0.27
-        handle_radius = size * 0.33
+        size = min(self.width(), self.height()) - self.RING_MARGIN
+        outer_radius = size * self.OUTER_RADIUS_RATIO
+        inner_radius = size * self.INNER_RADIUS_RATIO
+        handle_radius = size * self.HANDLE_RADIUS_RATIO
         return center, outer_radius, inner_radius, handle_radius
 
     def resizeEvent(self, event):
@@ -192,17 +217,13 @@ class HueRingSelector(QWidget):
         """Handle mouse press events."""
         if event.button() == Qt.LeftButton:
             pos = event.pos()
-            center = self.rect().center()
+            # Use the same metrics as painting so hit-testing matches what is drawn.
+            center, outer_radius, inner_radius, handle_radius = self._metrics()
 
             # Check which element was clicked
             dx = pos.x() - center.x()
             dy = pos.y() - center.y()
             distance = math.sqrt(dx * dx + dy * dy)
-
-            size = min(self.width(), self.height()) - 20
-            outer_radius = size * 0.4
-            inner_radius = size * 0.27
-            handle_radius = size * 0.33
 
             # Check handle clicks - original working coordinate system
             left_angle = math.radians((self.h - self.h_minus) * 360 - 90)

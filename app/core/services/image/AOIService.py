@@ -844,6 +844,37 @@ class AOIService:
                 self.logger.error(f"AOIService: Failed to calculate AOI color - {e}")
             return None
 
+    def get_cached_or_representative_color(self, aoi):
+        """
+        Return an AOI's representative color, preferring the value cached at
+        analysis time.
+
+        AOIs analyzed by ADIAT carry a ``color_info`` dict computed from the
+        actual detected pixels. That value is authoritative and should be
+        preferred: recomputing here is less reliable because ``detected_pixels``
+        are not persisted for AOIs larger than 100 px (see ``XmlService.save_xml``),
+        which forces a whole-AOI-circle sample that includes background and skews
+        the hue. The viewer's AOI list and gallery both prefer ``color_info``;
+        using this accessor keeps map/PDF/KML exports consistent with them.
+
+        Args:
+            aoi (dict): AOI dictionary, optionally containing a 'color_info' dict
+                with 'rgb', 'hex', and 'hue_degrees' keys.
+
+        Returns:
+            dict or None: {'rgb': (r, g, b), 'hex': '#rrggbb', 'hue_degrees': int}
+                from the cached color when available, otherwise a freshly computed
+                value, or None if the color cannot be determined.
+        """
+        color_info = aoi.get('color_info') if isinstance(aoi, dict) else None
+        if color_info and color_info.get('rgb') is not None:
+            return {
+                'rgb': tuple(color_info['rgb']),
+                'hex': color_info.get('hex', ''),
+                'hue_degrees': int(round(float(color_info.get('hue_degrees', 0)))),
+            }
+        return self.get_aoi_representative_color(aoi)
+
     @staticmethod
     def is_terrain_available() -> bool:
         """Check if terrain service is available and enabled."""

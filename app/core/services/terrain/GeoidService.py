@@ -62,18 +62,20 @@ class GeoidService:
         self._grid_data: Optional[list] = None
         self._grid_loaded = False
 
-    def get_undulation(self, lat: float, lon: float) -> Optional[float]:
+    def get_undulation(self, lat: float, lon: float, offline_only: bool = False) -> Optional[float]:
         """
         Get the geoid undulation (N) at a given location.
 
         Args:
             lat: Latitude in degrees (-90 to 90)
             lon: Longitude in degrees (-180 to 180 or 0 to 360)
+            offline_only: If True, never download or synthesize the grid on the
+                calling thread; return None when it is not already available.
 
         Returns:
             Geoid undulation in meters, or None if data unavailable
         """
-        if not self._ensure_grid_loaded():
+        if not self._ensure_grid_loaded(offline_only=offline_only):
             return None
 
         # Normalize longitude to 0-360 range
@@ -124,8 +126,16 @@ class GeoidService:
             return None
         return h_orthometric + N
 
-    def _ensure_grid_loaded(self) -> bool:
-        """Ensure the geoid grid is loaded, downloading if necessary."""
+    def _ensure_grid_loaded(self, offline_only: bool = False) -> bool:
+        """Ensure the geoid grid is loaded, downloading if necessary.
+
+        Args:
+            offline_only: If True, use only an already-loaded grid or a local
+                cached grid file; never download or synthesize the grid. This
+                keeps callers on the GUI hot path (e.g. the map zoom-FOV
+                redraw) from blocking on a network download or the pure-Python
+                grid generation. Returns False when no local grid is available.
+        """
         if self._grid_loaded:
             return True
 
@@ -133,6 +143,10 @@ class GeoidService:
 
         if grid_file.exists():
             return self._load_grid_binary(grid_file)
+
+        if offline_only:
+            # No local grid and we must not touch the network/CPU here.
+            return False
 
         # Try to download
         if self._download_grid():

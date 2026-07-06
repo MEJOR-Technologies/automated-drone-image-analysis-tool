@@ -201,7 +201,7 @@ class KMLGeneratorService:
                 color_info = ""
                 marker_rgb = None
                 try:
-                    color_result = aoi_service.get_aoi_representative_color(aoi)
+                    color_result = aoi_service.get_cached_or_representative_color(aoi)
                     if color_result:
                         marker_rgb = color_result['rgb']
                         color_info = f"Color: Hue: {color_result['hue_degrees']}° {color_result['hex']}\n"

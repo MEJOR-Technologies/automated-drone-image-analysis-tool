@@ -226,7 +226,7 @@ class UnifiedMapExportThread(QThread):
                             marker_rgb = None
                             try:
                                 aoi_service = AOIService(image)
-                                color_result = aoi_service.get_aoi_representative_color(aoi)
+                                color_result = aoi_service.get_cached_or_representative_color(aoi)
                                 if color_result:
                                     marker_rgb = color_result['rgb']
                                     color_info = f"Color: Hue: {color_result['hue_degrees']}° {color_result['hex']}\n"
@@ -441,7 +441,7 @@ class UnifiedMapExportController(TranslationMixin):
 
             # Create services
             kml_service = KMLGeneratorService(custom_altitude_ft=custom_alt, use_terrain=use_terrain)
-            coverage_service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger)
+            coverage_service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger, use_terrain=use_terrain)
 
             # Calculate total items for progress (will be recalculated in thread, but estimate here)
             total_items = 0

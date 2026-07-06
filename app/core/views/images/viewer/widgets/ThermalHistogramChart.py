@@ -16,6 +16,7 @@ class ThermalHistogramChart(QWidget):
 
     MIN_ZOOM_DRAG_PIXELS = 12
     WHEEL_ZOOM_FACTOR = 1.2
+    MIN_AOI_BAR_HEIGHT = 3.0
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -344,8 +345,6 @@ class ThermalHistogramChart(QWidget):
         if not active_indices:
             return
 
-        min_visible_count = max(1.0, max_count * 0.01)
-
         painter.save()
         painter.setPen(Qt.NoPen)
         painter.setBrush(QColor(255, 120, 80, 235))
@@ -356,16 +355,16 @@ class ThermalHistogramChart(QWidget):
                 anomaly_counts,
                 overlay_mode
             )
-            if overlay_count < min_visible_count:
-                continue
+            # AOI bins must stay visible even in sparse bins dwarfed by the
+            # image's peak bin — clamp to a minimum height instead of skipping.
             bar_rect = self._bar_rect_for_index(
                 histogram_index,
                 overlay_count,
                 max_count,
                 plot_rect,
-                width_ratio=0.55
+                min_height=self.MIN_AOI_BAR_HEIGHT
             )
-            if bar_rect.height() < 3.0:
+            if bar_rect.isEmpty():
                 continue
             painter.drawRect(bar_rect)
         painter.restore()
@@ -520,7 +519,7 @@ class ThermalHistogramChart(QWidget):
         centers = self._histogram_data['bin_centers']
         return self._temperature_to_x(float(centers[index]), plot_rect)
 
-    def _bar_rect_for_index(self, index, count, max_count, plot_rect, width_ratio=0.8):
+    def _bar_rect_for_index(self, index, count, max_count, plot_rect, width_ratio=0.8, min_height=None):
         """Return a vertical bar rect for a histogram bin."""
         edges = self._histogram_data['bin_edges']
         left_temp = max(float(edges[index]), float(self._view_min))
@@ -535,6 +534,9 @@ class ThermalHistogramChart(QWidget):
         x = left_x + ((available_width - bar_width) / 2.0)
         top = self._count_to_y(count, max_count, plot_rect)
         height = plot_rect.bottom() - top
+        if min_height is not None and height < min_height:
+            height = min_height
+            top = plot_rect.bottom() - height
         if height < 0.5:
             return QRectF()
         return QRectF(x, top, bar_width, height)

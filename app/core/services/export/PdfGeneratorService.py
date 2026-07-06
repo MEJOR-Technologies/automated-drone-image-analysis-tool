@@ -1217,7 +1217,7 @@ class PdfGeneratorService:
 
             aoi_service = AOIService(image, img_array=img_array)
 
-            color_result = aoi_service.get_aoi_representative_color(aoi)
+            color_result = aoi_service.get_cached_or_representative_color(aoi)
             if color_result:
                 # Return hue angle with color square (matching viewer display)
                 color_hex = color_result['hex']

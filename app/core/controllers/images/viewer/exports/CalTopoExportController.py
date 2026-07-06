@@ -827,7 +827,7 @@ class CalTopoExportController(TranslationMixin):
                 color_info = ""
                 marker_rgb = None
                 try:
-                    color_result = aoi_service.get_aoi_representative_color(aoi)
+                    color_result = aoi_service.get_cached_or_representative_color(aoi)
                     if color_result:
                         marker_rgb = color_result['rgb']
                         color_info = f"Color/Temp: Hue: {color_result['hue_degrees']}° {color_result['hex']}\n"
@@ -970,8 +970,9 @@ class CalTopoExportController(TranslationMixin):
             if not filtered_images:
                 return polygons
 
-            # Create coverage extent service
-            coverage_service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger)
+            # Create coverage extent service (honor the terrain-elevation preference)
+            use_terrain = getattr(self.parent, 'use_terrain_elevation', True)
+            coverage_service = CoverageExtentService(custom_altitude_ft=custom_alt, logger=self.logger, use_terrain=use_terrain)
 
             # Calculate coverage extents using only non-hidden images
             coverage_data = coverage_service.calculate_coverage_extents(filtered_images)

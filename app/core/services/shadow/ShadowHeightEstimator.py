@@ -109,6 +109,7 @@ class ShadowHeightEstimator:
         base_px: Tuple[float, float],
         tip_px: Tuple[float, float],
         allow_azimuth_override: bool = False,
+        use_terrain: bool = True,
     ) -> ShadowHeightResult:
         """Compute height of a vertical object from its shadow.
 
@@ -120,6 +121,10 @@ class ShadowHeightEstimator:
                 shadow-azimuth mismatch from rejection to warning. The
                 dialog sets this when the user clicks "Use anyway" on a
                 previously-rejected measurement.
+            use_terrain: honor DEM terrain data when projecting the clicks
+                to ground (mirrors the viewer's UseTerrainElevation
+                preference). When False the flat-terrain fallback is used
+                and the estimate ignores ground slope.
 
         Returns:
             ShadowHeightResult — always returned, even on rejection.
@@ -154,13 +159,17 @@ class ShadowHeightEstimator:
         except Exception as exc:
             return _reject(result, f"Could not load image for projection: {exc}")
 
-        base_gps = aoi_service.estimate_aoi_gps(image, {'center': tuple(base_px)})
+        base_gps = aoi_service.estimate_aoi_gps(
+            image, {'center': tuple(base_px)}, use_terrain=use_terrain
+        )
         if base_gps is None:
             return _reject(
                 result,
                 _diagnose_projection_failure(aoi_service, exif_data, "base"),
             )
-        tip_gps = aoi_service.estimate_aoi_gps(image, {'center': tuple(tip_px)})
+        tip_gps = aoi_service.estimate_aoi_gps(
+            image, {'center': tuple(tip_px)}, use_terrain=use_terrain
+        )
         if tip_gps is None:
             return _reject(
                 result,
