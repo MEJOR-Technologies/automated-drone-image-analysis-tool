@@ -206,7 +206,7 @@ def write_tags(exiftool_path, image_path, data, agl_meters=None):
         f'-GPSLongitude={abs(data.longitude):.10f}',
         f'-GPSLongitudeRef={"E" if data.longitude >= 0 else "W"}',
         f'-GPSAltitude={data.altitude_asl:.2f}',
-        f'-GPSAltitudeRef=0',
+        '-GPSAltitudeRef=0',
         # Set Make to DJI so ADIAT recognizes the XMP namespace
         '-Make=DJI',
     ]
@@ -285,7 +285,7 @@ def main():
     print(f"Parsing CSV: {args.csv_file}")
     parsed, errors = parse_csv(args.csv_file)
     if errors:
-        print(f"CSV parse errors:")
+        print("CSV parse errors:")
         for err in errors[:10]:
             print(f"  {err}")
         if not parsed:
@@ -315,7 +315,7 @@ def main():
         os.makedirs(args.output_dir, exist_ok=True)
         print(f"Output directory: {args.output_dir}")
 
-    print(f"\nProcessing images...")
+    print("\nProcessing images...")
     for image_name, data in parsed.items():
         # Try exact match, then case-insensitive
         src_path = image_files.get(image_name) or image_files.get(image_name.lower())
@@ -347,7 +347,7 @@ def main():
             failed += 1
 
     # Summary
-    print(f"\nSummary:")
+    print("\nSummary:")
     print(f"  Modified: {matched}")
     print(f"  Not found in directory: {unmatched}")
     if failed:

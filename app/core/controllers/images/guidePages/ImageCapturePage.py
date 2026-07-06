@@ -654,71 +654,94 @@ class ImageCapturePage(BasePage):
                                 return  # Found exact match, we're done
 
             # Fallback: Try to find matching camera in dropdown using make/model
+            best_match_index = None
             if make and model:
-                make_lower = make.lower().strip()
-                model_lower = model.lower().strip()
+                best_match_index = self._find_fallback_camera_index(make, model)
 
-                best_match_index = None
-                best_match_score = 0
-
-                for i in range(self.dialog.droneComboBox.count()):
-                    drone_data = self.dialog.droneComboBox.itemData(i)
-
-                    # Skip section headers and None items
-                    if drone_data is None or (isinstance(drone_data, str) and drone_data == "__SECTION__"):
-                        continue
-
-                    if isinstance(drone_data, pd.Series):
-                        drone_make = None
-                        drone_model = None
-
-                        for key in ['Make', 'Manufacturer']:
-                            if key in drone_data.index:
-                                val = drone_data[key]
-                                if pd.notna(val) and val != '':
-                                    drone_make = str(val).strip()
-                                    break
-
-                        for key in ['Model', 'Model (Exif)']:
-                            if key in drone_data.index:
-                                val = drone_data[key]
-                                if pd.notna(val) and val != '':
-                                    drone_model = str(val).strip()
-                                    break
-
-                        if drone_make and drone_model:
-                            drone_make_lower = drone_make.lower()
-                            drone_model_lower = drone_model.lower()
-
-                            # Calculate match score
-                            score = 0
-
-                            # Exact match gets highest score
-                            if make_lower == drone_make_lower:
-                                score += 10
-                            elif make_lower in drone_make_lower or drone_make_lower in make_lower:
-                                score += 5
-
-                            if model_lower == drone_model_lower:
-                                score += 10
-                            elif model_lower in drone_model_lower or drone_model_lower in model_lower:
-                                score += 5
-
-                            # If we have a good match, use it
-                            if score > best_match_score:
-                                best_match_score = score
-                                best_match_index = i
-
-                # Select the best match if we found one
-                if best_match_index is not None and best_match_score >= 5:
-                    self.dialog.droneComboBox.setCurrentIndex(best_match_index)
-                    # self.logger.info(f"Matched camera: {make} {model} -> Selected index {best_match_index}")
-                else:
-                    # self.logger.info(f"Could not match camera: {make} {model} (best score: {best_match_score})")
-                    pass
+            if best_match_index is not None:
+                self.dialog.droneComboBox.setCurrentIndex(best_match_index)
+                # self.logger.info(f"Matched camera: {make} {model} -> Selected index {best_match_index}")
+            else:
+                # Camera couldn't be detected from the image; default to the
+                # "Select Drone/Camera" placeholder instead of guessing.
+                self.dialog.droneComboBox.setCurrentIndex(0)
 
             # Recalculate GSD with focal length from image
             self._calculate_gsd()
 
         except Exception as e:
             self.logger.error(f"Error extracting metadata from first image: {e}")
+            # Metadata extraction failed, so the camera can't be detected;
+            # fall back to the "Select Drone/Camera" placeholder.
+            self.dialog.droneComboBox.setCurrentIndex(0)
+
+    def _find_fallback_camera_index(self, make, model):
+        """Find the combo box index best matching the EXIF make/model.
+
+        Both the manufacturer and the model must match (exactly or as a
+        substring). A make-only match is not a detection: it used to select
+        that manufacturer's alphabetically-first model (e.g. "Air"), which
+        looked like a detected camera when it wasn't.
+
+        Returns:
+            The best-matching combo box index, or None if the camera
+            couldn't be matched.
+        """
+        make_lower = make.lower().strip()
+        model_lower = model.lower().strip()
+
+        best_match_index = None
+        best_match_score = 0
+
+        for i in range(self.dialog.droneComboBox.count()):
+            drone_data = self.dialog.droneComboBox.itemData(i)
+
+            # Skip section headers and None items
+            if drone_data is None or (isinstance(drone_data, str) and drone_data == "__SECTION__"):
+                continue
+
+            if isinstance(drone_data, pd.Series):
+                drone_make = None
+                drone_model = None
+
+                for key in ['Make', 'Manufacturer']:
+                    if key in drone_data.index:
+                        val = drone_data[key]
+                        if pd.notna(val) and val != '':
+                            drone_make = str(val).strip()
+                            break
+
+                for key in ['Model', 'Model (Exif)']:
+                    if key in drone_data.index:
+                        val = drone_data[key]
+                        if pd.notna(val) and val != '':
+                            drone_model = str(val).strip()
+                            break
+
+                if drone_make and drone_model:
+                    drone_make_lower = drone_make.lower()
+                    drone_model_lower = drone_model.lower()
+
+                    # Exact match gets highest score
+                    make_score = 0
+                    if make_lower == drone_make_lower:
+                        make_score = 10
+                    elif make_lower in drone_make_lower or drone_make_lower in make_lower:
+                        make_score = 5
+
+                    model_score = 0
+                    if model_lower == drone_model_lower:
+                        model_score = 10
+                    elif model_lower in drone_model_lower or drone_model_lower in model_lower:
+                        model_score = 5
+
+                    # Only candidates matching on BOTH components count
+                    if make_score == 0 or model_score == 0:
+                        continue
+
+                    score = make_score + model_score
+                    if score > best_match_score:
+                        best_match_score = score
+                        best_match_index = i
+
+        return best_match_index

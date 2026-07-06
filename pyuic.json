@@ -133,6 +133,10 @@
       "app/algorithms/streaming/ColorAnomalyAndMotionDetection/views"
     ],
     [
+      "resources/views/algorithms/AIPersonDetectorWizard.ui",
+      "app/algorithms/streaming/AIPersonDetector/views"
+    ],
+    [
       "resources/views/flight/*.ui",
       "app/core/views/flight"
     ]

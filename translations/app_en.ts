@@ -162,27 +162,32 @@ GPU acceleration significantly improves processing speed for AI models.</transla
     <name>AIPersonDetectorWizardController</name>
     <message>
         <location filename="../app/algorithms/images/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="33"/>
+        <location filename="../app/algorithms/streaming/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="52"/>
         <source>Very 
 Confident</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="34"/>
+        <location filename="../app/algorithms/streaming/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="53"/>
         <source>Confident</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="35"/>
+        <location filename="../app/algorithms/streaming/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="54"/>
         <source>Balanced</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="36"/>
+        <location filename="../app/algorithms/streaming/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="55"/>
         <source>Permissive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../app/algorithms/images/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="37"/>
+        <location filename="../app/algorithms/streaming/AIPersonDetector/controllers/AIPersonDetectorWizardController.py" line="56"/>
         <source>Very 
 Permissive</source>
         <translation type="unfinished"></translation>
@@ -219,78 +224,78 @@ Permissive</source>
 <context>
     <name>AOIController</name>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="346"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="366"/>
         <source>No AOI #{number} in this analysis.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="359"/>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="369"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="379"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="389"/>
         <source>AOI #{number} is hidden by the current filter.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="572"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="592"/>
         <source>Comment saved</source>
         <translation>Comment saved</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="574"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="594"/>
         <source>Comment cleared</source>
         <translation>Comment cleared</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="663"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="683"/>
         <source>Copy Data</source>
         <translation>Copy Data</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="764"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="784"/>
         <source>AOI data copied</source>
         <translation>AOI data copied</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="851"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="871"/>
         <source>Invalid image index</source>
         <translation>Invalid image index</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="856"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="876"/>
         <source>Invalid AOI index</source>
         <translation>Invalid AOI index</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="919"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="939"/>
         <source>Could not calculate AOI location. Diagnostic info copied to clipboard!</source>
         <translation>Could not calculate AOI location. Diagnostic info copied to clipboard!</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="925"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="945"/>
         <source>Could not calculate AOI location</source>
         <translation>Could not calculate AOI location</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1380"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1402"/>
         <source>Temperature sorting unavailable (no thermal data)</source>
         <translation>Temperature sorting unavailable (no thermal data)</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1732"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1754"/>
         <source>Cannot Delete AOI</source>
         <translation>Cannot Delete AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1734"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1756"/>
         <source>Only manually created AOIs can be deleted. Algorithm-detected AOIs cannot be deleted.</source>
         <translation>Only manually created AOIs can be deleted. Algorithm-detected AOIs cannot be deleted.</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1743"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1765"/>
         <source>Delete AOI</source>
         <translation>Delete AOI</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1745"/>
+        <location filename="../app/core/controllers/images/viewer/aoi/AOIController.py" line="1767"/>
         <source>Are you sure you want to delete this AOI? This action cannot be undone.</source>
         <translation>Are you sure you want to delete this AOI? This action cannot be undone.</translation>
     </message>
@@ -3210,12 +3215,12 @@ Recommended: 50% for balanced filtering, 30% for more detections, 70% for strict
 <context>
     <name>ColorHistogramController</name>
     <message>
-        <location filename="../app/core/controllers/images/viewer/ColorHistogramController.py" line="41"/>
+        <location filename="../app/core/controllers/images/viewer/ColorHistogramController.py" line="57"/>
         <source>Hue Histogram Unavailable</source>
         <translation>Hue Histogram Unavailable</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/ColorHistogramController.py" line="43"/>
+        <location filename="../app/core/controllers/images/viewer/ColorHistogramController.py" line="59"/>
         <source>No color image data is available for the current image.</source>
         <translation>No color image data is available for the current image.</translation>
     </message>
@@ -3253,20 +3258,20 @@ Recommended: 50% for balanced filtering, 30% for more detections, 70% for strict
         <translation>Visible Hue Range</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="62"/>
-        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="146"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="64"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="174"/>
         <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="127"/>
         <source>Hover over the histogram to inspect a hue band.</source>
         <translation>Hover over the histogram to inspect a hue band.</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="59"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="61"/>
         <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="85"/>
         <source>Minimum: --</source>
         <translation>Minimum: --</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="60"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="62"/>
         <location filename="../resources/views/images/viewer/ColorHistogramDialog.ui" line="92"/>
         <source>Maximum: --</source>
         <translation>Maximum: --</translation>
@@ -3282,17 +3287,17 @@ Recommended: 50% for balanced filtering, 30% for more detections, 70% for strict
         <translation>No hue histogram data available</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="152"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="180"/>
         <source>Hover hue: {value}°</source>
         <translation>Hover hue: {value}°</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="160"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="188"/>
         <source>Minimum: {minimum}°</source>
         <translation>Minimum: {minimum}°</translation>
     </message>
     <message>
-        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="165"/>
+        <location filename="../app/core/views/images/viewer/dialogs/ColorHistogramDialog.py" line="193"/>
         <source>Maximum: {maximum}°</source>
         <translation>Maximum: {maximum}°</translation>
     </message>
@@ -6041,29 +6046,29 @@ Pixels with saturation below {1}% or value below {2}% are excluded.</source>
 <context>
     <name>HSVColorRangeWizardController</name>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="51"/>
+        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="53"/>
         <source>No Colors Selected</source>
         <translation>No Colors Selected</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="61"/>
+        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="63"/>
         <source>View Range</source>
         <translation>View Range</translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="96"/>
+        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="99"/>
         <source>Hue Expansion</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="98"/>
+        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="101"/>
         <source>When enabled, expand each AOI through neighbors whose hue is within +/- {0}
 (OpenCV units) of the mean hue of the original detected pixels.
 Pixels with saturation below {1}% or value below {2}% are excluded.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="385"/>
+        <location filename="../app/algorithms/images/HSVColorRange/controllers/HSVColorRangeWizardController.py" line="408"/>
         <source>Please add at least one color to detect.</source>
         <translation>Please add at least one color to detect.</translation>
     </message>
@@ -6086,18 +6091,18 @@ Tolerance:</source>
 <context>
     <name>HSVRangePickerWidget</name>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="89"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="90"/>
         <source>HEX:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="92"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="93"/>
         <source>Hexadecimal color code input.
 Enter colors as hex codes (e.g., #FF0000 for red).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="101"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="102"/>
         <source>Enter a hexadecimal color code.
 • Format: #RRGGBB (e.g., #FF0000 for red, #00FF00 for green)
 • Also accepts short format: #RGB (e.g., #F00 for red)
@@ -6106,12 +6111,12 @@ The color will be converted to HSV automatically.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="110"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="111"/>
         <source>Reset to Default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="113"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="114"/>
         <source>Reset to default color and ranges.
 • Color: Pure red (H:0°, S:100%, V:100%)
 • Hue range: ±20° (total 40° range)
@@ -6121,19 +6126,19 @@ Use this to start over with standard settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="136"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="137"/>
         <source>Saturation / Value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="140"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="141"/>
         <source>Saturation and Value (brightness) selector.
 Saturation controls color intensity (left=gray, right=vivid).
 Value controls brightness (bottom=dark, top=bright).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="148"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="149"/>
         <source>Interactive Saturation/Value selector.
 • Click anywhere to set the center color&apos;s saturation and brightness
 • White circle = current center color position
@@ -6145,18 +6150,18 @@ Larger ranges detect more color variations but may include unwanted colors.</sou
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="164"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="165"/>
         <source>Hue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="168"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="169"/>
         <source>Hue (color type) selector.
 Hue represents the actual color: red, orange, yellow, green, cyan, blue, purple, magenta.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="175"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="176"/>
         <source>Interactive Hue color ring selector.
 • Click on the ring to select a hue (color type)
 • White line = current center hue
@@ -6168,12 +6173,12 @@ Warning: Hue ranges wider than 60° may detect too many colors.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="204"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="205"/>
         <source>Use Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="207"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="208"/>
         <source>Open HSV Color Range Assistant.
 Advanced tool for selecting colors from an image:
 • Load an image from your input folder
@@ -6184,12 +6189,12 @@ Recommended for finding the best color range for your target.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="218"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="219"/>
         <source>Pick Screen Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="221"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="222"/>
         <source>Pick a color from anywhere on your screen.
 Opens a color picker that lets you:
 • Click anywhere on your screen to sample a color
@@ -6199,12 +6204,12 @@ Ranges remain unchanged - adjust manually after picking.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="231"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="232"/>
         <source>Add to Custom Colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="234"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="235"/>
         <source>Save current color to Custom Colors palette.
 Adds the current center color to the first empty slot in Custom Colors.
 • Only saves the color, not the ranges
@@ -6214,19 +6219,19 @@ Useful for building a palette of frequently used colors.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="252"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="253"/>
         <source>Basic Colors:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="255"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="256"/>
         <source>Preset basic color palette.
 Quick access to common colors like red, orange, yellow, green, cyan, blue, purple, and grayscale.
 Click any color swatch to set it as the center color.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="263"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="264"/>
         <source>Basic color swatches.
 Click any color to quickly set it as your center color.
 • Top row: Primary colors and tints
@@ -6235,19 +6240,19 @@ Useful for quickly selecting standard colors.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="273"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="274"/>
         <source>Custom Colors:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="276"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="277"/>
         <source>Your saved custom color palette.
 Colors you&apos;ve saved using &apos;Add to Custom Colors&apos; button.
 Click any saved color to reuse it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="284"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="285"/>
         <source>Custom color swatches.
 Click any color to set it as your center color.
 • Empty slots shown as gray
@@ -6257,63 +6262,63 @@ Build your own palette of frequently used colors.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="460"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="461"/>
         <source>Current HSV color range summary.
 Shows the center color and detection ranges in real-time.
 Warning indicators appear when ranges may cause detection issues.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="470"/>
         <source>Center HSV:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="470"/>
         <source>Hue Range:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="470"/>
         <source>Sat Range:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="469"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="470"/>
         <source>Val Range:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="471"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="472"/>
         <source>Current center HSV color values.
 H = Hue (0-360°), S = Saturation (0-100%), V = Value/brightness (0-100%).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="472"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="473"/>
         <source>Hue detection range (minus/plus from center).
 Total range = minus + plus. Warning shown if total &gt; 60°.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="473"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="474"/>
         <source>Saturation detection range (minus/plus from center).
 Warning shown if lower bound &lt; 25%.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="474"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="475"/>
         <source>Value detection range (minus/plus from center).
 Warning shown if lower bound &lt; 25%.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="496"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="497"/>
         <source>⚠ Too wide!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="501"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="502"/>
         <source>Hue range warning.
 Your hue range is wider than 60° total.
 Wide hue ranges may detect too many different colors.
@@ -6321,13 +6326,13 @@ Consider narrowing the range for more accurate detection.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="509"/>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="522"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="510"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="523"/>
         <source>⚠ Too low!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="514"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="515"/>
         <source>Saturation range warning.
 Your saturation lower bound is below 25%.
 Low saturation includes grayish/washed out colors.
@@ -6335,7 +6340,7 @@ May detect unintended gray or desaturated colors.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="527"/>
+        <location filename="../app/algorithms/images/HSVColorRange/views/HSVRangePickerWidget.py" line="528"/>
         <source>Value range warning.
 Your value lower bound is below 25%.
 Low value includes very dark colors.
@@ -6783,7 +6788,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <translation>(Image {current} of {total})</translation>
     </message>
     <message>
-        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="432"/>
+        <location filename="../app/core/controllers/images/viewer/image/ImageLoadController.py" line="441"/>
         <source>Error Loading Image</source>
         <translation>Error Loading Image</translation>
     </message>
@@ -13563,8 +13568,8 @@ Shows total frames extracted when complete.</translation>
     <message>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="112"/>
         <location filename="../resources/views/images/viewer/Viewer.ui" line="133"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="985"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1156"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="975"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1146"/>
         <source>TextLabel</source>
         <translation>TextLabel</translation>
     </message>
@@ -13592,127 +13597,127 @@ Use to compare original image with detection results.</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1192"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="225"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="228"/>
         <source>Toggle Gallery Mode (G)
 Shows all AOIs from all images in a grid view</source>
         <translation>Toggle Gallery Mode (G)
 Shows all AOIs from all images in a grid view</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="255"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="258"/>
         <source>Highlight Pixels of Interest(H)</source>
         <translation>Highlight Pixels of Interest(H)</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="277"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="280"/>
         <source>Show AOIs</source>
         <translation>Show AOIs</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1212"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="321"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="324"/>
         <source>Open Histogram</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="344"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="347"/>
         <source>Map with Image Locations (M)</source>
         <translation>Map with Image Locations (M)</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="360"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="363"/>
         <source>North-Oriented View of Image (R)</source>
         <translation>North-Oriented View of Image (R)</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="376"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="379"/>
         <source>Adjust Image (Ctrl+H)</source>
         <translation>Adjust Image (Ctrl+H)</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="379"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="407"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="430"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="463"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="507"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="544"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="586"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="382"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="410"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="433"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="466"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="510"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="547"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="589"/>
         <source>...</source>
         <translation>...</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="392"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="395"/>
         <source>adjustments.png</source>
         <translation>adjustments.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="404"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="407"/>
         <source>Measure Distance (Ctrl+M)</source>
         <translation>Measure Distance (Ctrl+M)</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="420"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="423"/>
         <source>ruler.png</source>
         <translation>ruler.png</translation>
     </message>
     <message>
         <location filename="../app/core/controllers/images/viewer/Viewer.py" line="1927"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="427"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="430"/>
         <source>Person Size Reference (Ctrl+P)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="299"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="302"/>
         <source>Toggle the measurement ruler drawn over the selected AOI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="439"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="442"/>
         <source>person.png</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="446"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="449"/>
         <source>Toggle Magnifying Glass (Middle Mouse)</source>
         <translation>Toggle Magnifying Glass (Middle Mouse)</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="476"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="479"/>
         <source>magnify.png</source>
         <translation>magnify.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="490"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="493"/>
         <source>Map Export (KML / CalTopo)</source>
         <translation>Map Export (KML / CalTopo)</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="520"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="523"/>
         <source>map.png</source>
         <translation>map.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="527"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="530"/>
         <source>Generate PDF Report</source>
         <translation>Generate PDF Report</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="557"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="560"/>
         <source>pdf.png</source>
         <translation>pdf.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="569"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="572"/>
         <source>Generate Zip Bundle</source>
         <translation>Generate Zip Bundle</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="599"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="602"/>
         <source>zip.png</source>
         <translation>zip.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="624"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="627"/>
         <source>Skip hidden images when navigating.
 When enabled, Previous/Next buttons will skip over images marked as hidden.
 Use to focus on images that haven&apos;t been reviewed or marked for exclusion.
@@ -13723,12 +13728,12 @@ Use to focus on images that haven&apos;t been reviewed or marked for exclusion.
 Keyboard shortcut: H to hide/unhide current image</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="630"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="633"/>
         <source>Skip Hidden</source>
         <translation>Skip Hidden</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="669"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="672"/>
         <source>Mark current image as hidden.
 Hidden images can be excluded from reports, exports, and navigation.
 Use to remove images with false positives or no relevant detections.
@@ -13741,13 +13746,13 @@ When &quot;Skip Hidden&quot; is enabled, hidden images are skipped during naviga
 Keyboard shortcut: H</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="676"/>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="696"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="679"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="699"/>
         <source>Hide Image</source>
         <translation>Hide Image</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="688"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="691"/>
         <source>Displays the name of the currently hidden image.
 When an image is marked as hidden, its filename appears here.
 Hidden images are excluded from navigation when &quot;Skip Hidden&quot; is enabled.</source>
@@ -13756,7 +13761,7 @@ When an image is marked as hidden, its filename appears here.
 Hidden images are excluded from navigation when &quot;Skip Hidden&quot; is enabled.</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="724"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="727"/>
         <source>Jump directly to a specific image number.
 Enter an image number and press Enter to navigate instantly.
 Useful for reviewing specific images or returning to a noted location.</source>
@@ -13765,12 +13770,12 @@ Enter an image number and press Enter to navigate instantly.
 Useful for reviewing specific images or returning to a noted location.</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="729"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="732"/>
         <source>Jump To:</source>
         <translation>Jump To:</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="754"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="757"/>
         <source>Enter an image number (1 to total) and press Enter.
 Quickly navigate to any image in the analysis results.
 Example: Type &quot;25&quot; and press Enter to jump to image #25</source>
@@ -13779,54 +13784,54 @@ Quickly navigate to any image in the analysis results.
 Example: Type &quot;25&quot; and press Enter to jump to image #25</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="768"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="771"/>
         <source>Jump to a specific AOI by its run-wide number.
 Enter an AOI number and press Enter to select and scroll to it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="772"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="775"/>
         <source>Go to AOI #:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="797"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="800"/>
         <source>Enter an AOI number and press Enter.
 Selects that AOI and scrolls it into view in the gallery or single-image list.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="810"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="813"/>
         <source>Previous Image</source>
         <translation>Previous Image</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="817"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="820"/>
         <source>previous.png</source>
         <translation>previous.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="832"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="835"/>
         <source>Next Image</source>
         <translation>Next Image</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="839"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="842"/>
         <source>next.png</source>
         <translation>next.png</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="995"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="985"/>
         <source>Filter AOIs by color and pixel area</source>
         <translation>Filter AOIs by color and pixel area</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1067"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1057"/>
         <source>Sort By</source>
         <translation>Sort By</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1079"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1069"/>
         <source>Sort Areas of Interest (AOIs) in the list.
 Choose how to order the detected objects:
 • Pixel Area: Sort by size (largest to smallest)
@@ -13843,7 +13848,7 @@ Choose how to order the detected objects:
 Sorting helps prioritize review of larger or closer objects.</translation>
     </message>
     <message>
-        <location filename="../resources/views/images/viewer/Viewer.ui" line="1167"/>
+        <location filename="../resources/views/images/viewer/Viewer.ui" line="1157"/>
         <source>Open</source>
         <translation>Open</translation>
     </message>

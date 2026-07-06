@@ -18,6 +18,7 @@ from algorithms.images.HSVColorRange.views.HSVColorRangeWizard_ui import Ui_HSVC
 from algorithms.images.HSVColorRange.views.HSVColorRowWizardWidget import HSVColorRowWizardWidget
 from algorithms.images.HSVColorRange.controllers.HSVColorRangeViewerController import HSVColorRangeRangeViewer
 from algorithms.Shared.views.ColorSelectionMenu import ColorSelectionMenu
+from core.services.LoggerService import LoggerService
 from helpers.IconHelper import IconHelper
 from helpers.TranslationMixin import TranslationMixin
 
@@ -33,6 +34,7 @@ class HSVColorRangeWizardController(TranslationMixin, QWidget, Ui_HSVColorRangeW
         QWidget.__init__(self)
         AlgorithmController.__init__(self, config)
         self.theme = theme
+        self.logger = LoggerService()
 
         # List of color row widgets
         self.color_rows = []
@@ -74,6 +76,7 @@ class HSVColorRangeWizardController(TranslationMixin, QWidget, Ui_HSVColorRangeW
             on_color_selected=self._on_color_selected_from_menu,
             get_default_qcolor=self._get_default_qcolor,
             on_hsv_selected=self._on_hsv_selected_from_picker,
+            on_recent_color_selected=self._on_recent_color_selected,
             mode='HSV'
         )
         self.color_selection_menu.attach_to(self.addColorButton)
@@ -157,6 +160,26 @@ class HSVColorRangeWizardController(TranslationMixin, QWidget, Ui_HSVColorRangeW
         color = QColor(r, g, b)
         # Pass the full hsv_data dict so ranges can be displayed
         self.add_color_row(color, from_hsv_picker=True, hsv_ranges=hsv_data)
+
+    def _on_recent_color_selected(self, color_data: dict):
+        """Handle a color chosen from the recent colors list.
+
+        Recent HSV entries are shaped ``{'selected_color': (r, g, b), 'hsv_ranges': {...}}``
+        where ``hsv_ranges`` holds fractional (0-1) center/range values. When ranges are
+        present the row is shown in HSV-picker mode with those exact ranges; otherwise it
+        falls back to the default tolerance preset (mirrors the non-wizard controller).
+        """
+        try:
+            selected_color = color_data.get('selected_color', (255, 0, 0))
+            r, g, b = selected_color
+            color = QColor(r, g, b)
+            hsv_ranges = color_data.get('hsv_ranges')
+            if hsv_ranges:
+                self.add_color_row(color, from_hsv_picker=True, hsv_ranges=hsv_ranges)
+            else:
+                self.add_color_row(color)
+        except Exception as e:
+            self.logger.error(f"Error handling recent color selection: {e}")
 
     def add_color_row(self, color, tolerance_index=2, from_hsv_picker=False, hsv_ranges=None):
         """

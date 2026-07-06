@@ -22,8 +22,7 @@ These are the biggest, most user-visible, most novel additions — the strongest
 4. **Terrain / DEM integration.** Real elevation data (USGS 3DEP local GeoTIFF or online) drives terrain-corrected AOI GPS coordinates and terrain-conforming field-of-view boxes.
 5. **Person Size Reference + Shadow Height Estimation.** Photogrammetry tools to judge whether a detection could be a person — perspective-correct silhouette overlay and shadow-based height measurement.
 6. **Batch Processing + headless CLI.** Analyze every subfolder as its own run, with timeouts/ETAs/resume, scriptable from the command line, auto-linked into a Search Coordinator project.
-7. **Team Planning.** Assign detections to named field teams on a map and export field-ready per-team PDF packets.
-8. **Platform maturity:** in-app auto-update and multi-language support (English, Italian, Spanish, Dutch).
+7. **Platform maturity:** in-app auto-update and multi-language support (English, Italian, Spanish, Dutch).
 
 ---
 
@@ -246,6 +245,12 @@ The existing Streaming viewer was substantially upgraded.
 - **Where:** GPS Map View.
 - **Key files:** `GPSMapController.on_map_gps_clicked` · commit `64c8b82`
 
+### ◐ Terrain-corrected coverage-extent polygons + consistent terrain preference
+- **Type:** Enhancement
+- **What it does:** The image-coverage polygons (Unified Map / Coverage Extent / CalTopo exports, and the Align Image starting overlay) now derive each image's footprint from DEM-corrected effective AGL/GSD at the image center — the same terrain pipeline as AOI markers — instead of the drone's reported altitude. The "Use terrain elevation" preference is also now honored uniformly everywhere terrain is consulted: GPS map marker, FOV/zoom boxes, right-click map navigation, neighbor tracking, and the shadow-height tools all follow the same toggle as the AOI label and exports.
+- **Where:** Unified Map / CalTopo / Coverage KML exports; GPS Map View; Measure dialog.
+- **Key files:** `CoverageExtentService.py`, `ImageService.get_effective_agl_at_pixel`, `GPSMapView.py`, `GPSMapController.py`, `ShadowHeightEstimator.py`
+
 ### · Windows stability: suppress benign Qt COM traces
 - **Type:** Bug fix
 - **What it does:** Disables faulthandler on Windows so harmless internal Qt COM exceptions no longer spew crash-style tracebacks. Crash diagnostics stay enabled elsewhere.
@@ -254,12 +259,6 @@ The existing Streaming viewer was substantially upgraded.
 ---
 
 ## 6. Results Viewer & Review Tools
-
-### ⭐ Team Planning ("Plan Verification") with per-team PDF packets
-- **Type:** New feature
-- **What it does:** Divide flagged detections among named field teams on an interactive map (single-click, Ctrl-click, or rectangle select), with live per-team and "Unassigned" counts, then export field-ready PDFs — one packet per team plus a master summary. Each team packet has a cover page, a team overview map with legend, and detail pages for assigned AOIs. Definitions/assignments persist in `ADIAT_Data.xml`.
-- **Where:** Results Viewer — "Plan Verification (T)" toolbar button / "T" shortcut.
-- **Key files:** `TeamPlanningController.py`, `TeamPlanningDialog.py`, `TeamPlanningMapView.py`, `export/TeamPdfExportService.py` · commit `3a1f99b`
 
 ### ⭐ Color Histogram with hue isolation
 - **Type:** New feature
@@ -420,7 +419,7 @@ The existing Streaming viewer was substantially upgraded.
 These don't affect the feature list but are worth knowing before you publish:
 
 - **Version label:** confirm whether you ship as `2.1.0 Beta 1` (current HEAD) vs `2.1.0 Alpha` (bump commit). `app/__main__.py:23` currently says `2.1.0 Beta 1`.
-- **Test coverage gaps:** Team Planning and the PDF map-tile dropdown shipped without added automated tests (per the auditing pass).
+- **Test coverage gaps:** the PDF map-tile dropdown shipped without added automated tests (per the auditing pass).
 - **i18n gaps:** several newer user-facing features were translated for English/Italian but not yet Spanish/Dutch — worth a translation sweep (`python scripts/extract_translations.py`) before release if multi-language parity matters.
 - **Platform availability varies by feature:** Temperature Residual Anomaly is **Windows-only**; AI Person Detector image algorithm is **Windows + macOS**; the streaming AI Person Detector adds **Linux**. Mention platform support where relevant in the notes.
 - **Behavior change to call out:** the standalone live **Motion Detection** streaming algorithm was removed (folded into "Color Anomaly & Motion Detection") — existing users will notice the menu entry is gone.
