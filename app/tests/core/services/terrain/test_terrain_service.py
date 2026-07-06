@@ -144,6 +144,37 @@ class TestTerrainService:
             assert result.source == 'flat'
             mock_get_tile.assert_called_once()
 
+    @patch.object(TerrainCacheService, 'get_tile_if_cached')
+    @patch.object(TerrainCacheService, 'get_tile')
+    def test_offline_only_floor_blocks_download(self, mock_get_tile, mock_get_cached):
+        """service.offline_only=True (from app Offline Only mode) must prevent
+        any network download even when get_elevation is called with no flag."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            service = TerrainService(cache_dir=tmpdir, enable_geoid=False)
+            service.offline_only = True
+            mock_get_cached.return_value = None
+
+            result = service.get_elevation(40.7128, -74.0060)
+
+            # Only the cache-only path is consulted; the downloading path is not.
+            mock_get_cached.assert_called_once()
+            mock_get_tile.assert_not_called()
+            assert result.source == 'flat'
+
+    @patch.object(TerrainCacheService, 'get_tile_if_cached')
+    @patch.object(TerrainCacheService, 'get_tile')
+    def test_offline_floor_off_allows_download(self, mock_get_tile, mock_get_cached):
+        """With the floor off, the normal (downloading) cache path is used."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            service = TerrainService(cache_dir=tmpdir, enable_geoid=False)
+            assert service.offline_only is False  # default
+            mock_get_tile.return_value = None
+
+            service.get_elevation(40.7128, -74.0060)
+
+            mock_get_tile.assert_called_once()
+            mock_get_cached.assert_not_called()
+
     @patch.object(TerrainCacheService, 'get_tile')
     def test_get_elevation_batch(self, mock_get_tile):
         """Test batch elevation retrieval."""

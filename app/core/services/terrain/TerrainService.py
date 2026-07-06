@@ -118,6 +118,12 @@ class TerrainService:
 
         self._enabled = True
 
+        # When True, no method downloads elevation/geoid data over the network;
+        # only already-cached data is used. Set from the app's "Offline Only"
+        # preference by the caller (see AOIService._get_terrain_service). Acts
+        # as a floor: an explicit offline_only=True argument still wins.
+        self.offline_only = False
+
     def _build_cache(self) -> Optional[TerrainCacheService]:
         """Construct a tile cache only for tiled_web providers."""
         if self.provider.get_provider_kind() != 'tiled_web':
@@ -182,6 +188,9 @@ class TerrainService:
         if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
             self.logger.warning(f"Invalid coordinates: {lat}, {lon}")
             return self._create_error_result("Invalid coordinates")
+
+        # Honor the service-wide offline floor (e.g. app "Offline Only" mode).
+        offline_only = offline_only or self.offline_only
 
         # Local-GeoTIFF providers (e.g. USGS 3DEP) bypass the tile cache.
         if self.provider.get_provider_kind() == 'local_geotiff':
@@ -351,20 +360,22 @@ class TerrainService:
             return None
         return self._geoid.orthometric_to_ellipsoidal(lat, lon, h_orthometric)
 
-    def get_geoid_undulation(self, lat: float, lon: float) -> Optional[float]:
+    def get_geoid_undulation(self, lat: float, lon: float, offline_only: bool = False) -> Optional[float]:
         """
         Get geoid undulation at a location.
 
         Args:
             lat: Latitude in degrees
             lon: Longitude in degrees
+            offline_only: If True, never download/synthesize the geoid grid.
+                Combined with the service-wide offline floor (self.offline_only).
 
         Returns:
             Geoid undulation (N) in meters, or None if unavailable
         """
         if self._geoid is None:
             return None
-        return self._geoid.get_undulation(lat, lon)
+        return self._geoid.get_undulation(lat, lon, offline_only=offline_only or self.offline_only)
 
     def prefetch_area(self, lat: float, lon: float, radius_km: float = 5) -> int:
         """

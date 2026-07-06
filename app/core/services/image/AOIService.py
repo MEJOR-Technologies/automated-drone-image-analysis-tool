@@ -18,7 +18,13 @@ _terrain_service = None
 
 
 def _get_terrain_service():
-    """Lazy initialization of terrain service singleton."""
+    """Lazy initialization of terrain service singleton.
+
+    The singleton's offline floor is refreshed from the app's "Offline Only"
+    preference on every fetch (cheap — called once per AOI/FOV operation, not
+    per pixel), so toggling the preference at runtime takes effect and no DEM
+    or geoid data is downloaded while offline mode is on.
+    """
     global _terrain_service
     if _terrain_service is None:
         try:
@@ -26,6 +32,15 @@ def _get_terrain_service():
             _terrain_service = TerrainService()
         except Exception:
             # Terrain service not available
+            pass
+    if _terrain_service is not None:
+        try:
+            from core.services.SettingsService import SettingsService
+            _terrain_service.offline_only = SettingsService().get_bool_setting(
+                "OfflineOnly", False
+            )
+        except Exception:
+            # Settings unavailable — leave the existing flag untouched.
             pass
     return _terrain_service
 

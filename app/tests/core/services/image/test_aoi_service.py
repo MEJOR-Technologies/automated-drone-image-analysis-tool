@@ -302,6 +302,33 @@ def test_is_terrain_available():
         assert not AOIService.is_terrain_available()
 
 
+def test_get_terrain_service_applies_offline_only_setting():
+    """_get_terrain_service must push the app 'Offline Only' preference onto the
+    terrain singleton so DEM/geoid downloads are suppressed while offline."""
+    import core.services.image.AOIService as aoi_module
+    from core.services.image.AOIService import _get_terrain_service
+
+    fake_service = MagicMock()
+    original = aoi_module._terrain_service
+    try:
+        aoi_module._terrain_service = fake_service
+        with patch('core.services.SettingsService.SettingsService') as mock_settings_cls:
+            settings = mock_settings_cls.return_value
+
+            settings.get_bool_setting.return_value = True
+            svc = _get_terrain_service()
+            assert svc is fake_service
+            assert fake_service.offline_only is True
+            settings.get_bool_setting.assert_called_with('OfflineOnly', False)
+
+            # Toggling the preference is reflected on the next fetch (runtime change).
+            settings.get_bool_setting.return_value = False
+            _get_terrain_service()
+            assert fake_service.offline_only is False
+    finally:
+        aoi_module._terrain_service = original
+
+
 def test_get_terrain_service_info():
     """Test getting terrain service info."""
     with patch('core.services.image.AOIService._get_terrain_service') as mock_get_terrain:
