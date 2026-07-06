@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QDialog
 from core.controllers.UpdateController import UpdateController
 from core.views.SelectionDialog_ui import Ui_MediaSelector
 from core.services.SettingsService import SettingsService
+from helpers import FeatureFlags
 from helpers.IconHelper import IconHelper
 
 
@@ -62,7 +63,10 @@ class SelectionDialog(QDialog, Ui_MediaSelector):
         self.imageButton.clicked.connect(self._on_image_clicked)
         self.streamButton.clicked.connect(self._on_stream_clicked)
         if hasattr(self, "flightButton"):
-            self.flightButton.clicked.connect(self._on_flight_clicked)
+            if FeatureFlags.FLIGHT_VIEWER_ENABLED:
+                self.flightButton.clicked.connect(self._on_flight_clicked)
+            else:
+                self._hide_flight_viewer_tile()
 
         self._apply_icons(theme)
 
@@ -73,6 +77,39 @@ class SelectionDialog(QDialog, Ui_MediaSelector):
         self.app_version = self.settings_service.get_setting('app_version', '2.0.0') or '2.0.0'
         self.update_controller = UpdateController(self, settings_service=self.settings_service)
         self.update_controller.schedule_startup_check()
+
+    def _hide_flight_viewer_tile(self) -> None:
+        """Remove the Flight Viewer tile and tighten the dialog around the
+        two remaining options.
+
+        Flight Viewer is deferred to a later release. Hiding just the button
+        leaves its Expanding column claiming a third of the width; hiding the
+        whole ``flightWidget`` column removes it. The two remaining tiles are
+        then switched from Expanding to fixed and wrapped in stretches so they
+        stay grouped and centered under the heading rather than spreading to
+        the edges (the heading label can be wider than the two tiles and would
+        otherwise drive them apart). Finally the dialog shrinks to its natural
+        two-tile width.
+        """
+        from PySide6.QtWidgets import QSizePolicy
+
+        designed_height = self.height()  # keep the .ui height (two rows unchanged)
+
+        self.flightWidget.setVisible(False)
+
+        for tile in (self.imageWidget, self.streamWidget):
+            policy = tile.sizePolicy()
+            policy.setHorizontalPolicy(QSizePolicy.Maximum)
+            tile.setSizePolicy(policy)
+
+        # Center the pair: [stretch] image  stream [stretch].
+        self.horizontalLayout_2.insertStretch(0, 1)
+        self.horizontalLayout_2.addStretch(1)
+
+        # Shrink to the natural two-tile width; adjustSize also grows the
+        # height, so restore the designed height afterward.
+        self.adjustSize()
+        self.resize(self.width(), designed_height)
 
     def _on_image_clicked(self) -> None:
         """Handle click on the Images button.

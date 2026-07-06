@@ -432,3 +432,10 @@ def testVideoParser(testData, qtbot):
 
         if path.exists(testData['Video_Output']):
             assert len(os.listdir(testData['Video_Output'])) > 0
+
+
+def test_flight_viewer_menu_hidden_when_feature_disabled(main_window):
+    """Flight Viewer is deferred to a later release: the File-menu action
+    must be invisible while FeatureFlags.FLIGHT_VIEWER_ENABLED is False."""
+    assert hasattr(main_window, 'actionFlightViewer')
+    assert not main_window.actionFlightViewer.isVisible()

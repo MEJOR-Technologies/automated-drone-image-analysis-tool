@@ -17,6 +17,7 @@ from core.services.LoggerService import LoggerService
 from core.services.ResultsScannerService import ResultsScannerService
 from core.controllers.UpdateController import UpdateController
 from core.controllers.coordinator.CoordinatorWindow import CoordinatorWindow
+from helpers import FeatureFlags
 # StreamViewerWindow imported lazily in _open_streaming_detector() to avoid circular dependency
 from core.controllers.images.VideoParser import VideoParser
 from core.controllers.Preferences import Preferences
@@ -124,9 +125,13 @@ class MainWindow(TranslationMixin, QMainWindow, Ui_MainWindow):
         if hasattr(self, 'actionStreaming'):
             self.actionStreaming.triggered.connect(self._open_streaming_detector)
 
-        # Connect Flight Viewer menu item
+        # Connect Flight Viewer menu item (hidden while the feature is
+        # deferred to a later release)
         if hasattr(self, 'actionFlightViewer'):
-            self.actionFlightViewer.triggered.connect(self._open_flight_viewer)
+            if FeatureFlags.FLIGHT_VIEWER_ENABLED:
+                self.actionFlightViewer.triggered.connect(self._open_flight_viewer)
+            else:
+                self.actionFlightViewer.setVisible(False)
 
         # Add Coordinator functionality
         self.coordinator_window = None

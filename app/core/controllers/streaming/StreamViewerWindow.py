@@ -33,6 +33,7 @@ from core.controllers.streaming.StreamingGuide import StreamingGuide
 # MainWindow imported lazily in _open_image_analysis() to avoid circular dependency
 from core.controllers.UpdateController import UpdateController
 from core.services.SettingsService import SettingsService
+from helpers import FeatureFlags
 from core.services.ConfigService import ConfigService
 from core.views.streaming.StreamViewerWindow_ui import Ui_StreamViewerWindow
 from core.services.LoggerService import LoggerService
@@ -239,7 +240,9 @@ class StreamViewerWindow(TranslationMixin, QMainWindow):
         primary_menu.addAction(self.action_streaming_guide)
         primary_menu.addSeparator()
         primary_menu.addAction(self.action_image_analysis)
-        primary_menu.addAction(self.action_flight_viewer)
+        if FeatureFlags.FLIGHT_VIEWER_ENABLED:
+            # Flight Viewer is deferred to a later release
+            primary_menu.addAction(self.action_flight_viewer)
         primary_menu.addAction(self.action_preferences)
 
         # Help menu

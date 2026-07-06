@@ -429,3 +429,21 @@ class TestStreamViewerWindow:
         finally:
             window.close()
             QApplication.processEvents()
+
+
+def test_flight_viewer_menu_entry_hidden_when_feature_disabled(qapp):
+    """Flight Viewer is deferred to a later release: its action must not
+    appear in any menu while FeatureFlags.FLIGHT_VIEWER_ENABLED is False."""
+    window = StreamViewerWindow(algorithm_name='', theme='dark')
+    try:
+        menu_texts = [
+            action.text()
+            for top in window.menuBar().actions() if top.menu()
+            for action in top.menu().actions()
+        ]
+        assert window.action_flight_viewer.text() not in menu_texts
+        # Positive control: sibling entries are still present.
+        assert window.action_image_analysis.text() in menu_texts
+    finally:
+        window.close()
+        QApplication.processEvents()
