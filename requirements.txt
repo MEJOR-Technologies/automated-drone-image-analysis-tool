@@ -10,7 +10,7 @@ scikit-image
 pyqtdarktheme==2.1.0
 pillow
 pandas
-pyarrow==20.0.0
+pyarrow>=23.0.1
 utm
 PyExifTool
 reportlab
