@@ -31,6 +31,7 @@ from core.controllers.images.viewer.WingtraDataController import WingtraDataCont
 from core.controllers.images.viewer.AlignImageController import AlignImageController
 from core.controllers.images.viewer.WaldoPrePassController import WaldoPrePassController
 from core.controllers.images.viewer.image.ImageLoadController import ImageLoadController
+from core.controllers.images.viewer.grid.GridReviewController import GridReviewController
 from core.controllers.images.viewer.AOIOverlayController import AOIOverlayController
 from core.controllers.images.viewer.PixelInfoController import PixelInfoController
 from core.controllers.images.viewer.ThermalDataController import ThermalDataController
@@ -231,6 +232,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.color_histogram_controller = ColorHistogramController(self)
         self.pixel_info_controller = PixelInfoController(self)
         self.image_load_controller = ImageLoadController(self)
+        self.grid_review_controller = GridReviewController(self)
         self.altitude_controller = AltitudeController(self)
         self.wingtra_controller = WingtraDataController(self)
         self.align_image_controller = AlignImageController(self)
@@ -271,7 +273,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.messages = StatusDict(callback=self.status_controller.message_listener,
                                    key_order=["GPS Coordinates", "Relative Altitude",
                                               "Gimbal Orientation", "Estimated Average GSD",
-                                              "Temperature", "Color Values"])
+                                              "Temperature", "Color Values", "Grid Review"])
 
         # Apply icons
         self._apply_icons()
@@ -413,6 +415,10 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         # Clean up neighbor tracking controller
         if hasattr(self, 'neighbor_tracking_controller'):
             self.neighbor_tracking_controller.cleanup()
+
+        # Persist any unsaved grid review marks
+        if hasattr(self, 'grid_review_controller'):
+            self.grid_review_controller.cleanup()
 
         event.accept()
 
@@ -573,8 +579,15 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if hasattr(self, 'image_gallery_splitter'):
             self.gallery_controller.save_splitter_position(self.image_gallery_splitter)
 
+    def _on_grid_review_clicked(self):
+        """Handle Grid Review button click - toggle the sweep mode."""
+        self.grid_review_controller.toggle_mode()
+
     def _on_gallery_mode_clicked(self):
         """Handle Gallery Mode button click - update styling and toggle gallery mode."""
+        # Gallery and grid review are mutually exclusive single-surface modes
+        if hasattr(self, 'grid_review_controller'):
+            self.grid_review_controller.deactivate()
         # The button's checked state drives the gallery mode
         if hasattr(self, 'galleryModeButton'):
             should_be_in_gallery_mode = self.galleryModeButton.isChecked()
@@ -819,6 +832,12 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
                 # This allows text input in dialogs to work properly on macOS
                 super().keyPressEvent(e)
                 return
+
+        # Grid review mode gets first claim on keys: while active it owns
+        # Space/arrows/X/Esc (and S toggles it from anywhere). It returns
+        # False for everything else so all bindings below are unaffected.
+        if hasattr(self, 'grid_review_controller') and self.grid_review_controller.handle_key(e):
+            return
 
         if e.key() == Qt.Key_Right:
             if self.gallery_mode and hasattr(self, 'gallery_controller'):
@@ -1130,6 +1149,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.zipButton.clicked.connect(self._zipButton_clicked)
             self.measureButton.clicked.connect(self._open_measure_dialog)
             self.personOverlayButton.clicked.connect(self._open_person_reference_dialog)
+            self.gridReviewButton.clicked.connect(self._on_grid_review_clicked)
             self.adjustmentsButton.clicked.connect(self._open_image_adjustment_dialog)
             self.magnifyButton.clicked.connect(self._magnifyButton_clicked)
             self.GPSMapButton.clicked.connect(self._gps_map_button_clicked)
@@ -1141,6 +1161,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.ui_style_controller.update_person_overlay_button_style()
             self.ui_style_controller.update_gps_map_button_style()
             self.ui_style_controller.update_rotate_image_button_style()
+            self.ui_style_controller.update_grid_review_button_style()
 
             # Connect the Gallery Mode button
             if hasattr(self, 'galleryModeButton'):
@@ -2071,6 +2092,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.zipButton.setIcon(IconHelper.create_icon('fa5s.file-archive', self.theme))
         self.measureButton.setIcon(IconHelper.create_icon('fa6s.ruler', self.theme))
         self.personOverlayButton.setIcon(IconHelper.create_icon('fa6s.person', self.theme))
+        self.gridReviewButton.setIcon(IconHelper.create_icon('fa6s.border-all', self.theme))
         self.adjustmentsButton.setIcon(IconHelper.create_icon('fa6s.sliders', self.theme))
         self.previousImageButton.setIcon(IconHelper.create_icon('fa6s.arrow-left', self.theme))
         self.nextImageButton.setIcon(IconHelper.create_icon('fa6s.arrow-right', self.theme))
