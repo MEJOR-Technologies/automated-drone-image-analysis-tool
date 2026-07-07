@@ -47,6 +47,7 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         self._terrain_service = None
         self._add_language_selection()
         self._add_terrain_provider_section()
+        self._arrange_terrain_controls()
         self._load_settings()
         self._connect_signals()
         self._update_terrain_cache_display()
@@ -75,12 +76,18 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         self.verticalLayout_2.insertWidget(0, self.languageWidget)
 
     def _add_terrain_provider_section(self):
-        """Add a Terrain elevation source group: provider combo + 3DEP path fields."""
-        self.terrainProviderGroup = QGroupBox(self.tr("Terrain Elevation Source"), self.mainWidget)
+        """Build the elevation-source controls (provider combo + 3DEP paths).
+
+        This is a plain container with no border/title of its own; it is
+        nested inside the "Terrain" card assembled by
+        _arrange_terrain_controls, so the card's frame is the only border.
+        """
+        self.terrainProviderGroup = QWidget(self.mainWidget)
         layout = QVBoxLayout(self.terrainProviderGroup)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         combo_row = QHBoxLayout()
-        combo_label = QLabel(self.tr("Provider:"), self.terrainProviderGroup)
+        combo_label = QLabel(self.tr("Elevation Source:"), self.terrainProviderGroup)
         self.terrainProviderComboBox = QComboBox(self.terrainProviderGroup)
         for provider in TerrainProviderFactory.available_providers():
             self.terrainProviderComboBox.addItem(provider['label'], provider['id'])
@@ -110,8 +117,40 @@ class Preferences(TranslationMixin, QDialog, Ui_Preferences):
         tiles_row.addWidget(self.terrain3DEPTilesButton)
         layout.addLayout(tiles_row)
 
-        # Insert near the top of the dialog (just below language selection)
-        self.verticalLayout_2.insertWidget(1, self.terrainProviderGroup)
+        # Placement is handled by _arrange_terrain_controls, which nests this
+        # section inside the "Terrain" card with the toggle and cache rows.
+
+    def _arrange_terrain_controls(self):
+        """Collect the related terrain controls into a single "Terrain" card at
+        the bottom of the dialog:
+
+            Terrain  (QGroupBox card)
+              Use Terrain Elevation   (terrainWidget, from the .ui)
+              Elevation Source         (terrainProviderGroup, built in code)
+              Terrain Cache            (terrainCacheWidget, from the .ui)
+
+        The .ui-defined rows are detached from their default positions and
+        re-parented into the card so the three settings read as one group.
+        """
+        layout = self.verticalLayout_2
+        terrain_widget = getattr(self, 'terrainWidget', None)
+        cache_widget = getattr(self, 'terrainCacheWidget', None)
+
+        # Detach the .ui rows from their default positions (no-op if absent).
+        for widget in (terrain_widget, cache_widget):
+            if widget is not None:
+                layout.removeWidget(widget)
+
+        self.terrainCard = QGroupBox(self.tr("Terrain"), self.mainWidget)
+        card_layout = QVBoxLayout(self.terrainCard)
+        if terrain_widget is not None:
+            card_layout.addWidget(terrain_widget)
+        card_layout.addWidget(self.terrainProviderGroup)
+        if cache_widget is not None:
+            card_layout.addWidget(cache_widget)
+
+        # Place the card at the bottom of the settings area.
+        layout.addWidget(self.terrainCard)
 
     def _load_settings(self):
         """Loads the settings from SettingsService and updates the UI accordingly."""

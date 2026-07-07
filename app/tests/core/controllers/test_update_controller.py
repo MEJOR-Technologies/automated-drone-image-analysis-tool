@@ -106,3 +106,35 @@ def test_check_for_updates_reports_when_app_is_current(qtbot):
 
     assert result is None
     mock_information.assert_called_once()
+
+
+def test_menu_action_trigger_shows_no_updates_dialog(qtbot):
+    """Triggering the Help-menu action runs interactively and shows the
+    'No Updates Available' dialog when already on the latest version.
+
+    Regression: QAction.triggered passes a `checked` bool, so connecting
+    check_for_updates directly ran it with interactive=False and suppressed
+    the dialog.
+    """
+    settings_service = MagicMock()
+    settings_service.get_bool_setting.side_effect = lambda name, default=False: {
+        "OfflineOnly": False,
+        "AutoCheckForUpdates": True,
+    }.get(name, default)
+
+    update_service = MagicMock()
+    update_service.get_latest_available_release.return_value = None  # on latest
+
+    window = DummyWindow(settings_service)
+    qtbot.addWidget(window)
+
+    controller = UpdateController(window, update_service=update_service, settings_service=settings_service)
+    action = QAction("Check for Updates", window)
+    controller.bind_action(action)
+
+    with patch("core.controllers.UpdateController.QMessageBox.information") as mock_information:
+        action.trigger()
+
+    mock_information.assert_called_once()
+    title = mock_information.call_args.args[1]
+    assert "No Updates Available" in title

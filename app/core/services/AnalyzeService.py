@@ -28,6 +28,18 @@ from core.services.XmlService import XmlService
 # the whole analysis hanging forever.
 PROCESS_TIMEOUT_SECONDS = 300
 
+# Granularity for polling a worker result. Cancellation terminates the pool,
+# which leaves any in-flight AsyncResult permanently unset; waiting for it with
+# one long get(timeout=PROCESS_TIMEOUT_SECONDS) would stall the whole run for
+# the full timeout before the cancel is noticed. Polling in short slices lets
+# the retrieval loop react to a cancel within a fraction of a second while
+# still enforcing the real per-image timeout budget for a wedged worker.
+RESULT_POLL_INTERVAL_SECONDS = 0.2
+
+
+class _AnalysisCancelled(Exception):
+    """Internal signal that the run was cancelled while awaiting a result."""
+
 
 class AnalyzeService(QObject):
     """Service to process images using a selected algorithm.
@@ -210,7 +222,11 @@ class AnalyzeService(QObject):
                 if self.cancelled:
                     break
                 try:
-                    result = async_result.get(timeout=PROCESS_TIMEOUT_SECONDS)
+                    result = self._await_result(async_result)
+                except _AnalysisCancelled:
+                    # Cancel was requested while waiting; stop retrieving
+                    # results and fall through to pool teardown below.
+                    break
                 except MPTimeoutError:
                     self._handle_failed_image(
                         file, f"Processing exceeded {PROCESS_TIMEOUT_SECONDS}s and was skipped"
@@ -554,6 +570,42 @@ class AnalyzeService(QObject):
         else:
             eta = 0.0
         self.sig_progress.emit(self._completed_images, self.ttl_images, eta)
+
+    def _await_result(self, async_result):
+        """Wait for a worker's result while staying responsive to cancellation.
+
+        Polls the AsyncResult in short slices (RESULT_POLL_INTERVAL_SECONDS)
+        instead of a single long blocking get(). Cancellation terminates the
+        pool, which leaves an in-flight AsyncResult permanently unset; without
+        polling, the retrieval loop would block for the full
+        PROCESS_TIMEOUT_SECONDS before noticing the cancel, leaving the UI
+        stuck on "Cancelling Image Processing". The real per-image timeout
+        budget is still enforced for a genuinely wedged worker.
+
+        Args:
+            async_result: The multiprocessing AsyncResult to wait on.
+
+        Returns:
+            The worker's return value.
+
+        Raises:
+            _AnalysisCancelled: If cancellation was requested while waiting.
+            multiprocessing.TimeoutError: If PROCESS_TIMEOUT_SECONDS elapses.
+            Exception: Whatever the worker raised, propagated by get().
+        """
+        deadline = time.monotonic() + PROCESS_TIMEOUT_SECONDS
+        while True:
+            if self.cancelled:
+                raise _AnalysisCancelled()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise MPTimeoutError()
+            try:
+                return async_result.get(timeout=min(RESULT_POLL_INTERVAL_SECONDS, remaining))
+            except MPTimeoutError:
+                # This poll slice elapsed with no result; loop to re-check the
+                # cancel flag and the real per-image deadline.
+                continue
 
     @Slot()
     def process_cancel(self):

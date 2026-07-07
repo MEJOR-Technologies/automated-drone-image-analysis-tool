@@ -291,6 +291,71 @@ def test_process_cancel_sets_flag_and_terminates_pool(analyze_service):
 
 
 # ---------------------------------------------------------------------------
+# _await_result (cancel responsiveness)
+# ---------------------------------------------------------------------------
+
+def test_await_result_returns_worker_value(analyze_service):
+    """A ready result is returned straight through."""
+    async_result = MagicMock()
+    async_result.get.return_value = "payload"
+    assert analyze_service._await_result(async_result) == "payload"
+
+
+def test_await_result_bails_out_immediately_when_already_cancelled(analyze_service):
+    """If cancel is already requested, the wait aborts without blocking on get().
+
+    Reproduces the regression where a terminated pool leaves the in-flight
+    AsyncResult permanently unset: the cancel flag must be honoured before
+    ever waiting on get(), so the run cannot stall for PROCESS_TIMEOUT_SECONDS.
+    """
+    from core.services.AnalyzeService import _AnalysisCancelled
+
+    async_result = MagicMock()
+    analyze_service.cancelled = True
+    with pytest.raises(_AnalysisCancelled):
+        analyze_service._await_result(async_result)
+    async_result.get.assert_not_called()
+
+
+def test_await_result_detects_cancel_mid_wait(analyze_service):
+    """A cancel that arrives while polling stops the wait promptly.
+
+    Simulates a terminated-pool in-flight result whose get() only ever times
+    out; once cancellation is flagged mid-wait, _await_result must raise
+    instead of looping until the real per-image deadline.
+    """
+    from multiprocessing import TimeoutError as MPTimeoutError
+    from core.services.AnalyzeService import _AnalysisCancelled
+
+    async_result = MagicMock()
+
+    def timeout_then_flag(*args, **kwargs):
+        # Model the worker being killed by pool.terminate(): the result never
+        # arrives, and the cancel flag flips between poll slices.
+        analyze_service.cancelled = True
+        raise MPTimeoutError()
+
+    async_result.get.side_effect = timeout_then_flag
+    with pytest.raises(_AnalysisCancelled):
+        analyze_service._await_result(async_result)
+
+
+def test_await_result_enforces_per_image_timeout(analyze_service, monkeypatch):
+    """A wedged worker (no cancel) still hits the real per-image timeout."""
+    import core.services.AnalyzeService as analyze_module
+    from multiprocessing import TimeoutError as MPTimeoutError
+
+    # Force the deadline into the past so the wedged-worker path is reached
+    # without waiting the real PROCESS_TIMEOUT_SECONDS.
+    monkeypatch.setattr(analyze_module, "PROCESS_TIMEOUT_SECONDS", -1)
+
+    async_result = MagicMock()
+    async_result.get.side_effect = MPTimeoutError()
+    with pytest.raises(MPTimeoutError):
+        analyze_service._await_result(async_result)
+
+
+# ---------------------------------------------------------------------------
 # _setup_output_dir
 # ---------------------------------------------------------------------------
 

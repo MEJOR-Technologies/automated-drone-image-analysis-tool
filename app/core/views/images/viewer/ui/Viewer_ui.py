@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'Viewer.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.2
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -68,7 +68,7 @@ class Ui_Viewer(object):
         self.horizontalLayout_5.setContentsMargins(0, 5, 0, 5)
         self.fileNameLabel = QLabel(self.mainHeaderWidget)
         self.fileNameLabel.setObjectName(u"fileNameLabel")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.fileNameLabel.sizePolicy().hasHeightForWidth())
@@ -83,11 +83,8 @@ class Ui_Viewer(object):
 
         self.indexLabel = QLabel(self.mainHeaderWidget)
         self.indexLabel.setObjectName(u"indexLabel")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.indexLabel.sizePolicy().hasHeightForWidth())
-        self.indexLabel.setSizePolicy(sizePolicy2)
+        sizePolicy1.setHeightForWidth(self.indexLabel.sizePolicy().hasHeightForWidth())
+        self.indexLabel.setSizePolicy(sizePolicy1)
         self.indexLabel.setFont(font)
         self.indexLabel.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
 
@@ -130,7 +127,7 @@ class Ui_Viewer(object):
 
         self.horizontalLayout_5.addWidget(self.showOverlayCheckBox)
 
-        self.horizontalSpacer_3 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer_3 = QSpacerItem(224, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_5.addItem(self.horizontalSpacer_3)
 
@@ -333,11 +330,11 @@ class Ui_Viewer(object):
 
         self.skipHidden = QCheckBox(self.mainHeaderWidget)
         self.skipHidden.setObjectName(u"skipHidden")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.skipHidden.sizePolicy().hasHeightForWidth())
-        self.skipHidden.setSizePolicy(sizePolicy3)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.skipHidden.sizePolicy().hasHeightForWidth())
+        self.skipHidden.setSizePolicy(sizePolicy2)
         font3 = QFont()
         font3.setPointSize(14)
         self.skipHidden.setFont(font3)
@@ -349,11 +346,11 @@ class Ui_Viewer(object):
 
         self.placeholderImage = QGraphicsView(self.imageWidget)
         self.placeholderImage.setObjectName(u"placeholderImage")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.placeholderImage.sizePolicy().hasHeightForWidth())
-        self.placeholderImage.setSizePolicy(sizePolicy4)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.placeholderImage.sizePolicy().hasHeightForWidth())
+        self.placeholderImage.setSizePolicy(sizePolicy3)
         self.placeholderImage.setMinimumSize(QSize(0, 0))
         font4 = QFont()
         font4.setPointSize(9)
@@ -390,11 +387,11 @@ class Ui_Viewer(object):
 
         self.jumpToLine = QLineEdit(self.imageWidget)
         self.jumpToLine.setObjectName(u"jumpToLine")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        sizePolicy5.setHorizontalStretch(0)
-        sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.jumpToLine.sizePolicy().hasHeightForWidth())
-        self.jumpToLine.setSizePolicy(sizePolicy5)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.jumpToLine.sizePolicy().hasHeightForWidth())
+        self.jumpToLine.setSizePolicy(sizePolicy4)
         self.jumpToLine.setMinimumSize(QSize(50, 0))
         self.jumpToLine.setMaximumSize(QSize(50, 16777215))
 
@@ -408,8 +405,8 @@ class Ui_Viewer(object):
 
         self.aoiJumpLine = QLineEdit(self.imageWidget)
         self.aoiJumpLine.setObjectName(u"aoiJumpLine")
-        sizePolicy5.setHeightForWidth(self.aoiJumpLine.sizePolicy().hasHeightForWidth())
-        self.aoiJumpLine.setSizePolicy(sizePolicy5)
+        sizePolicy4.setHeightForWidth(self.aoiJumpLine.sizePolicy().hasHeightForWidth())
+        self.aoiJumpLine.setSizePolicy(sizePolicy4)
         self.aoiJumpLine.setMinimumSize(QSize(50, 0))
         self.aoiJumpLine.setMaximumSize(QSize(50, 16777215))
 
@@ -439,11 +436,11 @@ class Ui_Viewer(object):
 
         self.thumbnailScrollArea = QScrollArea(self.imageWidget)
         self.thumbnailScrollArea.setObjectName(u"thumbnailScrollArea")
-        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        sizePolicy6.setHorizontalStretch(0)
-        sizePolicy6.setVerticalStretch(0)
-        sizePolicy6.setHeightForWidth(self.thumbnailScrollArea.sizePolicy().hasHeightForWidth())
-        self.thumbnailScrollArea.setSizePolicy(sizePolicy6)
+        sizePolicy5 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.thumbnailScrollArea.sizePolicy().hasHeightForWidth())
+        self.thumbnailScrollArea.setSizePolicy(sizePolicy5)
         self.thumbnailScrollArea.setMinimumSize(QSize(0, 116))
         self.thumbnailScrollArea.setMaximumSize(QSize(16777215, 116))
         self.thumbnailScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -475,11 +472,11 @@ class Ui_Viewer(object):
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.aoiHeaderWidget = QWidget(self.aoiWidget)
         self.aoiHeaderWidget.setObjectName(u"aoiHeaderWidget")
-        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-        sizePolicy7.setHorizontalStretch(0)
-        sizePolicy7.setVerticalStretch(0)
-        sizePolicy7.setHeightForWidth(self.aoiHeaderWidget.sizePolicy().hasHeightForWidth())
-        self.aoiHeaderWidget.setSizePolicy(sizePolicy7)
+        sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        sizePolicy6.setHorizontalStretch(0)
+        sizePolicy6.setVerticalStretch(0)
+        sizePolicy6.setHeightForWidth(self.aoiHeaderWidget.sizePolicy().hasHeightForWidth())
+        self.aoiHeaderWidget.setSizePolicy(sizePolicy6)
         self.aoiHeaderWidget.setMinimumSize(QSize(250, 50))
         self.aoiHeaderWidget.setMaximumSize(QSize(294, 50))
         self.horizontalLayout_3 = QHBoxLayout(self.aoiHeaderWidget)
@@ -487,11 +484,11 @@ class Ui_Viewer(object):
         self.horizontalLayout_3.setContentsMargins(0, 5, 0, 5)
         self.areaCountLabel = QLabel(self.aoiHeaderWidget)
         self.areaCountLabel.setObjectName(u"areaCountLabel")
-        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-        sizePolicy8.setHorizontalStretch(0)
-        sizePolicy8.setVerticalStretch(0)
-        sizePolicy8.setHeightForWidth(self.areaCountLabel.sizePolicy().hasHeightForWidth())
-        self.areaCountLabel.setSizePolicy(sizePolicy8)
+        sizePolicy7 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
+        sizePolicy7.setHorizontalStretch(0)
+        sizePolicy7.setVerticalStretch(0)
+        sizePolicy7.setHeightForWidth(self.areaCountLabel.sizePolicy().hasHeightForWidth())
+        self.areaCountLabel.setSizePolicy(sizePolicy7)
         self.areaCountLabel.setFont(font)
         self.areaCountLabel.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
 
@@ -543,11 +540,11 @@ class Ui_Viewer(object):
 
         self.aoiListWidget = QListWidget(self.aoiFrame)
         self.aoiListWidget.setObjectName(u"aoiListWidget")
-        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-        sizePolicy9.setHorizontalStretch(0)
-        sizePolicy9.setVerticalStretch(0)
-        sizePolicy9.setHeightForWidth(self.aoiListWidget.sizePolicy().hasHeightForWidth())
-        self.aoiListWidget.setSizePolicy(sizePolicy9)
+        sizePolicy8 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        sizePolicy8.setHorizontalStretch(0)
+        sizePolicy8.setVerticalStretch(0)
+        sizePolicy8.setHeightForWidth(self.aoiListWidget.sizePolicy().hasHeightForWidth())
+        self.aoiListWidget.setSizePolicy(sizePolicy8)
         self.aoiListWidget.setMinimumSize(QSize(250, 0))
         self.aoiListWidget.setFrameShape(QFrame.NoFrame)
 
@@ -571,11 +568,11 @@ class Ui_Viewer(object):
         self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.statusBar = QLabel(self.statusBarWidget)
         self.statusBar.setObjectName(u"statusBar")
-        sizePolicy10 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred)
-        sizePolicy10.setHorizontalStretch(0)
-        sizePolicy10.setVerticalStretch(0)
-        sizePolicy10.setHeightForWidth(self.statusBar.sizePolicy().hasHeightForWidth())
-        self.statusBar.setSizePolicy(sizePolicy10)
+        sizePolicy9 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred)
+        sizePolicy9.setHorizontalStretch(0)
+        sizePolicy9.setVerticalStretch(0)
+        sizePolicy9.setHeightForWidth(self.statusBar.sizePolicy().hasHeightForWidth())
+        self.statusBar.setSizePolicy(sizePolicy9)
         self.statusBar.setFont(font2)
 
         self.horizontalLayout_4.addWidget(self.statusBar)

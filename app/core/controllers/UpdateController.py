@@ -33,7 +33,11 @@ class UpdateController(QObject):
     def bind_action(self, action: QAction) -> None:
         """Attach the manual update-check action."""
         self.action = action
-        self.action.triggered.connect(self.check_for_updates)
+        # QAction.triggered emits a `checked` bool; connecting check_for_updates
+        # directly would pass that False into `interactive` and suppress every
+        # user-facing dialog (incl. "No Updates Available"). Wrap it so the
+        # manual menu check always runs interactively.
+        self.action.triggered.connect(lambda _checked=False: self.check_for_updates(interactive=True))
         self.refresh_action_state()
 
     def refresh_action_state(self) -> None:

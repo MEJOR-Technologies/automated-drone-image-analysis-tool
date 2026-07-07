@@ -63,3 +63,4 @@ app/algorithms/images/AIPersonDetector/services/ai_person_model_bak.onnx
 COMMIT_MESSAGE.txt
 .pyside_env/
 AI_CODEBASE_GUIDE.md
+RELEASE_AUDIT_v2.1.0.md

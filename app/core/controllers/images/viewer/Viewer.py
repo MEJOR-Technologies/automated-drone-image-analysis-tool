@@ -464,34 +464,27 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.showOverlayToggle.clicked.connect(self._show_overlay_change)
 
     @staticmethod
-    def _tighten_header(header_layout, index_label):
-        """Shrink the viewer header so it fits the screen without clipping text.
+    def _tighten_header(header_layout):
+        """Tighten the dense viewer header so its glyphs are not clipped.
 
-        The header toolbar is dense. With the default 6px spacing its minimum
-        width exceeds 1920px on 1080p displays, so Qt cannot honor the window
-        geometry and logs "Unable to set geometry ...". Tightening the spacing
-        and letting the index label shrink under width pressure (it otherwise
-        reports its full text width as its minimum) keeps the window's minimum
-        width well below the screen edge. The top/bottom margins are also
-        dropped so the 16pt file-name glyphs have the full header height and are
-        not clipped at the bottom.
+        The header is a simple two-part row: a left group (file name, index,
+        Show Overlay) and the right-justified toolbar buttons, separated by an
+        expanding spacer. The only element that yields under width pressure is
+        the file-name label (its minimum width is pinned to 10px in the .ui), so
+        when the two groups would overlap the file name is what gets cut off and
+        every other item keeps its natural width.
+
+        This helper only removes the top/bottom margins (so the 16pt file-name
+        glyphs get the full header height) and tightens the inter-widget spacing.
 
         Args:
             header_layout (QHBoxLayout): The main header layout (horizontalLayout_5).
-            index_label (QLabel): The image-index label.
         """
         header_layout.setSpacing(2)
 
         # Give the labels the full header height so descenders aren't clipped.
         margins = header_layout.contentsMargins()
         header_layout.setContentsMargins(margins.left(), 0, margins.right(), 0)
-
-        # Let the index label shrink under width pressure rather than forcing
-        # the window minimum width past the screen edge. (The file-name label
-        # already pins its minimum width to 10px in the .ui.)
-        index_label.setMinimumWidth(10)
-        index_label.setSizePolicy(
-            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
 
     def _setup_gallery_mode_ui(self):
         """Set up the gallery mode toggle and stacked widget for AOI display."""
@@ -532,9 +525,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             self.mainHeaderWidget.setMinimumHeight(header_height)
             self.mainHeaderWidget.setMaximumHeight(header_height)
 
-            # Tighten the dense toolbar so its minimum width stays below the
-            # screen (see _tighten_header).
-            self._tighten_header(self.horizontalLayout_5, self.indexLabel)
+            # Tighten the dense toolbar so its glyphs aren't clipped
+            # (see _tighten_header).
+            self._tighten_header(self.horizontalLayout_5)
 
             # Create header row with both headers side by side
             self._header_row = QWidget()
