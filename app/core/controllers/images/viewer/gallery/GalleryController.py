@@ -669,10 +669,11 @@ class GalleryController:
                 # We need to wait for the second one (after resetZoom) to ensure zoom stack is clear
                 zoom_handler = None
                 zoom_executed = False
+                zoom_disconnected = False
                 view_changed_count = 0
 
                 def zoom_when_ready():
-                    nonlocal zoom_executed, view_changed_count
+                    nonlocal zoom_executed, zoom_disconnected, view_changed_count
                     view_changed_count += 1
 
                     # Check if _recursion_guard is set - if so, updateViewer() is still running
@@ -712,6 +713,7 @@ class GalleryController:
                         if zoom_handler:
                             try:
                                 self.parent.main_image.viewChanged.disconnect(zoom_handler)
+                                zoom_disconnected = True
                             except Exception:
                                 pass
 
@@ -776,8 +778,11 @@ class GalleryController:
                     # file, destroyed viewer) otherwise leaves it armed on the
                     # viewChanged signal, where a later wheel zoom would re-enter
                     # zoomToArea against a stale AOI. Disconnect from the exact
-                    # viewer we connected to.
-                    if zoom_handler is not None and connected_viewer is not None:
+                    # viewer we connected to. Skip if the handler already
+                    # disconnected itself on success, otherwise PySide6 warns
+                    # about a failed disconnect from an already-severed slot.
+                    if (zoom_handler is not None and connected_viewer is not None
+                            and not zoom_disconnected):
                         try:
                             connected_viewer.viewChanged.disconnect(zoom_handler)
                         except Exception:
