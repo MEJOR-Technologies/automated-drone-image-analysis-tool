@@ -482,3 +482,140 @@ def test_go_to_aoi_number_single_image_rebuilds_stale_map(controller):
     assert controller.go_to_aoi_number(1) is True
     controller.ui_component.refresh_aoi_display.assert_called_once()
     controller.select_aoi.assert_called_once_with(0, 0)
+
+
+# ---------------------------------------------------------------------------
+# show_aoi_context_menu — Find Similar AOIs action
+# ---------------------------------------------------------------------------
+
+def _open_context_menu(controller, aoi_index, image_idx):
+    """Open the AOI context menu with QMenu mocked; returns the added action mocks.
+
+    Shiboken methods cannot be monkeypatched on the class, so the whole QMenu
+    class is replaced in the controller module and the action mocks inspected.
+    """
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QPoint
+    QApplication.instance() or QApplication([])
+
+    actions = {}
+
+    def make_action(text):
+        action = MagicMock()
+        actions[text] = action
+        return action
+
+    with patch("core.controllers.images.viewer.aoi.AOIController.QMenu") as menu_cls:
+        menu_cls.return_value.addAction.side_effect = make_action
+        controller.show_aoi_context_menu(
+            QPoint(0, 0), MagicMock(), (10, 10), 100, None,
+            aoi_index=aoi_index, image_idx=image_idx,
+        )
+    menu_cls.return_value.exec.assert_called_once()
+    return actions
+
+
+def test_context_menu_find_similar_triggers_controller(controller):
+    actions = _open_context_menu(controller, aoi_index=0, image_idx=1)
+
+    assert "Find Similar AOIs" in actions
+    action = actions["Find Similar AOIs"]
+    action.setEnabled.assert_called_once_with(True)
+
+    triggered_handler = action.triggered.connect.call_args[0][0]
+    triggered_handler()
+    controller.parent.similarity_controller.find_similar_for_selected.assert_called_once_with(
+        image_idx=1, aoi_idx=0)
+
+
+def test_context_menu_find_similar_disabled_without_index(controller):
+    actions = _open_context_menu(controller, aoi_index=None, image_idx=None)
+
+    actions["Find Similar AOIs"].setEnabled.assert_called_once_with(False)
+
+
+# ---------------------------------------------------------------------------
+# Bulk flag / comment setters
+# ---------------------------------------------------------------------------
+
+def _bulk_parent():
+    """Parent mock with two images, real AOI dicts, and XML elements attached."""
+    import xml.etree.ElementTree as ET
+    parent = _mock_parent(images=[
+        {"areas_of_interest": [
+            _aoi(center=(10, 10), xml=ET.Element("area_of_interest")),
+            _aoi(center=(20, 20), xml=ET.Element("area_of_interest")),
+        ]},
+        {"areas_of_interest": [
+            _aoi(center=(30, 30), xml=ET.Element("area_of_interest")),
+        ]},
+    ])
+    parent.xml_path = "results.xml"
+    parent.xml_service = MagicMock()
+    parent.gallery_controller = MagicMock()
+    return parent
+
+
+@pytest.fixture
+def bulk_controller():
+    with patch("core.controllers.images.viewer.aoi.AOIController.AOIUIComponent"):
+        from core.controllers.images.viewer.aoi.AOIController import AOIController
+        return AOIController(_bulk_parent())
+
+
+def test_set_aoi_flags_bulk_flags_and_saves_once(bulk_controller):
+    applied = bulk_controller.set_aoi_flags_bulk([(0, 0), (0, 1), (1, 0), (9, 9)], True)
+
+    assert applied == 3
+    images = bulk_controller.parent.images
+    assert images[0]["areas_of_interest"][0]["flagged"] is True
+    assert images[0]["areas_of_interest"][1]["flagged"] is True
+    assert images[1]["areas_of_interest"][0]["flagged"] is True
+    assert images[0]["areas_of_interest"][0]["xml"].get("flagged") == "True"
+    assert bulk_controller.flagged_aois == {0: {0, 1}, 1: {0}}
+    bulk_controller.parent.xml_service.save_xml_file.assert_called_once_with("results.xml")
+    bulk_controller.parent.gallery_controller.refresh_gallery.assert_called_once()
+    # Current image (0) was touched -> single-image display refreshed
+    bulk_controller.ui_component.refresh_aoi_display.assert_called_once()
+
+
+def test_set_aoi_flags_bulk_unflag(bulk_controller):
+    bulk_controller.set_aoi_flags_bulk([(0, 0), (1, 0)], True)
+    bulk_controller.parent.xml_service.reset_mock()
+
+    applied = bulk_controller.set_aoi_flags_bulk([(0, 0), (1, 0)], False)
+
+    assert applied == 2
+    images = bulk_controller.parent.images
+    assert images[0]["areas_of_interest"][0]["flagged"] is False
+    assert images[0]["areas_of_interest"][0]["xml"].get("flagged") == "False"
+    assert bulk_controller.flagged_aois == {0: set(), 1: set()}
+    bulk_controller.parent.xml_service.save_xml_file.assert_called_once()
+
+
+def test_set_aoi_flags_bulk_empty_and_invalid(bulk_controller):
+    assert bulk_controller.set_aoi_flags_bulk([], True) == 0
+    assert bulk_controller.set_aoi_flags_bulk([(9, 9), (None, 0)], True) == 0
+    bulk_controller.parent.xml_service.save_xml_file.assert_not_called()
+
+
+def test_set_aoi_comments_bulk_sets_text(bulk_controller):
+    applied = bulk_controller.set_aoi_comments_bulk([(0, 0), (1, 0)], "orange tarp")
+
+    assert applied == 2
+    images = bulk_controller.parent.images
+    assert images[0]["areas_of_interest"][0]["user_comment"] == "orange tarp"
+    assert images[1]["areas_of_interest"][0]["user_comment"] == "orange tarp"
+    assert images[0]["areas_of_interest"][0]["xml"].get("user_comment") == "orange tarp"
+    bulk_controller.parent.xml_service.save_xml_file.assert_called_once_with("results.xml")
+
+
+def test_set_aoi_comments_bulk_empty_clears_attribute(bulk_controller):
+    bulk_controller.set_aoi_comments_bulk([(0, 0)], "note")
+    assert bulk_controller.parent.images[0]["areas_of_interest"][0]["xml"].get("user_comment") == "note"
+
+    bulk_controller.set_aoi_comments_bulk([(0, 0)], "")
+
+    aoi = bulk_controller.parent.images[0]["areas_of_interest"][0]
+    assert aoi["user_comment"] == ""
+    assert "user_comment" not in aoi["xml"].attrib

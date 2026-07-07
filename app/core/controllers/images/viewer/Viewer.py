@@ -21,6 +21,7 @@ from core.controllers.images.viewer.thumbnails.ThumbnailController import Thumbn
 from core.controllers.images.viewer.gallery.GalleryController import GalleryController
 from core.controllers.images.viewer.aoi.AOIController import AOIController
 from core.controllers.images.viewer.neighbor.AOINeighborTrackingController import AOINeighborTrackingController
+from core.controllers.images.viewer.similarity.AOISimilarityController import AOISimilarityController
 from core.controllers.images.viewer.exports.UnifiedMapExportController import UnifiedMapExportController
 from core.controllers.images.viewer.exports.CoverageExtentExportController import CoverageExtentExportController
 from core.controllers.images.viewer.exports.CalTopoExportController import CalTopoExportController
@@ -225,6 +226,7 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         self.gps_map_controller = GPSMapController(self)
         self.team_planning_controller = TeamPlanningController(self)
         self.neighbor_tracking_controller = AOINeighborTrackingController(self)
+        self.similarity_controller = AOISimilarityController(self)
 
         self.ui_style_controller = UIStyleController(self, theme)
         self.thermal_controller = ThermalDataController(self)
@@ -416,6 +418,9 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
         if hasattr(self, 'neighbor_tracking_controller'):
             self.neighbor_tracking_controller.cleanup()
 
+        # Clean up similarity search controller
+        if hasattr(self, 'similarity_controller'):
+            self.similarity_controller.cleanup()
         # Persist any unsaved grid review marks
         if hasattr(self, 'grid_review_controller'):
             self.grid_review_controller.cleanup()
@@ -951,24 +956,55 @@ class Viewer(TranslationMixin, QMainWindow, Ui_Viewer):
             if hasattr(self, 'neighbor_tracking_controller'):
                 if (hasattr(self, 'gallery_mode') and self.gallery_mode and
                         hasattr(self, 'gallery_controller') and self.gallery_controller):
-                    ui_component = self.gallery_controller.ui_component
-                    if ui_component and ui_component.gallery_view:
-                        current_index = ui_component.gallery_view.currentIndex()
-                        if current_index.isValid():
-                            aoi_info = self.gallery_controller.model.get_aoi_info(current_index)
-                            if aoi_info:
-                                image_idx, aoi_idx, _ = aoi_info
-                                self.neighbor_tracking_controller.track_selected_aoi(
-                                    image_idx=image_idx, aoi_idx=aoi_idx
-                                )
+                    gallery_selection = self._resolve_gallery_selected_aoi()
+                    if gallery_selection:
+                        image_idx, aoi_idx = gallery_selection
+                        self.neighbor_tracking_controller.track_selected_aoi(
+                            image_idx=image_idx, aoi_idx=aoi_idx
+                        )
                 else:
                     self.neighbor_tracking_controller.track_selected_aoi()
+        if e.key() == Qt.Key_Z and e.modifiers() == Qt.ShiftModifier:
+            # Find visually similar AOIs with 'Shift+Z'
+            if hasattr(self, 'similarity_controller'):
+                if (hasattr(self, 'gallery_mode') and self.gallery_mode and
+                        hasattr(self, 'gallery_controller') and self.gallery_controller):
+                    gallery_selection = self._resolve_gallery_selected_aoi()
+                    if gallery_selection:
+                        image_idx, aoi_idx = gallery_selection
+                        self.similarity_controller.find_similar_for_selected(
+                            image_idx=image_idx, aoi_idx=aoi_idx
+                        )
+                else:
+                    self.similarity_controller.find_similar_for_selected()
         if e.key() == Qt.Key_W and e.modifiers() == Qt.ShiftModifier:
             # Load Wingtra CSV flight log with 'Shift+W' key
             self.wingtra_controller.prompt_and_load_csv()
         if e.key() == Qt.Key_A and e.modifiers() == Qt.NoModifier:
             # Open the Align Image dialog with 'A' key
             self.align_image_controller.open_dialog()
+
+    def _resolve_gallery_selected_aoi(self):
+        """Resolve the AOI selected in the gallery model.
+
+        In gallery mode the selection may belong to an image other than the
+        one displayed in the main viewer, so it must be read from the gallery
+        model rather than the single-image AOIController.
+
+        Returns:
+            tuple: (image_idx, aoi_idx) of the selected AOI, or None.
+        """
+        ui_component = self.gallery_controller.ui_component
+        if not ui_component or not ui_component.gallery_view:
+            return None
+        current_index = ui_component.gallery_view.currentIndex()
+        if not current_index.isValid():
+            return None
+        aoi_info = self.gallery_controller.model.get_aoi_info(current_index)
+        if not aoi_info:
+            return None
+        image_idx, aoi_idx, _ = aoi_info
+        return (image_idx, aoi_idx)
 
     def _build_source_images(self):
         """Enumerate every capture from the original flight folder.

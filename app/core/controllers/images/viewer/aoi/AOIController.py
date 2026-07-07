@@ -519,6 +519,99 @@ class AOIController(TranslationMixin):
                         except Exception:
                             pass
 
+    def set_aoi_flags_bulk(self, items, flagged):
+        """Set the flag state on multiple AOIs with a single XML save.
+
+        Args:
+            items: Iterable of (image_index, aoi_index) pairs.
+            flagged (bool): Desired flag state for every item.
+
+        Returns:
+            int: Number of AOIs actually updated.
+        """
+        touched_images = set()
+        applied = 0
+        for image_index, aoi_index in items:
+            aoi = self._get_aoi_safe(image_index, aoi_index)
+            if aoi is None:
+                continue
+            aoi['flagged'] = flagged
+            if aoi.get('xml') is not None:
+                aoi['xml'].set('flagged', str(flagged))
+
+            flagged_set = self.flagged_aois.setdefault(image_index, set())
+            if flagged:
+                flagged_set.add(aoi_index)
+            else:
+                flagged_set.discard(aoi_index)
+            touched_images.add(image_index)
+            applied += 1
+
+        if touched_images:
+            self._save_xml_and_refresh_bulk(touched_images)
+        return applied
+
+    def set_aoi_comments_bulk(self, items, comment):
+        """Set the same comment on multiple AOIs with a single XML save.
+
+        An empty comment clears the comment (mirrors save_aoi_comment_to_xml).
+
+        Args:
+            items: Iterable of (image_index, aoi_index) pairs.
+            comment (str): Comment text to apply to every item.
+
+        Returns:
+            int: Number of AOIs actually updated.
+        """
+        touched_images = set()
+        applied = 0
+        for image_index, aoi_index in items:
+            aoi = self._get_aoi_safe(image_index, aoi_index)
+            if aoi is None:
+                continue
+            aoi['user_comment'] = comment
+            if aoi.get('xml') is not None:
+                if comment:
+                    aoi['xml'].set('user_comment', str(comment))
+                elif 'user_comment' in aoi['xml'].attrib:
+                    del aoi['xml'].attrib['user_comment']
+            touched_images.add(image_index)
+            applied += 1
+
+        if touched_images:
+            self._save_xml_and_refresh_bulk(touched_images)
+        return applied
+
+    def _get_aoi_safe(self, image_index, aoi_index):
+        """Return the AOI dict at (image_index, aoi_index), or None if invalid."""
+        if image_index is None or aoi_index is None:
+            return None
+        if not hasattr(self.parent, 'images'):
+            return None
+        if not (0 <= image_index < len(self.parent.images)):
+            return None
+        aois = self.parent.images[image_index].get('areas_of_interest', [])
+        if not (0 <= aoi_index < len(aois)):
+            return None
+        return aois[aoi_index]
+
+    def _save_xml_and_refresh_bulk(self, touched_images):
+        """Persist bulk AOI edits with one XML save and refresh affected displays."""
+        if hasattr(self.parent, 'xml_service') and self.parent.xml_service:
+            try:
+                self.parent.xml_service.save_xml_file(self.parent.xml_path)
+            except Exception:
+                pass
+
+        if getattr(self.parent, 'current_image', None) in touched_images and self.ui_component:
+            self.ui_component.refresh_aoi_display()
+
+        if hasattr(self.parent, 'gallery_controller') and self.parent.gallery_controller:
+            try:
+                self.parent.gallery_controller.refresh_gallery()
+            except Exception:
+                pass
+
     def edit_aoi_comment(self, aoi_index, image_idx=None):
         """Open dialog to edit the comment for an AOI.
 
@@ -663,6 +756,14 @@ class AOIController(TranslationMixin):
         copy_action = menu.addAction(self.tr("Copy Data"))
         copy_action.triggered.connect(
             lambda: self.copy_aoi_data(center, pixel_area, avg_info, aoi_index, image_idx=image_idx)
+        )
+
+        # Add find-similar action
+        similar_action = menu.addAction(self.tr("Find Similar AOIs"))
+        similar_action.setEnabled(aoi_index is not None and hasattr(self.parent, 'similarity_controller'))
+        similar_action.triggered.connect(
+            lambda: self.parent.similarity_controller.find_similar_for_selected(
+                image_idx=image_idx, aoi_idx=aoi_index)
         )
 
         # Get the current cursor position (global coordinates)
