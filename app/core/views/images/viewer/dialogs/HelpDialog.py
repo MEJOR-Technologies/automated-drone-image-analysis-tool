@@ -242,6 +242,21 @@ class HelpDialog(TranslationMixin, QDialog):
                         <td>Track selected AOI across neighboring images (shows where AOI appears in flight path)</td>
                     </tr>
                     <tr>
+                        <td>Shift + Z</td>
+                        <td>Find visually similar AOIs (ranks all other AOIs by color/size similarity to the selected AOI)</td>
+                        <td>S</td>
+                        <td>Toggle Grid Review Mode — sweep the image cell by cell at a fixed zoom.
+                            While active: Space marks the cell reviewed and advances (rolling into the
+                            next image), arrow keys move without marking, X toggles the current cell,
+                            Backspace steps back, Esc exits. Reviewed cells are saved with the results.
+                            (The grid does not appear in the north-oriented R view.)</td>
+                    </tr>
+                    <tr>
+                        <td>Shift + S</td>
+                        <td>Open Grid Review settings (grid size, auto-mark, 3×3 focus guide,
+                            GSD-based suggestion, and "apply this grid size to all images")</td>
+                    </tr>
+                    <tr>
                         <td>Shift + O</td>
                         <td>Override altitude for all images (manually set custom
                             AGL altitude for GSD calculations)</td>
@@ -482,6 +497,12 @@ class HelpDialog(TranslationMixin, QDialog):
                     <li>Press <b>R</b> to view images oriented to true north based on drone heading</li>
                     <li>Press <b>Z</b> to track a selected AOI across neighboring images
                         - useful for verifying if a detection appears in multiple overlapping shots</li>
+                    <li>Press <b>Shift+Z</b> (or right-click an AOI thumbnail and choose
+                        <b>Find Similar AOIs</b>) to rank all other AOIs by visual similarity
+                        - useful for finding other detections of the same object or material</li>
+                    <li>In the similar-AOI results, <b>check thumbnails</b> to select them, then
+                        use <b>Flag</b>, <b>Unflag</b>, or <b>Comment</b> to update all checked
+                        AOIs at once</li>
                 </ul>
             </div>
 
