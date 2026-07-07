@@ -244,6 +244,17 @@ class HelpDialog(TranslationMixin, QDialog):
                     <tr>
                         <td>Shift + Z</td>
                         <td>Find visually similar AOIs (ranks all other AOIs by color/size similarity to the selected AOI)</td>
+                        <td>S</td>
+                        <td>Toggle Grid Review Mode — sweep the image cell by cell at a fixed zoom.
+                            While active: Space marks the cell reviewed and advances (rolling into the
+                            next image), arrow keys move without marking, X toggles the current cell,
+                            Backspace steps back, Esc exits. Reviewed cells are saved with the results.
+                            (The grid does not appear in the north-oriented R view.)</td>
+                    </tr>
+                    <tr>
+                        <td>Shift + S</td>
+                        <td>Open Grid Review settings (grid size, auto-mark, 3×3 focus guide,
+                            GSD-based suggestion, and "apply this grid size to all images")</td>
                     </tr>
                     <tr>
                         <td>Shift + O</td>
