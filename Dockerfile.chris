@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/opt/adiat:/opt/adiat/app \
+    ADIAT_ANALYSIS_HARD_TIMEOUT_SECONDS=270
+
+WORKDIR /opt/adiat
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libglib2.0-0 libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-chris.txt .
+RUN pip install --no-cache-dir -r requirements-chris.txt
+
+COPY app ./app
+COPY chris_adiat_adapter ./chris_adiat_adapter
+
+RUN python -m chris_adiat_adapter.cli self-test
+
+CMD ["dask-worker", "tcp://dask-scheduler:8786", "--name", "adiat-gpl-worker", "--resources", "adiat_analysis=1", "--nworkers", "1", "--nthreads", "1", "--memory-limit", "0"]
