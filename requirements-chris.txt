@@ -1,0 +1,11 @@
+dask[distributed]
+boto3
+opencv-python-headless
+numpy
+scipy==1.15.3
+spectral
+pillow
+tifffile
+PyExifTool
+piexif
+pandas
