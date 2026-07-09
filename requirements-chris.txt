@@ -9,3 +9,5 @@ tifffile
 PyExifTool
 piexif
 pandas
+PySide6
+qimage2ndarray
