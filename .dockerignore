@@ -1,0 +1,9 @@
+.git
+.venv
+__pycache__
+*.pyc
+app/tests
+resources
+translations
+*.spec
+app/algorithms/images/AIPersonDetector/services/*.onnx
