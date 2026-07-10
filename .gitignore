@@ -43,6 +43,8 @@ clean_*.py
 find_*.py
 get_*.py
 requirements-*.txt
+!requirements-chris.txt
+!requirements-chris-test.txt
 nul
 
 # Temporary and debug files

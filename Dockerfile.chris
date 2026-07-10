@@ -1,22 +1,49 @@
-FROM python:3.11-slim
+FROM python:3.12-slim@sha256:423ed6ab25b1921a477529254bfeeabf5855151dc2c3141699a1bfc852199fbf
+
+LABEL org.opencontainers.image.source="https://github.com/MEJOR-Technologies/automated-drone-image-analysis-tool" \
+    org.opencontainers.image.licenses="GPL-3.0-only"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/opt/adiat:/opt/adiat/app \
-    ADIAT_ANALYSIS_HARD_TIMEOUT_SECONDS=270
+    ADIAT_SOURCE_TIMEOUT_SECONDS=270 \
+    ADIAT_MAX_SOURCE_BYTES=268435456 \
+    ADIAT_MAX_IMAGE_PIXELS=60000000 \
+    ADIAT_MAX_OBSERVATIONS_PER_SOURCE=1000 \
+    ADIAT_MAX_OBSERVATIONS_PER_BATCH=5000 \
+    ADIAT_MAX_RESULT_BYTES=750000 \
+    ADIAT_MAX_DETECTED_PIXEL_SAMPLES=4096 \
+    ADIAT_MAX_CONTOUR_POINTS=64 \
+    ADIAT_BATCH_TIMEOUT_SECONDS=3600 \
+    ADIAT_CHILD_MEMORY_LIMIT_BYTES=5368709120 \
+    DASK_DISTRIBUTED__WORKER__DAEMON=false \
+    QT_QPA_PLATFORM=offscreen \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1
 
 WORKDIR /opt/adiat
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libglib2.0-0 libgomp1 \
+    && apt-get install -y --no-install-recommends \
+        libglib2.0-0 \
+        libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements-chris.txt .
-RUN pip install --no-cache-dir -r requirements-chris.txt
+RUN pip install --no-cache-dir --require-hashes -r requirements-chris.txt
 
+COPY LICENSE /licenses/GPL-3.0.txt
 COPY app ./app
 COPY chris_adiat_adapter ./chris_adiat_adapter
 
+RUN groupadd --system adiat \
+    && useradd --system --gid adiat --create-home --home-dir /home/adiat adiat \
+    && chown -R adiat:adiat /opt/adiat
+
+USER adiat:adiat
+
 RUN python -m chris_adiat_adapter.cli self-test
 
-CMD ["dask-worker", "tcp://dask-scheduler:8786", "--name", "adiat-gpl-worker", "--resources", "adiat_analysis=1", "--nworkers", "1", "--nthreads", "1", "--memory-limit", "0"]
+CMD ["dask-worker", "tcp://dask-scheduler:8786", "--resources", "adiat_analysis=1", "--nworkers", "1", "--nthreads", "1", "--worker-port", "8790", "--no-nanny", "--no-dashboard"]

@@ -34,6 +34,9 @@ class LoggerService:
             app_path = home_path + '/AppData/Roaming/ADIAT/'
             if not os.path.exists(app_path):
                 os.makedirs(app_path)
+        else:
+            app_path = os.path.join(os.path.expanduser("~"), ".adiat") + "/"
+            os.makedirs(app_path, exist_ok=True)
 
         log_path = app_path + 'adiat_logs.txt'
         self.logger = logging.getLogger(__name__)

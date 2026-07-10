@@ -1,12 +1,20 @@
+MAX_POLYGON_POINTS = 64
+
+
 def normalize_aoi(source, algorithm_name, aoi):
     metadata = source.get("metadata") or {}
+    contour_points = _contour_points(aoi)
     polygon = _polygon_from_aoi(aoi)
-    bbox = _bbox_from_polygon(polygon)
+    bbox = (
+        _bbox_from_points(contour_points)
+        if contour_points
+        else _bbox_from_polygon(polygon)
+    )
     center = _center_from_aoi(aoi, bbox)
 
     return {
         "source_media_id": source["media_id"],
-        "source_checksum": source.get("checksum"),
+        "source_checksum": source.get("checksum_sha256"),
         "algorithm": algorithm_name,
         "algorithm_version": None,
         "algorithm_options": {},
@@ -30,9 +38,16 @@ def normalize_aoi(source, algorithm_name, aoi):
 
 
 def _polygon_from_aoi(aoi):
-    contour = aoi.get("contour")
-    if contour:
-        return [[int(point[0]), int(point[1])] for point in contour]
+    points = _contour_points(aoi)
+    if points:
+        if len(points) > MAX_POLYGON_POINTS:
+            last_index = len(points) - 1
+            indices = [
+                round(index * last_index / (MAX_POLYGON_POINTS - 1))
+                for index in range(MAX_POLYGON_POINTS)
+            ]
+            points = [points[index] for index in indices]
+        return points
 
     pixels = aoi.get("detected_pixels") or []
     if pixels:
@@ -42,6 +57,16 @@ def _polygon_from_aoi(aoi):
     radius = int(aoi.get("radius") or 0)
     cx, cy = int(center[0]), int(center[1])
     return _polygon_from_bbox([cx - radius, cy - radius, radius * 2, radius * 2])
+
+
+def _contour_points(aoi):
+    contour = aoi.get("contour")
+    if not contour:
+        return []
+    points = [[int(point[0]), int(point[1])] for point in contour]
+    if len(points) > 1 and points[0] == points[-1]:
+        points = points[:-1]
+    return points
 
 
 def _bbox_from_polygon(polygon):
