@@ -8,6 +8,8 @@ from chris_adiat_adapter.analysis import (
     run_batch,
 )
 
+PROGRESS_TOPIC = "adiat-analysis-progress"
+
 
 def run(payload):
     if multiprocessing.current_process().daemon:
@@ -15,23 +17,43 @@ def run(payload):
             _isolation_failure(payload), _max_result_bytes()
         )
     started_at = time.time()
-    result = run_batch(payload)
+    worker = _dask_worker()
+    result = run_batch(payload, progress_callback=_progress_callback(worker))
     result.setdefault("metadata", {}).update(
-        _worker_metadata(started_at, time.time() - started_at)
+        _worker_metadata(started_at, time.time() - started_at, worker)
     )
     return _fit_response_to_byte_limit(result, _max_result_bytes())
 
 
-def _worker_metadata(started_at, duration_seconds):
+def _dask_worker():
+    try:
+        from distributed import get_worker
+
+        return get_worker()
+    except (ImportError, ValueError):
+        return None
+
+
+def _noop_progress(_event):
+    return None
+
+
+def _progress_callback(worker):
+    if worker is None:
+        return _noop_progress
+
+    def callback(event):
+        worker.log_event(PROGRESS_TOPIC, event)
+
+    return callback
+
+
+def _worker_metadata(started_at, duration_seconds, worker=None):
     metadata = {
         "worker_started_at_epoch": started_at,
         "worker_duration_seconds": duration_seconds,
     }
-    try:
-        from distributed import get_worker
-
-        worker = get_worker()
-    except (ImportError, ValueError):
+    if worker is None:
         return metadata
     metadata.update(
         {

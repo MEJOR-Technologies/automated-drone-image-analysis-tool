@@ -103,7 +103,9 @@ def test_batch_worker_reports_dask_worker_identity(monkeypatch):
 
     monkeypatch.setattr("distributed.get_worker", lambda: Worker())
     monkeypatch.setattr(
-        batch_worker, "run_batch", lambda payload: _empty_success(payload)
+        batch_worker,
+        "run_batch",
+        lambda payload, progress_callback=None: _empty_success(payload),
     )
 
     result = batch_worker.run(_payload("ok"))
@@ -112,6 +114,37 @@ def test_batch_worker_reports_dask_worker_identity(monkeypatch):
     assert result["metadata"]["worker_nthreads"] == 1
     assert result["metadata"]["worker_resources"] == {"adiat_analysis": 1.0}
     assert result["metadata"]["worker_duration_seconds"] >= 0
+
+
+def test_batch_worker_logs_progress_events_to_dask(monkeypatch):
+    class WorkerState:
+        total_resources = {"adiat_analysis": 1.0}
+
+    class Worker:
+        address = "tcp://worker-1:8790"
+        nthreads = 1
+        state = WorkerState()
+
+        def __init__(self):
+            self.events = []
+
+        def log_event(self, topic, event):
+            self.events.append((topic, event))
+
+    worker = Worker()
+    monkeypatch.setattr("distributed.get_worker", lambda: worker)
+
+    def fake_run_batch(payload, progress_callback=None):
+        progress_callback({"event": "source_terminal"})
+        return _empty_success(payload)
+
+    monkeypatch.setattr(batch_worker, "run_batch", fake_run_batch)
+
+    batch_worker.run(_payload("ok"))
+
+    assert worker.events == [
+        (batch_worker.PROGRESS_TOPIC, {"event": "source_terminal"})
+    ]
 
 
 def _empty_success(payload):
@@ -232,6 +265,78 @@ def test_run_batch_treats_zero_detections_as_success(tmp_path):
     ]
 
 
+def test_run_batch_counts_two_algorithms_as_one_completed_source(tmp_path):
+    events = []
+
+    result = run_batch(
+        _payload("image"),
+        source_loader=_load_source,
+        algorithm_runner=_run_algorithm_without_detections,
+        work_dir=str(tmp_path),
+        source_timeout_seconds=1,
+        progress_callback=events.append,
+    )
+
+    assert result["status"] == "succeeded"
+    assert events == [
+        {
+            "event": "source_terminal",
+            "task_id": "task-1",
+            "attempt_id": "attempt-1",
+            "sequence": 1,
+            "total_sources": 1,
+            "source_media_id": "image",
+            "source_checksum": "a" * 64,
+            "algorithms_expected": ["MRMap", "RXAnomaly"],
+            "algorithms_completed": ["MRMap", "RXAnomaly"],
+            "source_status": "succeeded",
+            "completed_sources": 1,
+            "failed_sources": 0,
+        }
+    ]
+
+
+def test_run_batch_counts_failed_algorithm_as_failed_source(tmp_path):
+    events = []
+
+    result = run_batch(
+        _payload("partial"),
+        source_loader=_load_source,
+        algorithm_runner=_run_partially_failing_algorithms,
+        work_dir=str(tmp_path),
+        source_timeout_seconds=1,
+        progress_callback=events.append,
+    )
+
+    assert result["status"] == "failed"
+    assert len(events) == 1
+    assert events[0]["algorithms_completed"] == ["MRMap"]
+    assert events[0]["source_status"] == "failed"
+    assert events[0]["completed_sources"] == 0
+    assert events[0]["failed_sources"] == 1
+
+
+def test_progress_callback_errors_do_not_fail_analysis(tmp_path):
+    events = []
+
+    def failing_callback(event):
+        events.append(event)
+        raise RuntimeError("progress sink unavailable")
+
+    result = run_batch(
+        _payload("image"),
+        source_loader=_load_source,
+        algorithm_runner=_run_algorithm_without_detections,
+        work_dir=str(tmp_path),
+        source_timeout_seconds=1,
+        progress_callback=failing_callback,
+    )
+
+    assert result["status"] == "succeeded"
+    assert len(events) == 1
+    assert result["details"]["processed_sources"]
+
+
 def test_run_batch_attests_only_successfully_completed_algorithms(tmp_path):
     result = run_batch(
         _payload("partial"),
@@ -331,13 +436,16 @@ def test_run_batch_executes_every_algorithm_when_observations_are_capped(
 
 
 def test_run_batch_enforces_whole_batch_deadline(tmp_path):
+    events = []
+
     result = run_batch(
         _payload("slow", "never-started"),
         source_loader=_load_source,
         algorithm_runner=_run_algorithm,
         work_dir=str(tmp_path),
         source_timeout_seconds=1,
-        batch_timeout_seconds=0.05,
+        batch_timeout_seconds=0.2,
+        progress_callback=events.append,
     )
 
     assert result["status"] == "failed"
@@ -348,6 +456,16 @@ def test_run_batch_enforces_whole_batch_deadline(tmp_path):
         "slow",
         "never-started",
     ]
+    assert [event["source_media_id"] for event in events] == [
+        "slow",
+        "never-started",
+    ]
+    assert events[0]["total_sources"] == 2
+    assert events[0]["completed_sources"] == 0
+    assert events[0]["failed_sources"] == 1
+    assert events[1]["sequence"] == 2
+    assert events[1]["completed_sources"] == 0
+    assert events[1]["failed_sources"] == 2
 
 
 def test_tiff_source_remains_immutable_across_both_algorithms(tmp_path):

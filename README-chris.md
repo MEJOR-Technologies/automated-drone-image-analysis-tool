@@ -51,6 +51,21 @@ dask-worker tcp://dask-scheduler:8786 \
 python -m chris_adiat_adapter.cli analyze --payload /path/to/payload.json
 ```
 
+## Live Progress
+
+During Dask execution, the worker emits `source_terminal` events on the
+`adiat-analysis-progress` scheduler topic. One event represents one source
+photo after every selected algorithm has reached a terminal outcome. Two
+algorithms over 28 photos therefore report 28 source units, not 56 detector
+operations.
+
+Events contain the fenced task/attempt identity, source identity and checksum,
+expected and completed algorithms, cumulative completed/failed source counts,
+and the total source count. Deadline-skipped photos emit failed terminal events,
+not completed events. Progress delivery is best effort and never changes
+the final result. CHRIS validates and persists accepted checkpoints; the final
+processed-source attestation remains authoritative.
+
 The worker runs on Python 3.12 with Dask/Distributed 2025.11.0. The
 `search_rescue` profile accepts projected RAW RGB sources using `MRMap` and
 `RXAnomaly`. Thermal, video, and live RTMP inputs are rejected.

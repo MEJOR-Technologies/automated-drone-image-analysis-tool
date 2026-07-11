@@ -32,6 +32,7 @@ def run_batch(
     work_dir=None,
     source_timeout_seconds=None,
     batch_timeout_seconds=None,
+    progress_callback=None,
 ):
     source_loader = source_loader or load_source
     algorithm_runner = algorithm_runner or run_adiat_algorithm
@@ -81,8 +82,13 @@ def run_batch(
     truncations = []
     successful_algorithm_runs = 0
     processed_source_count = 0
+    progress_sequence = 0
+    completed_sources = 0
+    failed_sources = 0
     batch_deadline = time.monotonic() + batch_timeout_seconds
     max_batch_observations = _max_observations_per_batch()
+    task_id = _bounded_text(payload.get("task_id"), 128)
+    attempt_id = _payload_attempt_id(payload)
 
     with _work_dir(work_dir) as batch_work_dir:
         sources = request["sources"]
@@ -94,10 +100,26 @@ def run_batch(
         for source_index, source in enumerate(sources):
             remaining_batch_seconds = batch_deadline - time.monotonic()
             if remaining_batch_seconds <= 0:
+                unprocessed_sources = sources[source_index:]
                 source_failures.extend(
                     _unprocessed_source_failures(
-                        sources[source_index:], "batch_timeout"
+                        unprocessed_sources, "batch_timeout"
                     )
+                )
+                (
+                    progress_sequence,
+                    completed_sources,
+                    failed_sources,
+                ) = _emit_unprocessed_source_terminals(
+                    progress_callback,
+                    task_id,
+                    attempt_id,
+                    len(sources),
+                    unprocessed_sources,
+                    algorithms,
+                    progress_sequence,
+                    completed_sources,
+                    failed_sources,
                 )
                 break
             effective_timeout = min(source_timeout_seconds, remaining_batch_seconds)
@@ -156,12 +178,45 @@ def run_batch(
                         "error": _bounded_error(isolated["error"]),
                     }
                 )
+                (
+                    progress_sequence,
+                    completed_sources,
+                    failed_sources,
+                ) = _emit_source_terminal(
+                    progress_callback,
+                    task_id,
+                    attempt_id,
+                    len(sources),
+                    source,
+                    algorithms,
+                    [],
+                    "failed",
+                    progress_sequence,
+                    completed_sources,
+                    failed_sources,
+                )
                 if failure_reason == "batch_timeout":
+                    unprocessed_sources = sources[source_index + 1 :]
                     source_failures.extend(
                         _unprocessed_source_failures(
-                            sources[source_index + 1 :],
+                            unprocessed_sources,
                             "batch_timeout",
                         )
+                    )
+                    (
+                        progress_sequence,
+                        completed_sources,
+                        failed_sources,
+                    ) = _emit_unprocessed_source_terminals(
+                        progress_callback,
+                        task_id,
+                        attempt_id,
+                        len(sources),
+                        unprocessed_sources,
+                        algorithms,
+                        progress_sequence,
+                        completed_sources,
+                        failed_sources,
                     )
                     break
                 continue
@@ -174,6 +229,34 @@ def run_batch(
             algorithm_failures.extend(source_result["algorithm_failures"])
             truncations.extend(source_result["truncations"])
             successful_algorithm_runs += source_result["successful_algorithm_runs"]
+            algorithms_completed = _completed_algorithms_for_progress(source_result)
+            source_status = (
+                "succeeded"
+                if (
+                    cleanup_error is None
+                    and not source_result.get("source_failures")
+                    and not source_result.get("algorithm_failures")
+                    and _all_algorithms_completed(algorithms, algorithms_completed)
+                )
+                else "failed"
+            )
+            (
+                progress_sequence,
+                completed_sources,
+                failed_sources,
+            ) = _emit_source_terminal(
+                progress_callback,
+                task_id,
+                attempt_id,
+                len(sources),
+                source,
+                algorithms,
+                algorithms_completed,
+                source_status,
+                progress_sequence,
+                completed_sources,
+                failed_sources,
+            )
 
     if source_failures or algorithm_failures:
         status = "failed"
@@ -362,6 +445,85 @@ def _unprocessed_source_failures(sources, reason):
         }
         for source in sources
     ]
+
+
+def _completed_algorithms_for_progress(source_result):
+    processed_sources = source_result.get("processed_sources") or []
+    if len(processed_sources) != 1:
+        return []
+    return list(processed_sources[0].get("algorithms_completed") or [])
+
+
+def _all_algorithms_completed(expected, completed):
+    return len(expected) == len(completed) and set(expected) == set(completed)
+
+
+def _emit_source_terminal(
+    progress_callback,
+    task_id,
+    attempt_id,
+    total_sources,
+    source,
+    algorithms_expected,
+    algorithms_completed,
+    source_status,
+    sequence,
+    completed_sources,
+    failed_sources,
+):
+    sequence += 1
+    if source_status == "succeeded":
+        completed_sources += 1
+    else:
+        failed_sources += 1
+    event = {
+        "event": "source_terminal",
+        "task_id": task_id,
+        "attempt_id": attempt_id,
+        "sequence": sequence,
+        "total_sources": total_sources,
+        "source_media_id": source["media_id"],
+        "source_checksum": source["checksum_sha256"],
+        "algorithms_expected": list(algorithms_expected),
+        "algorithms_completed": list(algorithms_completed),
+        "source_status": source_status,
+        "completed_sources": completed_sources,
+        "failed_sources": failed_sources,
+    }
+    try:
+        if progress_callback is not None:
+            progress_callback(event)
+    except Exception:
+        pass
+    return sequence, completed_sources, failed_sources
+
+
+def _emit_unprocessed_source_terminals(
+    progress_callback,
+    task_id,
+    attempt_id,
+    total_sources,
+    sources,
+    algorithms_expected,
+    sequence,
+    completed_sources,
+    failed_sources,
+):
+    for source in sources:
+        sequence, completed_sources, failed_sources = _emit_source_terminal(
+            progress_callback,
+            task_id,
+            attempt_id,
+            total_sources,
+            source,
+            algorithms_expected,
+            [],
+            "failed",
+            sequence,
+            completed_sources,
+            failed_sources,
+        )
+    return sequence, completed_sources, failed_sources
 
 
 def _with_actual_image_dimensions(source, image_path):
