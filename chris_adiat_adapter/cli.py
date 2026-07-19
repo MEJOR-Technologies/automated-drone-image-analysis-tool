@@ -31,7 +31,7 @@ def main(argv=None):
 
 
 def _run_self_test():
-    for algorithm_name in ("MRMap", "RXAnomaly"):
+    for algorithm_name in ("AIPersonDetector", "MRMap", "RXAnomaly"):
         _service_class_for_algorithm(algorithm_name)
 
     payload = {

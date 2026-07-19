@@ -18,8 +18,9 @@ M1 implementation status:
 - `Dockerfile.chris` builds the GPL worker image from this public repository.
 - `requirements-chris.txt` keeps worker runtime dependencies separate from desktop GUI packaging.
 - Initial supported profiles: `broad_scan` and `search_rescue`.
-- Initial supported algorithms: `MRMap` and `RXAnomaly`.
-- Thermal and AI-person detector inputs are rejected by this worker contract.
+- Supported RGB algorithms: `AIPersonDetector`, `MRMap`, and `RXAnomaly`.
+- Thermal RAW inputs use the thermal algorithms; AI-person detection runs
+  CPU-only against the bundled ONNX model.
 
 Production contract verified on 2026-07-10:
 
@@ -29,9 +30,11 @@ Production contract verified on 2026-07-10:
   thread, and uses no fixed worker name, so replicas register independently.
 - The private dispatcher skips its CHRIS-only trace wrapper for this external
   worker callable; no private CHRIS package is installed in the public image.
-- Only projected RAW RGB photos with valid SHA256 checksums are admitted.
-- The worker accepts at most 100 sources, 60,000,000 decoded pixels per source,
-  5,000 observations per batch, and a 3,600-second batch deadline.
+- Only projected RAW RGB photos and bounded thermal RAW rasters with valid
+  SHA256 checksums are admitted.
+- The worker accepts at most 100 sources and 60,000,000 decoded pixels per
+  source. It retains up to 100,000 observations per batch; the default deadline
+  scales with source count (`source_count * source_timeout + 900 seconds`).
 - Source algorithms run in killable child processes with a memory limit and
   per-source timeout. Input files are immutable and separate from outputs.
 - JPEG, DJI MPO-encoded JPEG, PNG, TIFF, and WebP inputs are accepted after
@@ -390,7 +393,7 @@ Known options from current sidecar:
 
 - MRMap: segments `16`, threshold `150`, window `30`, LAB color space
 - RXAnomaly: segments `16`, sensitivity `3`
-- AIPersonDetector: confidence `50`, CPU-only default
+- AIPersonDetector: confidence `50`, CPU-only default; requires `onnxruntime`
 
 Known issue:
 

@@ -1,7 +1,14 @@
 MAX_POLYGON_POINTS = 64
 
 
-def normalize_aoi(source, algorithm_name, aoi):
+def normalize_aoi(
+    source,
+    algorithm_name,
+    aoi,
+    *,
+    algorithm_options=None,
+    runtime_provenance=None,
+):
     metadata = source.get("metadata") or {}
     contour_points = _contour_points(aoi)
     polygon = _polygon_from_aoi(aoi)
@@ -12,12 +19,27 @@ def normalize_aoi(source, algorithm_name, aoi):
     )
     center = _center_from_aoi(aoi, bbox)
 
+    properties = {
+        "area": aoi.get("area"),
+        "radius": aoi.get("radius"),
+        "score_type": aoi.get("score_type"),
+        "raw_score": aoi.get("raw_score"),
+        "score_method": aoi.get("score_method"),
+    }
+    for key in ("minimum_c", "maximum_c", "mean_c"):
+        if key in aoi:
+            properties[key] = aoi.get(key)
+    if "mean_c" not in properties and "temperature" in aoi:
+        properties["mean_c"] = aoi.get("temperature")
+
+    provenance = dict(runtime_provenance or {})
     return {
         "source_media_id": source["media_id"],
         "source_checksum": source.get("checksum_sha256"),
         "algorithm": algorithm_name,
-        "algorithm_version": None,
-        "algorithm_options": {},
+        "algorithm_version": provenance.get("service_version"),
+        "algorithm_options": dict(algorithm_options or {}),
+        "runtime_provenance": provenance,
         "detection_class": "adiat_detection",
         "source_pixel_polygon": polygon,
         "source_pixel_bbox": bbox,
@@ -27,13 +49,7 @@ def normalize_aoi(source, algorithm_name, aoi):
         "map_geometry": None,
         "geometry_quality": "image_only",
         "score": aoi.get("confidence"),
-        "properties": {
-            "area": aoi.get("area"),
-            "radius": aoi.get("radius"),
-            "score_type": aoi.get("score_type"),
-            "raw_score": aoi.get("raw_score"),
-            "score_method": aoi.get("score_method"),
-        },
+        "properties": properties,
     }
 
 

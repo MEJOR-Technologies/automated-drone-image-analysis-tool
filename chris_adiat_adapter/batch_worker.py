@@ -4,6 +4,8 @@ import time
 from chris_adiat_adapter import __version__
 from chris_adiat_adapter.analysis import (
     _fit_response_to_byte_limit,
+    _max_observations_per_batch,
+    _max_observations_per_source,
     _max_result_bytes,
     run_batch,
 )
@@ -18,11 +20,29 @@ def run(payload):
         )
     started_at = time.time()
     worker = _dask_worker()
-    result = run_batch(payload, progress_callback=_progress_callback(worker))
-    result.setdefault("metadata", {}).update(
-        _worker_metadata(started_at, time.time() - started_at, worker)
+    # Kafka transport is compressed by the CHRIS dispatcher. Keep every
+    # observation here so multi-flight runs do not become partial merely because
+    # their uncompressed JSON exceeds the legacy inline message budget.
+    result = run_batch(
+        payload,
+        progress_callback=_progress_callback(worker),
+        apply_result_byte_limit=False,
     )
-    return _fit_response_to_byte_limit(result, _max_result_bytes())
+    result.setdefault("metadata", {}).update(
+        _worker_metadata(
+            started_at,
+            time.time() - started_at,
+            worker,
+            parquet_persistence=_uses_parquet_persistence(payload),
+        )
+    )
+    return result
+
+
+def _uses_parquet_persistence(payload):
+    request = payload.get("request") if isinstance(payload, dict) else None
+    persistence = request.get("persistence") if isinstance(request, dict) else None
+    return isinstance(persistence, dict) and persistence.get("mode") == "parquet"
 
 
 def _dask_worker():
@@ -48,10 +68,22 @@ def _progress_callback(worker):
     return callback
 
 
-def _worker_metadata(started_at, duration_seconds, worker=None):
+def _worker_metadata(
+    started_at,
+    duration_seconds,
+    worker=None,
+    *,
+    parquet_persistence=False,
+):
     metadata = {
         "worker_started_at_epoch": started_at,
         "worker_duration_seconds": duration_seconds,
+        "result_transport": "parquet" if parquet_persistence else "source_chunks",
+        "observations_streamed": not parquet_persistence,
+        "result_byte_limit_applied": False,
+        "max_observations_per_source": _max_observations_per_source(),
+        "max_observations_per_batch": _max_observations_per_batch(),
+        "max_result_bytes": _max_result_bytes(),
     }
     if worker is None:
         return metadata

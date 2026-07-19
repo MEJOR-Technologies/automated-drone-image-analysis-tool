@@ -6,4 +6,3 @@ app/tests
 resources
 translations
 *.spec
-app/algorithms/images/AIPersonDetector/services/*.onnx

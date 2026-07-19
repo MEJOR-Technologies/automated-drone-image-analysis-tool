@@ -12,7 +12,13 @@ DEFAULT_MAX_IMAGE_PIXELS = 60_000_000
 READ_CHUNK_BYTES = 1024 * 1024
 SHA256_PATTERN = re.compile(r"^(?:sha256:)?([0-9a-fA-F]{64})$")
 SUPPORTED_CONTENT_TYPES = frozenset(
-    {"image/jpeg", "image/png", "image/tiff", "image/webp"}
+    {
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "image/webp",
+        "application/octet-stream",
+    }
 )
 DETECTED_FORMAT_CONTENT_TYPES = {
     "JPEG": "image/jpeg",
@@ -154,6 +160,11 @@ def _max_source_bytes(value):
 
 
 def _validate_image(local_path, declared_content_type):
+    # DJI/FLIR thermal raw derivatives are bounded binary temperature rasters,
+    # not displayable image files. The thermal adapter validates their shape
+    # and decodes them before running a detector.
+    if declared_content_type == "application/octet-stream":
+        return
     try:
         with Image.open(local_path) as image:
             width, height = image.size

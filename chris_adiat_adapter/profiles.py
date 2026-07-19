@@ -1,5 +1,5 @@
 PROFILE_ALGORITHMS = {
-    "search_rescue": ["MRMap", "RXAnomaly"],
+    "search_rescue": ["AIPersonDetector", "MRMap", "RXAnomaly"],
 }
 
 

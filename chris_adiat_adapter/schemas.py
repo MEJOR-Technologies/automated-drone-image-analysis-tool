@@ -6,7 +6,17 @@ class PayloadValidationError(ValueError):
     """Raised when a CHRIS ADIAT task payload is not executable."""
 
 
-SUPPORTED_ALGORITHMS = frozenset({"MRMap", "RXAnomaly"})
+SUPPORTED_ALGORITHMS = frozenset(
+    {
+        "AIPersonDetector",
+        "MRMap",
+        "RXAnomaly",
+        "ThermalResidualAnomaly",
+        "ThermalAnomaly",
+        "ThermalRange",
+        "HSVColorRange",
+    }
+)
 SUPPORTED_PROFILE = "search_rescue"
 MAX_SOURCES_PER_BATCH = 100
 MAX_ALGORITHMS_PER_REQUEST = len(SUPPORTED_ALGORITHMS)
@@ -14,9 +24,16 @@ MAX_TASK_ID_LENGTH = 128
 MAX_MEDIA_ID_LENGTH = 256
 MAX_BUCKET_LENGTH = 63
 MAX_OBJECT_KEY_LENGTH = 1024
+MAX_CONTENT_TYPE_LENGTH = 128
 SHA256_PATTERN = re.compile(r"^(?:sha256:)?[0-9a-fA-F]{64}$")
 SUPPORTED_CONTENT_TYPES = frozenset(
-    {"image/jpeg", "image/png", "image/tiff", "image/webp"}
+    {
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "image/webp",
+        "application/octet-stream",
+    }
 )
 FORBIDDEN_SOURCE_SECRET_FIELDS = frozenset(
     {
@@ -91,17 +108,27 @@ def validate_payload(payload):
                 f"request.sources[{index}] must not contain storage credentials"
             )
 
-        if str(source.get("sensor_type") or "").lower() != "rgb":
+        sensor_type = str(source.get("sensor_type") or "").lower()
+        if sensor_type not in {"rgb", "thermal"}:
             raise PayloadValidationError(
-                f"request.sources[{index}] must be an RGB source"
+                f"request.sources[{index}] must be an RGB or thermal source"
             )
         if str(source.get("media_type") or "").lower() != "raw":
             raise PayloadValidationError(
                 f"request.sources[{index}] must reference original raw media"
             )
-        if str(source.get("content_type") or "").lower() not in SUPPORTED_CONTENT_TYPES:
+        content_type = str(source.get("content_type") or "").lower()
+        if content_type not in SUPPORTED_CONTENT_TYPES:
             raise PayloadValidationError(
                 f"request.sources[{index}] must be a supported photo source"
+            )
+        if sensor_type == "thermal" and content_type != "application/octet-stream":
+            raise PayloadValidationError(
+                f"request.sources[{index}] must use application/octet-stream for thermal raw media"
+            )
+        if sensor_type == "rgb" and content_type == "application/octet-stream":
+            raise PayloadValidationError(
+                f"request.sources[{index}] must use an image content type for RGB media"
             )
         _validate_projection_footprint(source.get("projection_footprint"), index)
 
@@ -118,7 +145,92 @@ def validate_payload(payload):
             MAX_OBJECT_KEY_LENGTH,
         )
 
+    _validate_persistence(payload, request, sources, algorithms)
+
     return payload
+
+
+def _validate_persistence(payload, request, sources, algorithms):
+    persistence = request.get("persistence")
+    if persistence is None:
+        return
+    if not isinstance(persistence, dict):
+        raise PayloadValidationError("request.persistence must be an object")
+    mode = persistence.get("mode")
+    if mode == "postgres":
+        return
+    if mode != "parquet":
+        raise PayloadValidationError("request.persistence.mode must be postgres or parquet")
+    if len(sources) != 1 or not isinstance(algorithms, list) or len(algorithms) != 1:
+        raise PayloadValidationError(
+            "parquet persistence requires exactly one source and one algorithm"
+        )
+    for field in ("contract_version", "artifact_schema_version"):
+        if not isinstance(persistence.get(field), int) or persistence[field] < 1:
+            raise PayloadValidationError(f"request.persistence.{field} must be positive")
+    _validate_identifier(
+        persistence.get("bucket"), "request.persistence.bucket", MAX_BUCKET_LENGTH
+    )
+    for field in (
+        "canonical_object_key",
+        "attempt_object_key",
+        "manifest_object_key",
+    ):
+        _validate_identifier(
+            persistence.get(field),
+            f"request.persistence.{field}",
+            MAX_OBJECT_KEY_LENGTH,
+        )
+    _validate_identifier(
+        persistence.get("content_type"),
+        "request.persistence.content_type",
+        MAX_CONTENT_TYPE_LENGTH,
+    )
+    if persistence.get("content_type") != "application/vnd.apache.parquet":
+        raise PayloadValidationError(
+            "request.persistence.content_type must be application/vnd.apache.parquet"
+        )
+    if persistence.get("immutable") is not True:
+        raise PayloadValidationError("request.persistence.immutable must be true")
+    _validate_legacy_xml_export(persistence)
+    metadata = payload.get("metadata")
+    if not isinstance(metadata, dict):
+        raise PayloadValidationError("metadata is required for parquet persistence")
+    _validate_identifier(
+        metadata.get("attempt_id"), "metadata.attempt_id", MAX_TASK_ID_LENGTH
+    )
+
+
+def _validate_legacy_xml_export(persistence):
+    config = persistence.get("legacy_xml")
+    if config is None:
+        return
+    if not isinstance(config, dict):
+        raise PayloadValidationError(
+            "request.persistence.legacy_xml must be an object"
+        )
+    enabled = config.get("enabled")
+    if not isinstance(enabled, bool):
+        raise PayloadValidationError(
+            "request.persistence.legacy_xml.enabled must be a boolean"
+        )
+    if not enabled:
+        return
+    for field in ("canonical_object_key", "attempt_object_key"):
+        _validate_identifier(
+            config.get(field),
+            f"request.persistence.legacy_xml.{field}",
+            MAX_OBJECT_KEY_LENGTH,
+        )
+    content_type = config.get("content_type", "application/xml")
+    if content_type != "application/xml":
+        raise PayloadValidationError(
+            "request.persistence.legacy_xml.content_type must be application/xml"
+        )
+    if config.get("immutable") is not True:
+        raise PayloadValidationError(
+            "request.persistence.legacy_xml.immutable must be true"
+        )
 
 
 def _validate_identifier(value, field, max_length):

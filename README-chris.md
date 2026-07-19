@@ -53,26 +53,32 @@ python -m chris_adiat_adapter.cli analyze --payload /path/to/payload.json
 
 ## Live Progress
 
-During Dask execution, the worker emits `source_terminal` events on the
-`adiat-analysis-progress` scheduler topic. One event represents one source
-photo after every selected algorithm has reached a terminal outcome. Two
-algorithms over 28 photos therefore report 28 source units, not 56 detector
-operations.
+During Dask execution, the worker emits `algorithm_started` before each
+detector begins, `algorithm_terminal` after it finishes, and `source_terminal`
+after every selected algorithm reaches a terminal outcome for that photo. The
+events include measured detector durations so CHRIS can estimate smooth motion
+within the active detector stage. Two algorithms over 28 photos therefore
+expose 56 detector markers while retaining 28 authoritative source-completion
+units.
 
 Events contain the fenced task/attempt identity, source identity and checksum,
-expected and completed algorithms, cumulative completed/failed source counts,
-and the total source count. Deadline-skipped photos emit failed terminal events,
-not completed events. Progress delivery is best effort and never changes
-the final result. CHRIS validates and persists accepted checkpoints; the final
+expected, processed, and completed algorithms, cumulative detector and source
+counts, and their totals. Deadline-skipped photos emit failed terminal events,
+not completed events. Progress delivery is best effort and never changes the
+final result. CHRIS validates and persists accepted checkpoints; the final
 processed-source attestation remains authoritative.
 
 The worker runs on Python 3.12 with Dask/Distributed 2025.11.0. The
-`search_rescue` profile accepts projected RAW RGB sources using `MRMap` and
-`RXAnomaly`. Thermal, video, and live RTMP inputs are rejected.
+`search_rescue` profile accepts projected RAW RGB sources using
+`AIPersonDetector`, `MRMap`, and `RXAnomaly`, plus bounded thermal RAW sources
+using the thermal algorithms. Video and live RTMP inputs are rejected.
 
 Runtime limits are 100 sources per batch, 60,000,000 decoded pixels per source,
-4,096 detected-pixel samples and 64 contour points per AOI, 5,000 returned
-observations, a 3,600-second batch deadline, and one active task per container.
+4,096 detected-pixel samples and 64 contour points per AOI, 1,000 retained
+observations per detector per source photo, a 100,000-observation diagnostic
+batch ceiling, a source-count-derived batch deadline, and one active task per
+container. The Dask dispatcher gzip-compresses large inline results before
+publishing them to Kafka.
 Source objects require a valid SHA256 checksum and are fetched
 read-only from S3 or MinIO. JPEG, DJI MPO-encoded JPEG, PNG, TIFF, and WebP are
 supported.
