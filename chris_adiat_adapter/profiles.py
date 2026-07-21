@@ -1,6 +1,5 @@
 PROFILE_ALGORITHMS = {
-    "broad_scan": ["MRMap"],
-    "search_rescue": ["MRMap", "RXAnomaly"],
+    "search_rescue": ["AIPersonDetector", "MRMap", "RXAnomaly"],
 }
 
 

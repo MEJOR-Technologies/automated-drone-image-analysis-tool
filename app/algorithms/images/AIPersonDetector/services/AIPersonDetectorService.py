@@ -1,7 +1,9 @@
 import cv2
+import hashlib
 import numpy as np
 import sys
 import os
+import threading
 from os import path
 
 # Optional import for onnxruntime - handle DLL load failures gracefully
@@ -104,6 +106,8 @@ class AIPersonDetectorService(AlgorithmService):
             detected people as areas of interest.
         """
         session = self._create_onnx_session()
+        providers = session.get_providers() if hasattr(session, "get_providers") else []
+        self.actual_provider = str(providers[0]) if providers else None
         input_name = session.get_inputs()[0].name
 
         try:
@@ -130,16 +134,38 @@ class AIPersonDetectorService(AlgorithmService):
 
             # --- MASK LOGIC ---
             mask = np.zeros(img.shape[:2], dtype=np.uint8)
+            qualified_bboxes = []
 
             for bbox in merged_bboxes:
                 x_min, y_min, x_max, y_max, conf, cls = bbox
-                if conf >= self.confidence:
+                # Zero confidence is the model's empty/padded output, not a
+                # detection. Keep every positive result when the operator sets
+                # the review threshold to zero, but never serialize sentinels.
+                if conf > 0 and conf >= self.confidence:
+                    qualified_bboxes.append(bbox)
                     # Fill the bounding box area with white (255)
                     mask[y_min:y_max, x_min:x_max] = 255
 
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            if self.combine_aois:
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            else:
+                # Keep each model box as its own observation, even when boxes
+                # overlap in the rendered mask.
+                contours = [
+                    np.array(
+                        [
+                            [[bbox[0], bbox[1]]],
+                            [[bbox[2], bbox[1]]],
+                            [[bbox[2], bbox[3]]],
+                            [[bbox[0], bbox[3]]],
+                        ],
+                        dtype=np.int32,
+                    )
+                    for bbox in qualified_bboxes
+                ]
 
             areas_of_interest, base_contour_count = self.identify_areas_of_interest(img.shape, contours)
+            areas_of_interest = self._attach_model_confidences(areas_of_interest, merged_bboxes)
             output_path = self._construct_output_path(full_path, input_dir, output_dir)
 
             # Store mask instead of duplicating image
@@ -152,6 +178,64 @@ class AIPersonDetectorService(AlgorithmService):
         except Exception as e:
             self.logger.error(f"Error processing image {full_path}: {e}")
             return AnalysisResult(full_path, error_message=str(e))
+
+    @staticmethod
+    def _attach_model_confidences(areas_of_interest, merged_bboxes):
+        """Attach each retained AOI's model confidence to the serialized result.
+
+        The contour stage intentionally keeps the geometry independent from the
+        detector boxes. Match each contour center back to its box so the adapter
+        can persist the confidence instead of returning a null score.
+        """
+        if not areas_of_interest or not merged_bboxes:
+            return areas_of_interest
+
+        valid_boxes = []
+        for bbox in merged_bboxes:
+            if len(bbox) < 5:
+                continue
+            try:
+                x1, y1, x2, y2, confidence = (float(value) for value in bbox[:5])
+            except (TypeError, ValueError):
+                continue
+            valid_boxes.append((x1, y1, x2, y2, confidence))
+
+        if not valid_boxes:
+            return areas_of_interest
+
+        for area in areas_of_interest:
+            center = area.get("center") if isinstance(area, dict) else None
+            if not center or len(center) < 2:
+                continue
+            try:
+                center_x, center_y = float(center[0]), float(center[1])
+            except (TypeError, ValueError):
+                continue
+
+            matching_boxes = [
+                box
+                for box in valid_boxes
+                if box[0] <= center_x <= box[2] and box[1] <= center_y <= box[3]
+            ]
+            if not matching_boxes:
+                matching_boxes = [
+                    min(
+                        valid_boxes,
+                        key=lambda box: (
+                            ((box[0] + box[2]) / 2 - center_x) ** 2
+                            + ((box[1] + box[3]) / 2 - center_y) ** 2
+                        ),
+                    )
+                ]
+
+            model_confidence = max(box[4] for box in matching_boxes)
+            model_confidence = max(0.0, min(1.0, model_confidence))
+            area["confidence"] = round(model_confidence * 100, 4)
+            area["raw_score"] = model_confidence
+            area["score_type"] = "model_confidence"
+            area["score_method"] = "AIPersonDetector"
+
+        return areas_of_interest
 
     def _preprocess_whole_image(self, img):
         """Convert BGR image to RGB and normalize to [0, 1] float32.
@@ -217,6 +301,29 @@ class AIPersonDetectorService(AlgorithmService):
         Returns:
             Loaded ONNX model session (onnxruntime.InferenceSession).
         """
+        requested_providers = (
+            ("CPUExecutionProvider",)
+            if self.cpu_only
+            else ("DmlExecutionProvider", "CPUExecutionProvider")
+        )
+        cache_key = (
+            os.path.realpath(self.model_path),
+            requested_providers,
+            "ORT_SEQUENTIAL",
+            "ORT_ENABLE_ALL",
+            False,
+            True,
+            False,
+            1,
+        )
+        with self._session_cache_lock:
+            session = self._session_cache.get(cache_key)
+            if session is None:
+                session = self._build_onnx_session(requested_providers)
+                self._session_cache[cache_key] = session
+        return session
+
+    def _build_onnx_session(self, requested_providers):
         so = ort.SessionOptions()
         so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
@@ -225,20 +332,17 @@ class AIPersonDetectorService(AlgorithmService):
         so.enable_profiling = False
         so.intra_op_num_threads = 1
 
-        providers_cuda_first = ["DmlExecutionProvider", "CPUExecutionProvider"]
-
-        providers_cpu_only = ["CPUExecutionProvider"]
         if self.cpu_only:
             return ort.InferenceSession(
                 self.model_path,
                 sess_options=so,
-                providers=providers_cpu_only
+                providers=list(requested_providers),
             )
         try:
             return ort.InferenceSession(
                 self.model_path,
                 sess_options=so,
-                providers=providers_cuda_first
+                providers=list(requested_providers),
             )
         except Exception as e:
             self.logger.warning(f"DmlExecutionProvider failed: {e}")
@@ -246,8 +350,31 @@ class AIPersonDetectorService(AlgorithmService):
                 return ort.InferenceSession(
                     self.model_path,
                     sess_options=so,
-                    providers=providers_cpu_only
+                    providers=["CPUExecutionProvider"],
                 )
             except Exception as cpu_e:
                 self.logger.error(f"Failed to load model even with CPUExecutionProvider: {cpu_e}")
                 raise RuntimeError("ONNX model could not be loaded with any provider.")
+
+    def runtime_provenance(self):
+        """Return the effective inference runtime used by the latest call."""
+        model_path = os.path.realpath(self.model_path)
+        with self._session_cache_lock:
+            model_sha256 = self._model_sha256_cache.get(model_path)
+            if model_sha256 is None:
+                digest = hashlib.sha256()
+                with open(model_path, "rb") as model_file:
+                    for chunk in iter(lambda: model_file.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                model_sha256 = digest.hexdigest()
+                self._model_sha256_cache[model_path] = model_sha256
+        return {
+            "service_version": self.SERVICE_VERSION,
+            "ai_model_filename": os.path.basename(model_path),
+            "ai_model_sha256": model_sha256,
+            "actual_provider": getattr(self, "actual_provider", None),
+        }
+    SERVICE_VERSION = "1"
+    _session_cache = {}
+    _model_sha256_cache = {}
+    _session_cache_lock = threading.RLock()

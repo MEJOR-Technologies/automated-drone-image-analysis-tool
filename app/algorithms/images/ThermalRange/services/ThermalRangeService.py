@@ -2,7 +2,11 @@ import numpy as np
 import cv2
 from algorithms.AlgorithmService import AlgorithmService, AnalysisResult
 from core.services.LoggerService import LoggerService
-from core.services.thermal.ThermalParserService import ThermalParserService
+
+try:
+    from core.services.thermal.ThermalParserService import ThermalParserService
+except ImportError:
+    ThermalParserService = None
 
 
 class ThermalRangeService(AlgorithmService):
@@ -51,8 +55,13 @@ class ThermalRangeService(AlgorithmService):
         """
         try:
             # Create an instance of ThermalParserService and parse the thermal image.
-            thermal = ThermalParserService(dtype=np.float32)
-            temperature_c, thermal_img = thermal.parse_file(full_path)
+            temperature_c = getattr(self, '_temperature_c_override', None)
+            if temperature_c is None:
+                if ThermalParserService is None:
+                    raise RuntimeError("thermal parser dependencies are unavailable")
+
+                thermal = ThermalParserService(dtype=np.float32)
+                temperature_c, _thermal_img = thermal.parse_file(full_path)
 
             # Create a mask to identify areas within the specified temperature range.
             mask = np.uint8(1 * ((temperature_c > self.min_temp) & (temperature_c < self.max_temp)))
@@ -67,7 +76,7 @@ class ThermalRangeService(AlgorithmService):
             # Extract average temperature from detected pixels for each AOI
             # Note: This must happen BEFORE coordinate scaling since pixels are in thermal space
             temps_extracted = 0
-            if areas_of_interest:
+            if areas_of_interest and getattr(self, '_persist_raster_mask', True):
                 for aoi in areas_of_interest:
                     detected_pixels = aoi.get('detected_pixels', [])
 
@@ -146,3 +155,26 @@ class ThermalRangeService(AlgorithmService):
             # Log and return an error if processing fails.
             self.logger.error(f"Error processing image {full_path}: {e}")
             return AnalysisResult(full_path, error_message=str(e))
+    SERVICE_VERSION = "1"
+
+    def process_temperature_raster(
+        self,
+        temperature_c,
+        *,
+        img=None,
+        full_path="thermal.raw",
+        input_dir=".",
+        output_dir=".",
+        persist_mask=False,
+    ):
+        """Run native range semantics over an already-parsed Celsius raster."""
+        temperature_c = np.asarray(temperature_c, dtype=np.float32)
+        if img is None:
+            img = np.zeros((*temperature_c.shape, 3), dtype=np.uint8)
+        self._temperature_c_override = temperature_c
+        self._persist_raster_mask = persist_mask
+        try:
+            return self.process_image(img, full_path, input_dir, output_dir)
+        finally:
+            del self._temperature_c_override
+            del self._persist_raster_mask

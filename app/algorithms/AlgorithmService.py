@@ -2,20 +2,22 @@ import numpy as np
 import cv2
 import os
 import math
-import shutil
-import json
-import zlib
-import base64
 import tifffile
 from pathlib import Path
-from PIL import Image
-from PIL.PngImagePlugin import PngInfo
-from helpers.MetaDataHelper import MetaDataHelper
-
-from core.services.cache.ThumbnailCacheService import ThumbnailCacheService
-from core.services.cache.ColorCacheService import ColorCacheService
-from core.services.cache.TemperatureCacheService import TemperatureCacheService
 from core.services.LoggerService import LoggerService
+
+
+def _contour_center_key(contour):
+    (x, y), _ = cv2.minEnclosingCircle(contour)
+    return int(y), int(x)
+
+
+class BoundedAreasOfInterest(list):
+    """AOIs retained under a generation cap, with the full available count."""
+
+    def __init__(self):
+        super().__init__()
+        self.available_count = 0
 
 
 class AlgorithmService:
@@ -45,6 +47,9 @@ class AlgorithmService:
         self.options = options
         self.is_thermal = is_thermal
         self.scale_factor = 1.0  # Default: no scaling
+        self.max_detected_pixels = None
+        self.max_areas_of_interest = None
+        self.max_contour_points = None
 
     def set_scale_factor(self, scale_factor):
         """
@@ -118,6 +123,54 @@ class AlgorithmService:
         coords = np.argwhere(mask > 0)
         return coords[:, [1, 0]]
 
+    def detected_pixels_for_aoi(self, mask):
+        """Return detected pixels, optionally sampled for bounded worker use."""
+        area = int(cv2.countNonZero(mask))
+        limit = getattr(self, 'max_detected_pixels', None)
+        if limit is None or area <= limit:
+            detected_pixels = np.argwhere(mask > 0)
+            return detected_pixels[:, [1, 0]].tolist(), area
+        if limit <= 0 or area == 0:
+            return [], area
+
+        sample_count = min(area, int(limit))
+        target_ranks = np.linspace(
+            0,
+            area - 1,
+            sample_count,
+            dtype=np.int64,
+        )
+        row_counts = np.count_nonzero(mask, axis=1).astype(np.int64, copy=False)
+        row_ends = np.cumsum(row_counts, dtype=np.int64)
+        sampled_rows = np.searchsorted(row_ends, target_ranks, side='right')
+        row_starts = row_ends[sampled_rows] - row_counts[sampled_rows]
+        offsets = target_ranks - row_starts
+
+        detected_pixels = []
+        for row in np.unique(sampled_rows):
+            row_targets = offsets[sampled_rows == row]
+            hit_columns = np.flatnonzero(mask[row] > 0)
+            detected_pixels.extend(
+                [int(hit_columns[offset]), int(row)] for offset in row_targets
+            )
+        return detected_pixels, area
+
+    def contour_points_for_aoi(self, contour):
+        """Return contour points, optionally sampled for bounded worker use."""
+        contour_points = contour.reshape(-1, 2)
+        limit = getattr(self, 'max_contour_points', None)
+        if limit is None or len(contour_points) <= limit:
+            return contour_points.tolist()
+        if limit <= 0:
+            return []
+        indices = np.linspace(
+            0,
+            len(contour_points) - 1,
+            int(limit),
+            dtype=np.int64,
+        )
+        return contour_points[indices].tolist()
+
     def identify_areas_of_interest(self, img_or_shape, contours):
         """
         Calculates areas of interest from contours without modifying the input image.
@@ -144,15 +197,29 @@ class AlgorithmService:
             # Fallback: try tuple conversion then slice
             h_w = tuple(img_or_shape)[:2]
             height, width = int(h_w[0]), int(h_w[1])
-        areas_of_interest = []
+        aoi_limit = getattr(self, 'max_areas_of_interest', None)
+        if aoi_limit is None:
+            areas_of_interest = []
+        else:
+            aoi_limit = max(int(aoi_limit), 0)
+            areas_of_interest = BoundedAreasOfInterest()
         temp_mask = np.zeros((height, width), dtype=np.uint8)
         base_contour_count = 0
+        available_aoi_count = 0
 
         # Store original detected pixels for each valid contour
         original_pixels_mask = np.zeros((height, width), dtype=np.uint8)
 
+        # Worker caps retain the same top-to-bottom ordering as the full desktop list.
+        contours_to_process = contours
+        if aoi_limit is not None and not self.combine_aois:
+            contours_to_process = sorted(
+                contours,
+                key=_contour_center_key,
+            )
+
         # First pass: filter contours and optionally mark them for combining
-        for cnt in contours:
+        for cnt in contours_to_process:
             mask = np.zeros((height, width), dtype=np.uint8)
             cv2.drawContours(mask, [cnt], -1, 255, thickness=-1)
             contour_area = cv2.countNonZero(mask)
@@ -163,22 +230,20 @@ class AlgorithmService:
                 radius = int(radius) + self.aoi_radius
                 base_contour_count += 1
 
-                # Add to mask for later combining
-                cv2.circle(temp_mask, center, radius, 255, -1)
+                if self.combine_aois:
+                    # Add to mask for later combining
+                    cv2.circle(temp_mask, center, radius, 255, -1)
 
-                # Also keep track of original pixels
-                original_pixels_mask = cv2.bitwise_or(original_pixels_mask, mask)
-
-                if not self.combine_aois:
+                    # Also keep track of original pixels
+                    original_pixels_mask = cv2.bitwise_or(original_pixels_mask, mask)
+                else:
+                    available_aoi_count += 1
+                    if aoi_limit is not None and len(areas_of_interest) >= aoi_limit:
+                        continue
                     # Store the contour points for drawing the boundary
-                    contour_points = cnt.reshape(-1, 2).tolist()
+                    contour_points = self.contour_points_for_aoi(cnt)
 
-                    # Get the detected pixels for this AOI
-                    detected_pixels = np.argwhere(mask > 0)
-                    detected_pixels_list = detected_pixels[:, [1, 0]].tolist() if len(detected_pixels) > 0 else []
-
-                    # Use actual detected pixel count for area
-                    area = len(detected_pixels_list)
+                    detected_pixels_list, area = self.detected_pixels_for_aoi(mask)
 
                     areas_of_interest.append({
                         'center': center,
@@ -202,22 +267,26 @@ class AlgorithmService:
                     break
                 contours = new_contours
 
-            for cnt in contours:
+            available_aoi_count = len(contours)
+            retained_contours = contours
+            if aoi_limit is not None:
+                retained_contours = sorted(
+                    contours,
+                    key=_contour_center_key,
+                )[:aoi_limit]
+
+            for cnt in retained_contours:
                 mask = np.zeros((height, width), dtype=np.uint8)
                 cv2.drawContours(mask, [cnt], -1, 255, thickness=-1)
                 (x, y), radius = cv2.minEnclosingCircle(cnt)
                 center = (int(x), int(y))
                 radius = int(radius)
                 # Store the contour points for drawing the boundary
-                contour_points = cnt.reshape(-1, 2).tolist()
+                contour_points = self.contour_points_for_aoi(cnt)
 
                 # Get the original detected pixels that belong to this combined AOI
                 aoi_pixels_mask = cv2.bitwise_and(original_pixels_mask, mask)
-                aoi_pixels = np.argwhere(aoi_pixels_mask > 0)
-                aoi_pixels_list = aoi_pixels[:, [1, 0]].tolist() if len(aoi_pixels) > 0 else []
-
-                # Use actual detected pixel count, not the expanded circle area
-                area = len(aoi_pixels_list)
+                aoi_pixels_list, area = self.detected_pixels_for_aoi(aoi_pixels_mask)
 
                 areas_of_interest.append({
                     'center': center,
@@ -229,6 +298,8 @@ class AlgorithmService:
 
         # Sort for consistent ordering
         areas_of_interest.sort(key=lambda item: (item['center'][1], item['center'][0]))
+        if isinstance(areas_of_interest, BoundedAreasOfInterest):
+            areas_of_interest.available_count = available_aoi_count
 
         return areas_of_interest, base_contour_count
 
@@ -382,7 +453,9 @@ class AlgorithmService:
             output_dir: Output directory where cache folders will be created.
             thermal: Whether this is a thermal image. Defaults to False.
         """
-        import colorsys
+        from core.services.cache.ColorCacheService import ColorCacheService
+        from core.services.cache.TemperatureCacheService import TemperatureCacheService
+        from core.services.cache.ThumbnailCacheService import ThumbnailCacheService
 
         try:
             if not areas_of_interest:

@@ -1,8 +1,12 @@
 import argparse
 import json
 import sys
+from pathlib import Path
+
+from PIL import Image
 
 from chris_adiat_adapter.analysis import run_batch
+from chris_adiat_adapter.algorithms import _service_class_for_algorithm
 
 
 def main(argv=None):
@@ -22,20 +26,39 @@ def main(argv=None):
             payload = json.load(payload_file)
         result = run_batch(payload)
 
-    print(json.dumps(result, sort_keys=True))
+    print(json.dumps(result, sort_keys=True, separators=(",", ":")))
     return 0 if result.get("status") in {"succeeded", "partial"} else 1
 
 
 def _run_self_test():
+    for algorithm_name in ("AIPersonDetector", "MRMap", "RXAnomaly"):
+        _service_class_for_algorithm(algorithm_name)
+
     payload = {
         "task_id": "self-test",
         "request": {
-            "profile": "broad_scan",
+            "profile": "search_rescue",
             "sources": [
                 {
                     "media_id": "self-test-source",
-                    "local_path": "/dev/null",
+                    "bucket": "self-test",
+                    "object_key": "source.jpg",
                     "sensor_type": "rgb",
+                    "media_type": "raw",
+                    "content_type": "image/jpeg",
+                    "checksum_sha256": "0" * 64,
+                    "projection_footprint": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [4.0, 52.0],
+                                [4.1, 52.0],
+                                [4.1, 52.1],
+                                [4.0, 52.1],
+                                [4.0, 52.0],
+                            ]
+                        ],
+                    },
                 }
             ],
         },
@@ -43,11 +66,24 @@ def _run_self_test():
 
     return run_batch(
         payload,
-        source_loader=lambda source, work_dir: source["local_path"],
-        algorithm_runner=lambda algorithm_name, image_path, source, work_dir: [
-            {"center": [0, 0], "radius": 1, "detected_pixels": [[0, 0]]}
-        ],
+        source_loader=_self_test_source_loader,
+        source_timeout_seconds=60,
+        batch_timeout_seconds=120,
     )
+
+
+def _self_test_source_loader(source, work_dir):
+    image_path = Path(work_dir) / "self-test.jpg"
+    image = Image.new("RGB", (64, 64))
+    image.putdata(
+        [
+            ((x * 4) % 256, (y * 4) % 256, ((x + y) * 2) % 256)
+            for y in range(64)
+            for x in range(64)
+        ]
+    )
+    image.save(image_path, format="JPEG")
+    return str(image_path)
 
 
 if __name__ == "__main__":

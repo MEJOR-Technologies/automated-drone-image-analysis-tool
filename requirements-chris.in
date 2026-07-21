@@ -1,0 +1,12 @@
+dask[distributed]==2025.11.0
+msgpack==1.1.2
+tornado==6.5.5
+boto3
+pyarrow==20.0.0
+opencv-python-headless
+numpy
+scipy==1.15.3
+spectral
+pillow
+tifffile
+onnxruntime

@@ -1,0 +1,4 @@
+-r requirements-chris.in
+flake8
+pytest
+ruff
