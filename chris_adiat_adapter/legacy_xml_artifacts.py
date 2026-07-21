@@ -94,9 +94,7 @@ class LegacyXmlArtifactWriter:
                 "path": _source_path(source),
                 "hidden": "False",
                 "source_media_id": str(source["media_id"]),
-                "source_checksum": _normalized_checksum(
-                    source.get("checksum_sha256")
-                ),
+                "source_checksum": _normalized_checksum(source.get("checksum_sha256")),
                 "source_bucket": str(source.get("bucket") or ""),
             },
         )
@@ -126,7 +124,9 @@ def legacy_xml_export_config(payload):
 
 def _execution_plan_options(request, algorithm, source):
     execution_plan = request.get("execution_plan")
-    entries = execution_plan.get("entries") if isinstance(execution_plan, dict) else None
+    entries = (
+        execution_plan.get("entries") if isinstance(execution_plan, dict) else None
+    )
     sensor_type = str(source.get("sensor_type") or "").strip().lower()
     if not isinstance(entries, list):
         return {}
@@ -195,8 +195,7 @@ def _polygon_area(points):
         return 0.0
     return abs(
         sum(
-            float(first[0]) * float(second[1])
-            - float(second[0]) * float(first[1])
+            float(first[0]) * float(second[1]) - float(second[0]) * float(first[1])
             for first, second in zip(points, points[1:] + points[:1])
         )
         / 2.0

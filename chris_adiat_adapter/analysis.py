@@ -163,9 +163,7 @@ def run_batch(
             if remaining_batch_seconds <= 0:
                 unprocessed_sources = sources[source_index:]
                 source_failures.extend(
-                    _unprocessed_source_failures(
-                        unprocessed_sources, "batch_timeout"
-                    )
+                    _unprocessed_source_failures(unprocessed_sources, "batch_timeout")
                 )
                 _emit_unprocessed_source_terminals(
                     progress_callback,
@@ -381,7 +379,11 @@ def run_batch(
             # Source chunks are authoritative for Dask runs. The terminal
             # result carries only attestations and stays small.
             "result_transport": (
-                "parquet" if parquet_persistence else "source_chunks" if stream_observations else "inline"
+                "parquet"
+                if parquet_persistence
+                else "source_chunks"
+                if stream_observations
+                else "inline"
             ),
             "observations_streamed": stream_observations,
             "raw_observation_count": normalized_observation_count,
@@ -546,7 +548,9 @@ def _run_source(
     algorithms_completed = []
     algorithms_processed = []
     algorithm_durations_ms = {}
-    observation_limits = _algorithm_observation_limits(max_observations, len(algorithms))
+    observation_limits = _algorithm_observation_limits(
+        max_observations, len(algorithms)
+    )
     algorithm_options_by_name = algorithm_options_by_name or {}
     for algorithm_index, algorithm_name in enumerate(algorithms):
         algorithm_options = dict(algorithm_options_by_name.get(algorithm_name) or {})
@@ -740,7 +744,9 @@ def _all_algorithms_completed(expected, completed):
 
 def _algorithms_for_source(request, source, fallback_algorithms):
     execution_plan = request.get("execution_plan")
-    entries = execution_plan.get("entries") if isinstance(execution_plan, dict) else None
+    entries = (
+        execution_plan.get("entries") if isinstance(execution_plan, dict) else None
+    )
     sensor_type = str(source.get("sensor_type") or "").strip().lower()
     if isinstance(entries, list) and entries and sensor_type:
         requested = {
@@ -762,7 +768,9 @@ def _algorithms_for_source(request, source, fallback_algorithms):
 
 def _algorithm_options_for_source(request, source, algorithms):
     execution_plan = request.get("execution_plan")
-    entries = execution_plan.get("entries") if isinstance(execution_plan, dict) else None
+    entries = (
+        execution_plan.get("entries") if isinstance(execution_plan, dict) else None
+    )
     sensor_type = str(source.get("sensor_type") or "").strip().lower()
     requested = [str(algorithm).strip() for algorithm in algorithms]
     overrides = {}
@@ -771,10 +779,8 @@ def _algorithm_options_for_source(request, source, algorithms):
             algorithm: dict(entry.get("options") or {})
             for entry in entries
             if isinstance(entry, dict)
-            and (algorithm := str(entry.get("algorithm") or "").strip())
-            in requested
-            and str(entry.get("sensor_type") or "").strip().lower()
-            == sensor_type
+            and (algorithm := str(entry.get("algorithm") or "").strip()) in requested
+            and str(entry.get("sensor_type") or "").strip().lower() == sensor_type
         }
     return {
         algorithm: effective_options_for_algorithm(

@@ -202,7 +202,9 @@ def test_validate_payload_rejects_multi_detector_parquet_contract():
         "immutable": True,
     }
 
-    with pytest.raises(PayloadValidationError, match="exactly one source and one algorithm"):
+    with pytest.raises(
+        PayloadValidationError, match="exactly one source and one algorithm"
+    ):
         validate_payload(payload)
 
 

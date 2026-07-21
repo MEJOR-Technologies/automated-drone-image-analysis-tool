@@ -155,7 +155,9 @@ def test_run_batch_isolates_each_source_and_aggregates_partial_results(tmp_path)
     assert result["status"] == "partial"
     assert result["reason"] == "source_timeout"
     assert len(result["result"]["observations"]) == 2
-    assert {item["source_media_id"] for item in result["result"]["observations"]} == {"ok"}
+    assert {item["source_media_id"] for item in result["result"]["observations"]} == {
+        "ok"
+    }
     assert result["details"]["source_failures"][0]["source_media_id"] == "slow"
     assert result["details"]["source_failures"][0]["reason"] == "source_timeout"
 
@@ -536,11 +538,14 @@ def test_execution_plan_keeps_fanout_child_scoped_to_its_assigned_detector():
         {"sensor_type": "rgb"},
         ["MRMap"],
     ) == ["MRMap"]
-    assert _algorithms_for_source(
-        request,
-        {"sensor_type": "thermal"},
-        ["MRMap"],
-    ) == []
+    assert (
+        _algorithms_for_source(
+            request,
+            {"sensor_type": "thermal"},
+            ["MRMap"],
+        )
+        == []
+    )
 
 
 def test_execution_plan_options_reach_detector_and_normalized_observation(tmp_path):
@@ -608,7 +613,9 @@ def test_run_batch_counts_failed_algorithm_as_failed_source(tmp_path):
 
     assert result["status"] == "partial"
     assert len(events) == 5
-    terminal_events = [event for event in events if event["event"] != "algorithm_started"]
+    terminal_events = [
+        event for event in events if event["event"] != "algorithm_started"
+    ]
     assert terminal_events[0]["algorithm_status"] == "succeeded"
     assert terminal_events[1]["algorithm_status"] == "failed"
     assert terminal_events[2]["algorithms_completed"] == ["MRMap"]
@@ -815,7 +822,9 @@ def test_streaming_run_processes_all_sources_without_inline_accumulation(tmp_pat
     assert len([event for event in events if event["event"] == "source_terminal"]) == 28
 
 
-def test_parquet_run_streams_every_detection_without_response_caps(tmp_path, monkeypatch):
+def test_parquet_run_streams_every_detection_without_response_caps(
+    tmp_path, monkeypatch
+):
     monkeypatch.setenv("ADIAT_MAX_OBSERVATIONS_PER_SOURCE", "1")
     monkeypatch.setenv("ADIAT_MAX_OBSERVATIONS_PER_BATCH", "1")
     monkeypatch.setenv("ADIAT_MAX_RESULT_BYTES", "4096")

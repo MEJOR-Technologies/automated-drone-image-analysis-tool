@@ -341,8 +341,8 @@ def _is_transient_publication_error(exc):
 
 def publish_observation_artifact(payload, observations, work_dir=None, s3_client=None):
     """Compatibility wrapper for callers that already hold an observation iterable."""
-    base_dir = Path(work_dir) if work_dir else Path(
-        tempfile.mkdtemp(prefix="adiat-artifact-")
+    base_dir = (
+        Path(work_dir) if work_dir else Path(tempfile.mkdtemp(prefix="adiat-artifact-"))
     )
     cleanup_dir = work_dir is None
     artifact_path = base_dir / "observations.parquet"
@@ -420,7 +420,9 @@ def _artifact_row_from_payload(payload, observation, *, index):
     )
 
 
-def _artifact_row(observation, *, index, source, algorithm, run_id, attempt_id, flight_id):
+def _artifact_row(
+    observation, *, index, source, algorithm, run_id, attempt_id, flight_id
+):
     observation = dict(observation)
     properties = dict(observation.get("properties") or {})
     runtime_provenance = dict(observation.get("runtime_provenance") or {})
@@ -456,7 +458,9 @@ def _artifact_row(observation, *, index, source, algorithm, run_id, attempt_id, 
         "algorithm_options_json": _json(observation.get("algorithm_options") or {}),
         "adapter_version": _optional_text(runtime_provenance.get("adapter_version")),
         "service_version": _optional_text(runtime_provenance.get("service_version")),
-        "ai_model_filename": _optional_text(runtime_provenance.get("ai_model_filename")),
+        "ai_model_filename": _optional_text(
+            runtime_provenance.get("ai_model_filename")
+        ),
         "ai_model_sha256": _optional_text(runtime_provenance.get("ai_model_sha256")),
         "actual_provider": _optional_text(runtime_provenance.get("actual_provider")),
         "detection_class": str(observation.get("detection_class") or "adiat_detection"),
@@ -470,10 +474,18 @@ def _artifact_row(observation, *, index, source, algorithm, run_id, attempt_id, 
         "source_image_width": _optional_int(observation.get("source_image_width")),
         "source_image_height": _optional_int(observation.get("source_image_height")),
         "map_geometry_json": _json(map_geometry),
-        "geometry_quality": "projection_footprint" if map_geometry else str(observation.get("geometry_quality") or "image_only"),
-        "thermal_minimum_c": _first_finite(properties, "minimum_c", "min_temperature_c", "temperature_min_c"),
-        "thermal_maximum_c": _first_finite(properties, "maximum_c", "max_temperature_c", "temperature_max_c"),
-        "thermal_mean_c": _first_finite(properties, "mean_c", "mean_temperature_c", "temperature_mean_c"),
+        "geometry_quality": "projection_footprint"
+        if map_geometry
+        else str(observation.get("geometry_quality") or "image_only"),
+        "thermal_minimum_c": _first_finite(
+            properties, "minimum_c", "min_temperature_c", "temperature_min_c"
+        ),
+        "thermal_maximum_c": _first_finite(
+            properties, "maximum_c", "max_temperature_c", "temperature_max_c"
+        ),
+        "thermal_mean_c": _first_finite(
+            properties, "mean_c", "mean_temperature_c", "temperature_mean_c"
+        ),
         "properties_json": _json(properties),
     }
 
@@ -496,7 +508,9 @@ def _project_polygon(source, polygon):
         projected.append(_lerp(top, bottom, v))
     if projected and projected[0] != projected[-1]:
         projected.append(projected[0])
-    return {"type": "Polygon", "coordinates": [projected]} if len(projected) >= 4 else None
+    return (
+        {"type": "Polygon", "coordinates": [projected]} if len(projected) >= 4 else None
+    )
 
 
 def _normalize_map_geometry(geometry):
@@ -512,7 +526,10 @@ def _normalize_map_geometry(geometry):
 
 
 def _lerp(first, second, amount):
-    return [float(first[0]) + (float(second[0]) - float(first[0])) * amount, float(first[1]) + (float(second[1]) - float(first[1])) * amount]
+    return [
+        float(first[0]) + (float(second[0]) - float(first[0])) * amount,
+        float(first[1]) + (float(second[1]) - float(first[1])) * amount,
+    ]
 
 
 def _put_object(client, path, *, bucket, object_key, content_type, metadata, immutable):
@@ -520,7 +537,9 @@ def _put_object(client, path, *, bucket, object_key, content_type, metadata, imm
         existing = _existing_checksum(client, bucket, object_key)
         if existing is not None:
             if existing != metadata["sha256"]:
-                raise ArtifactPublicationError("immutable artifact already exists with a different checksum")
+                raise ArtifactPublicationError(
+                    "immutable artifact already exists with a different checksum"
+                )
             return
     with path.open("rb") as body:
         kwargs = {
@@ -540,7 +559,9 @@ def _put_object(client, path, *, bucket, object_key, content_type, metadata, imm
             if immutable and code in {"PreconditionFailed", "412"}:
                 if _existing_checksum(client, bucket, object_key) == metadata["sha256"]:
                     return
-                raise ArtifactPublicationError("immutable artifact publication conflicted") from exc
+                raise ArtifactPublicationError(
+                    "immutable artifact publication conflicted"
+                ) from exc
             raise
 
 
@@ -558,7 +579,11 @@ def _existing_checksum(client, bucket, object_key):
 def _s3_client():
     kwargs = {}
     endpoint = os.getenv("ADIAT_S3_ENDPOINT_URL") or os.getenv("AWS_ENDPOINT_URL_S3")
-    region = os.getenv("ADIAT_S3_REGION") or os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
+    region = (
+        os.getenv("ADIAT_S3_REGION")
+        or os.getenv("AWS_REGION")
+        or os.getenv("AWS_DEFAULT_REGION")
+    )
     if endpoint:
         kwargs["endpoint_url"] = endpoint
     if region:
@@ -612,4 +637,8 @@ def _optional_text(value):
 
 
 def _json(value):
-    return json.dumps(value, sort_keys=True, separators=(",", ":")) if value is not None else None
+    return (
+        json.dumps(value, sort_keys=True, separators=(",", ":"))
+        if value is not None
+        else None
+    )

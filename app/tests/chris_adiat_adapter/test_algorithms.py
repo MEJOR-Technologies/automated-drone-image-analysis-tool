@@ -22,7 +22,10 @@ def test_ai_person_detector_uses_cpu_safe_defaults():
 
 
 def test_ai_person_detector_keeps_each_model_box_as_an_observation():
-    assert algorithms.SERVICE_KWARGS_BY_ALGORITHM["AIPersonDetector"]["combine_aois"] is False
+    assert (
+        algorithms.SERVICE_KWARGS_BY_ALGORITHM["AIPersonDetector"]["combine_aois"]
+        is False
+    )
     assert algorithms.DEFAULT_SERVICE_KWARGS["combine_aois"] is True
 
 
@@ -47,7 +50,9 @@ def test_run_passes_supplied_options_to_rgb_service(tmp_path, monkeypatch):
         def process_image(self, *args):
             return SimpleNamespace(error_message=None, areas_of_interest=[])
 
-    monkeypatch.setattr(algorithms, "_service_class_for_algorithm", lambda name: FakeService)
+    monkeypatch.setattr(
+        algorithms, "_service_class_for_algorithm", lambda name: FakeService
+    )
     monkeypatch.setattr(algorithms.cv2, "imread", lambda path: np.zeros((1, 1, 3)))
 
     algorithms.run_adiat_algorithm(
@@ -99,9 +104,7 @@ def test_adapter_thermal_range_matches_native_raster_service(tmp_path):
     temperatures.tofile(source_path)
     options = {"minTemp": 30.0, "maxTemp": 40.0}
     source = {"metadata": {"image_width": 16, "image_height": 16}}
-    service = ThermalRangeService(
-        (255, 0, 0), 1, 0, 25, True, options
-    )
+    service = ThermalRangeService((255, 0, 0), 1, 0, 25, True, options)
     service.max_detected_pixels = algorithms._max_detected_pixel_samples()
     service.max_areas_of_interest = algorithms._observation_limit(None)
     service.max_contour_points = algorithms._max_contour_points()
@@ -127,9 +130,7 @@ def test_adapter_thermal_anomaly_matches_native_raster_service(tmp_path):
     temperatures.tofile(source_path)
     options = {"segments": 1, "threshold": 1.0, "type": "Above Mean"}
     source = {"metadata": {"image_width": 32, "image_height": 32}}
-    service = ThermalAnomalyService(
-        (255, 0, 0), 1, 0, 25, True, options
-    )
+    service = ThermalAnomalyService((255, 0, 0), 1, 0, 25, True, options)
     service.max_detected_pixels = algorithms._max_detected_pixel_samples()
     service.max_areas_of_interest = algorithms._observation_limit(None)
     service.max_contour_points = algorithms._max_contour_points()

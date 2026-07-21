@@ -126,8 +126,12 @@ def compare_native_xml_to_parquet(native_xml, artifacts):
                 }
             )
 
-    expected_rows = sum(len(image["areas_of_interest"]) for image in expected_images.values())
-    actual_rows = sum(len(image["areas_of_interest"]) for image in actual_images.values())
+    expected_rows = sum(
+        len(image["areas_of_interest"]) for image in expected_images.values()
+    )
+    actual_rows = sum(
+        len(image["areas_of_interest"]) for image in actual_images.values()
+    )
     return {
         "matches": not mismatches,
         "source_count": len(expected_images),
@@ -157,7 +161,9 @@ def _canonical_parquet_document(artifacts):
         if settings is None:
             settings = current_settings
         elif current_settings != settings:
-            raise ValueError("native XML comparison requires uniform algorithm settings")
+            raise ValueError(
+                "native XML comparison requires uniform algorithm settings"
+            )
         rows = pq.read_table(parquet_path).to_pylist()
         documents.append(
             {
@@ -189,10 +195,14 @@ def _canonical_native_xml_document(source):
         )
     return {
         "settings": {
-            "algorithm": str(settings.get("algorithm") or "") if settings is not None else "",
+            "algorithm": str(settings.get("algorithm") or "")
+            if settings is not None
+            else "",
             "options": {
                 str(option.get("name")): str(option.get("value") or "")
-                for option in (settings.findall("options/option") if settings is not None else [])
+                for option in (
+                    settings.findall("options/option") if settings is not None else []
+                )
             },
         },
         "images": sorted(images, key=lambda item: item["path"]),
@@ -212,7 +222,9 @@ def _canonical_parquet_area(row):
     area = _finite(properties.get("area"))
     if area is None:
         area = _polygon_area(polygon)
-    temperature = _first_finite(properties.get("temperature"), row.get("thermal_mean_c"))
+    temperature = _first_finite(
+        properties.get("temperature"), row.get("thermal_mean_c")
+    )
     return _drop_none(
         {
             "center": [int(round(float(center[0]))), int(round(float(center[1])))],

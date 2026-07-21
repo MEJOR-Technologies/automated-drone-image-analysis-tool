@@ -174,8 +174,12 @@ def test_publishes_deterministic_queryable_parquet_with_projected_geometry(tmp_p
     assert artifact["row_count"] == 1
     assert artifact["minimum_confidence"] == 87.5
     assert artifact["maximum_confidence"] == 87.5
-    canonical = client.objects[("processed", _payload()["request"]["persistence"]["canonical_object_key"])]
-    assert hashlib.sha256(canonical["Body"]).hexdigest() == artifact["artifact_checksum"]
+    canonical = client.objects[
+        ("processed", _payload()["request"]["persistence"]["canonical_object_key"])
+    ]
+    assert (
+        hashlib.sha256(canonical["Body"]).hexdigest() == artifact["artifact_checksum"]
+    )
     table = pq.read_table(io.BytesIO(canonical["Body"]))
     row = table.to_pylist()[0]
     assert row["source_pixel_polygon_json"] == "[[10,20],[30,20],[30,40],[10,40]]"
@@ -205,9 +209,7 @@ def test_publishes_deterministic_queryable_parquet_with_projected_geometry(tmp_p
 def test_normalizes_supplied_polygon_to_one_part_multipolygon(tmp_path):
     client = MemoryS3()
     observation = _observation()
-    coordinates = [
-        [[4.0, 52.0], [4.1, 52.0], [4.1, 52.1], [4.0, 52.0]]
-    ]
+    coordinates = [[[4.0, 52.0], [4.1, 52.0], [4.1, 52.1], [4.0, 52.0]]]
     observation["map_geometry"] = {
         "type": "Polygon",
         "coordinates": coordinates,
@@ -232,9 +234,7 @@ def test_preserves_supplied_multipolygon_geometry(tmp_path):
     observation = _observation()
     geometry = {
         "type": "MultiPolygon",
-        "coordinates": [
-            [[[4.0, 52.0], [4.1, 52.0], [4.1, 52.1], [4.0, 52.0]]]
-        ],
+        "coordinates": [[[[4.0, 52.0], [4.1, 52.0], [4.1, 52.1], [4.0, 52.0]]]],
     }
     observation["map_geometry"] = geometry
 
@@ -281,7 +281,9 @@ def test_publishes_valid_zero_row_parquet(tmp_path):
     artifact = result["artifacts"][0]
     assert artifact["row_count"] == 0
     assert artifact["minimum_confidence"] is None
-    payload = client.objects[("processed", _payload()["request"]["persistence"]["canonical_object_key"])]["Body"]
+    payload = client.objects[
+        ("processed", _payload()["request"]["persistence"]["canonical_object_key"])
+    ]["Body"]
     assert pq.read_table(io.BytesIO(payload)).num_rows == 0
 
 
@@ -371,7 +373,10 @@ def test_transient_canonical_failure_retains_immutable_attempt_evidence(tmp_path
 
     class CanonicalFailureS3(MemoryS3):
         def put_object(self, **kwargs):
-            if kwargs["Key"] == payload["request"]["persistence"]["canonical_object_key"]:
+            if (
+                kwargs["Key"]
+                == payload["request"]["persistence"]["canonical_object_key"]
+            ):
                 raise ClientError(
                     {
                         "Error": {"Code": "ServiceUnavailable"},
@@ -448,7 +453,10 @@ def test_optional_legacy_xml_is_streamed_from_same_rows_without_changing_parquet
         s3_client=legacy_client,
     )
 
-    parquet_key = ("processed", payload["request"]["persistence"]["canonical_object_key"])
+    parquet_key = (
+        "processed",
+        payload["request"]["persistence"]["canonical_object_key"],
+    )
     xml_key = (
         "processed",
         payload["request"]["persistence"]["legacy_xml"]["canonical_object_key"],

@@ -160,14 +160,18 @@ def _validate_persistence(payload, request, sources, algorithms):
     if mode == "postgres":
         return
     if mode != "parquet":
-        raise PayloadValidationError("request.persistence.mode must be postgres or parquet")
+        raise PayloadValidationError(
+            "request.persistence.mode must be postgres or parquet"
+        )
     if len(sources) != 1 or not isinstance(algorithms, list) or len(algorithms) != 1:
         raise PayloadValidationError(
             "parquet persistence requires exactly one source and one algorithm"
         )
     for field in ("contract_version", "artifact_schema_version"):
         if not isinstance(persistence.get(field), int) or persistence[field] < 1:
-            raise PayloadValidationError(f"request.persistence.{field} must be positive")
+            raise PayloadValidationError(
+                f"request.persistence.{field} must be positive"
+            )
     _validate_identifier(
         persistence.get("bucket"), "request.persistence.bucket", MAX_BUCKET_LENGTH
     )
@@ -206,9 +210,7 @@ def _validate_legacy_xml_export(persistence):
     if config is None:
         return
     if not isinstance(config, dict):
-        raise PayloadValidationError(
-            "request.persistence.legacy_xml must be an object"
-        )
+        raise PayloadValidationError("request.persistence.legacy_xml must be an object")
     enabled = config.get("enabled")
     if not isinstance(enabled, bool):
         raise PayloadValidationError(

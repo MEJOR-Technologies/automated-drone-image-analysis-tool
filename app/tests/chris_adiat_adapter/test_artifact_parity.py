@@ -38,9 +38,7 @@ def _payload_for_source(index, *, legacy_xml=False):
 def _observation_for_source(payload, index):
     observation = _observation(60.0 + index)
     observation["source_media_id"] = payload["request"]["sources"][0]["media_id"]
-    observation["source_checksum"] = payload["request"]["sources"][0][
-        "checksum_sha256"
-    ]
+    observation["source_checksum"] = payload["request"]["sources"][0]["checksum_sha256"]
     left = 10 + index
     top = 20 + index
     observation["source_pixel_polygon"] = [
@@ -166,9 +164,7 @@ def test_native_xml_parity_reports_exact_source_mismatch(tmp_path):
     report = compare_native_xml_to_parquet(xml_path, [(payload, parquet_path)])
 
     assert report["matches"] is False
-    assert report["mismatches"][0]["path"] == (
-        "images['deterministic/source-00.jpg']"
-    )
+    assert report["mismatches"][0]["path"] == ("images['deterministic/source-00.jpg']")
 
 
 def test_native_xml_field_accounting_keeps_lossy_fields_explicit():

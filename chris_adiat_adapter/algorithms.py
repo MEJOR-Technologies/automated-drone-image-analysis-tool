@@ -139,7 +139,9 @@ def run_adiat_algorithm(
     if img is None:
         raise RuntimeError(f"OpenCV could not read source image: {image_path}")
 
-    service_kwargs = SERVICE_KWARGS_BY_ALGORITHM.get(algorithm_name, DEFAULT_SERVICE_KWARGS)
+    service_kwargs = SERVICE_KWARGS_BY_ALGORITHM.get(
+        algorithm_name, DEFAULT_SERVICE_KWARGS
+    )
     service = service_class(
         service_kwargs["identifier"],
         service_kwargs["min_area"],
@@ -196,9 +198,7 @@ def _run_thermal_algorithm(
         return BoundedAois(
             [],
             available_count=0,
-            runtime_provenance=_thermal_runtime_provenance(
-                algorithm_name, options
-            ),
+            runtime_provenance=_thermal_runtime_provenance(algorithm_name, options),
         )
     if algorithm_name == "ThermalResidualAnomaly":
         filled_temperatures = np.where(
@@ -302,9 +302,8 @@ def _thermal_runtime_provenance(algorithm_name, options, service_version=None):
     return {
         "effective_options": dict(options),
         "adapter_version": __version__,
-        "service_version": service_version or (
-            "1" if native else "adapter-thermal-residual-1"
-        ),
+        "service_version": service_version
+        or ("1" if native else "adapter-thermal-residual-1"),
         "implementation": "native_service" if native else "adapter_residual",
         "ai_model_filename": None,
         "ai_model_sha256": None,
@@ -386,7 +385,9 @@ def _thermal_areas_of_interest(temperatures, mask, scores, *, max_observations=N
                 "mean_c": mean_c,
             }
         )
-    areas.sort(key=lambda item: (-(item.get("raw_score") or 0.0), -(item.get("area") or 0.0)))
+    areas.sort(
+        key=lambda item: (-(item.get("raw_score") or 0.0), -(item.get("area") or 0.0))
+    )
     return BoundedAois(
         areas[: _observation_limit(max_observations)],
         available_count=len(areas),
@@ -428,9 +429,7 @@ def _iter_compact_areas_of_interest(areas_of_interest):
             compact = None
             if isinstance(area, dict):
                 compact = {
-                    key: area.get(key)
-                    for key in AOI_RESULT_FIELDS
-                    if key in area
+                    key: area.get(key) for key in AOI_RESULT_FIELDS if key in area
                 }
                 area.pop("detected_pixels", None)
             if hasattr(areas_of_interest, "__setitem__"):
