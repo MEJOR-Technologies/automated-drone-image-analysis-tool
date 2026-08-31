@@ -77,8 +77,11 @@ Runtime limits are 100 sources per batch, 60,000,000 decoded pixels per source,
 4,096 detected-pixel samples and 64 contour points per AOI, 1,000 retained
 observations per detector per source photo, a 100,000-observation diagnostic
 batch ceiling, a source-count-derived batch deadline, and one active task per
-container. The Dask dispatcher gzip-compresses large inline results before
-publishing them to Kafka.
+container. The worker preserves the complete domain-bounded logical output
+without applying a legacy downstream serialized-message limit. It emits source
+chunks through best-effort Dask progress events or publishes bounded result
+artifacts, then returns a terminal attestation. CHRIS owns downstream encoding,
+durable checkpoint acceptance, and PostgreSQL lifecycle/result persistence.
 Source objects require a valid SHA256 checksum and are fetched
 read-only from S3 or MinIO. JPEG, DJI MPO-encoded JPEG, PNG, TIFF, and WebP are
 supported.

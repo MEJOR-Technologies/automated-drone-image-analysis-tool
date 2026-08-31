@@ -20,9 +20,9 @@ def run(payload):
         )
     started_at = time.time()
     worker = _dask_worker()
-    # Kafka transport is compressed by the CHRIS dispatcher. Keep every
-    # observation here so multi-flight runs do not become partial merely because
-    # their uncompressed JSON exceeds the legacy inline message budget.
+    # Preserve the complete domain-bounded logical result at the public worker
+    # boundary. Dask progress carries source chunks, while CHRIS owns downstream
+    # encoding, transport, checkpoint acceptance, and durable persistence.
     result = run_batch(
         payload,
         progress_callback=_progress_callback(worker),

@@ -7,6 +7,31 @@ from core.services.LoggerService import LoggerService
 ROOT = Path(__file__).resolve().parents[3]
 
 
+def test_chris_worker_has_no_retired_broker_transport():
+    forbidden_transport = "kaf" + "ka"
+    guarded_files = [
+        ROOT / "Dockerfile.chris",
+        ROOT / "requirements-chris.in",
+        ROOT / "requirements-chris.txt",
+        ROOT / "requirements-chris-test.in",
+        ROOT / "requirements-chris-test.txt",
+        ROOT / "README-chris.md",
+        ROOT / "CHRIS_ADIAT_WORKER_DESIGN.md",
+        ROOT / ".github/workflows/chris-adiat-worker-image.yml",
+        *(ROOT / "chris_adiat_adapter").rglob("*.py"),
+    ]
+    findings = []
+
+    for path in sorted(guarded_files):
+        for line_number, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            if forbidden_transport in line.lower():
+                findings.append(f"{path.relative_to(ROOT)}:{line_number}")
+
+    assert findings == []
+
+
 def test_linux_logger_uses_defined_per_user_path():
     logger = MagicMock()
     logger.handlers = []

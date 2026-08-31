@@ -28,8 +28,9 @@ Production contract verified on 2026-07-10:
   Dask/Distributed 2025.11.0.
 - Each container advertises `adiat_analysis=1`, runs one Dask process with one
   thread, and uses no fixed worker name, so replicas register independently.
-- The private dispatcher skips its CHRIS-only trace wrapper for this external
-  worker callable; no private CHRIS package is installed in the public image.
+- The private processing coordinator skips its CHRIS-only trace wrapper for
+  this external worker callable; no private CHRIS package is installed in the
+  public image.
 - Only projected RAW RGB photos and bounded thermal RAW rasters with valid
   SHA256 checksums are admitted.
 - The worker accepts at most 100 sources and 60,000,000 decoded pixels per
@@ -39,9 +40,9 @@ Production contract verified on 2026-07-10:
   per-source timeout. Input files are immutable and separate from outputs.
 - JPEG, DJI MPO-encoded JPEG, PNG, TIFF, and WebP inputs are accepted after
   content-type, checksum, byte-size, decoded-image, and pixel-count validation.
-- Permanent result decode/schema/validation failures go to a bounded-evidence
-  Kafka DLQ before offset commit. Transient persistence or DLQ publication
-  failures remain uncommitted for retry.
+- The worker reports bounded decode/schema/validation failure evidence through
+  its Dask result contract. CHRIS owns durable PostgreSQL lifecycle state,
+  retry decisions, checkpoint acceptance, and result persistence.
 - The GHCR package is public. Releases publish an SBOM, provenance attestation,
   immutable SHA tags, and a digest suitable for CHRIS deployment.
 
@@ -55,7 +56,8 @@ is authoritative.
 - Avoid large changes inside `app/`.
 - Keep GPL/AGPL-covered ADIAT code out of the private CHRIS monorepo images.
 - Build a public GPL-compatible worker image that CHRIS can deploy locally and in AWS.
-- Move batch ADIAT execution behind Dask so existing CHRIS queue, dispatcher, and scaling structure can manage work.
+- Move batch ADIAT execution behind Dask so the CHRIS processing coordinator
+  and scaling structure can manage compute work.
 - Preserve current CHRIS result schema as much as possible.
 - Leave room for RTMP/live stream support without forcing it into the batch path.
 
@@ -64,7 +66,8 @@ is authoritative.
 - Do not rewrite ADIAT internals.
 - Do not vendor this repo as a Git submodule inside CHRIS.
 - Do not import ADIAT code from private CHRIS packages.
-- Do not give ADIAT workers CHRIS database access unless later proven necessary.
+- Do not give ADIAT workers CHRIS database access; CHRIS owns durable lifecycle
+  and result persistence.
 - Do not use Dask as the durable lifecycle manager for long-running RTMP streams unless we intentionally choose that tradeoff later.
 
 ## Historical CHRIS Sidecar Integration
@@ -73,7 +76,7 @@ Path before DEV-1056:
 
 ```text
 orchestrator
-  -> Kafka/task ledger
+  -> legacy task coordination
   -> dask-dispatcher
   -> Dask scheduler
   -> normal CHRIS Dask worker callable
@@ -118,18 +121,19 @@ Move real batch analysis into dedicated GPL Dask worker containers.
 Target flow:
 
 ```text
-orchestrator
-  -> Kafka/task ledger
-  -> dask-dispatcher
+CHRIS PostgreSQL task lifecycle
+  -> processing coordinator
   -> Dask scheduler
   -> dedicated adiat-gpl-batch-worker containers
   -> S3/MinIO source images
   -> ADIAT still-image algorithms
-  -> result JSON
-  -> CHRIS result listener / DB persistence
+  -> best-effort Dask progress + bounded result/artifact output
+  -> CHRIS validation and PostgreSQL persistence
 ```
 
-Key point: CHRIS private code schedules work and persists results. This public worker image executes ADIAT.
+Key point: CHRIS private code owns durable lifecycle, retries, fencing,
+checkpoint acceptance, and persistence. This public worker image performs
+bounded ADIAT compute without CHRIS database access.
 
 ## Why Dask for Batch
 
@@ -137,7 +141,7 @@ Batch ADIAT work is finite and queueable:
 
 - one mission/job has bounded source media
 - worker returns one JSON result
-- failures/retries fit the existing task ledger model
+- failures/retries remain in the PostgreSQL task lifecycle
 - capacity scales by adding worker containers
 - existing Dask scheduler can route by resource key
 
@@ -159,7 +163,8 @@ Concurrency model:
 - `--nthreads 1` avoids concurrent ADIAT calls in one process
 - scale by running more containers/processes
 - Dask queue absorbs excess tasks
-- CHRIS dispatcher can observe/backoff through its existing mechanisms
+- CHRIS processing coordinator can observe/backoff through its existing
+  mechanisms
 
 ## GPL Boundary
 
@@ -177,7 +182,7 @@ Public GPL worker repo/image contains:
 Private CHRIS repo contains only:
 
 - task schema/payload contract
-- dispatcher config
+- processing-coordinator submission config
 - image tag/digest reference
 - deployment definitions
 - result persistence logic
@@ -553,7 +558,7 @@ CHRIS private worker target must point at this public adapter callable, e.g.:
 ADIAT_DASK_WORKER_TARGET=chris_adiat_adapter.batch_worker:run
 ```
 
-or dispatcher config can select it by environment.
+or processing-coordinator config can select it by environment.
 
 ## AWS Deployment Shape
 
@@ -563,7 +568,7 @@ AWS target:
 - same network path to Dask scheduler as existing CHRIS Dask workers
 - no inbound public port required for Dask mode
 - S3 read access to mission media only
-- no CHRIS DB credentials unless needed later
+- no CHRIS DB credentials
 - CloudWatch logs enabled
 - desired count controls capacity
 
@@ -609,9 +614,12 @@ RTMP/WebRTC/HLS/video source
   -> frame sampling
   -> ADIAT streaming detector
   -> live detections
-  -> Kafka/websocket/DB/event log
+  -> CHRIS-owned live delivery and persistence boundary
   -> CHRIS UI overlay/list/status
 ```
+
+No live-stream control or detection transport is selected by this batch-worker
+design.
 
 New live-stream pieces required:
 
@@ -642,9 +650,10 @@ Possible Dask stream prototype:
 
 ```text
 orchestrator start stream
-  -> dask-dispatcher submits long-running Dask task
+  -> processing coordinator submits long-running Dask task
   -> task reads RTMP
-  -> task emits detections to Kafka/HTTP callback
+  -> task emits detections through an explicitly selected external result
+     channel
   -> stop stream cancels future/control message
 ```
 
@@ -656,17 +665,20 @@ If using Dask for streams:
 - stop via explicit control channel plus future cancellation
 - expect more brittle recovery semantics
 
-Recommended durable live design:
+Future durable live design constraints:
 
 ```text
 orchestrator
   -> stream session DB/API
-  -> Kafka topic: adiat-stream-control
+  -> explicitly selected control channel
   -> adiat-gpl-stream-worker service
   -> RTMP source
-  -> Kafka topic: adiat-stream-detections
-  -> CHRIS websocket/UI + optional persistence
+  -> explicitly selected detection delivery channel
+  -> CHRIS UI + optional persistence
 ```
+
+Transport selection is out of scope. This document does not nominate a broker
+or make the public worker a durable stream-session authority.
 
 Use same public GPL image, different command:
 
@@ -682,19 +694,20 @@ Recommended final shape:
 ```text
 Batch lane:
   orchestrator
-    -> Kafka/task ledger
-    -> dask-dispatcher
+    -> PostgreSQL task lifecycle
+    -> processing coordinator
     -> Dask scheduler
     -> adiat-gpl-batch-worker
     -> S3 images
-    -> result JSON
+    -> progress events + bounded result/artifact output
+    -> CHRIS PostgreSQL persistence
 
-Live lane:
+Future live lane (transport not selected):
   orchestrator
-    -> stream control API/Kafka
+    -> durable stream session API
     -> adiat-gpl-stream-worker
     -> RTMP/WebRTC source
-    -> live detections Kafka/websocket
+    -> explicitly selected live detection delivery channel
 ```
 
 One public repo/image can support both lanes.
@@ -741,8 +754,7 @@ Worker should receive minimal secrets:
 
 - S3 read access for relevant media buckets/prefixes
 - optional S3 write access only if artifacts are written
-- Kafka access only for stream worker if needed
-- no CHRIS DB credentials by default
+- no CHRIS DB credentials
 - no broad application secrets
 
 Avoid logging:
@@ -773,8 +785,8 @@ Integration tests:
 
 CHRIS-side tests:
 
-- dispatcher submits ADIAT task with `adiat_analysis=1`
-- result listener persists observations/detections
+- processing coordinator submits ADIAT task with `adiat_analysis=1`
+- CHRIS validates and persists observations/detections
 - fixture mode remains deterministic for release verifier
 - no ADIAT import in private CHRIS packages
 
@@ -800,7 +812,7 @@ Phase 1: Public batch worker skeleton
 Phase 2: CHRIS local Dask integration
 
 - add local compose service for `adiat-gpl-workers`
-- configure CHRIS dispatcher target to public callable
+- configure CHRIS processing-coordinator target to public callable
 - disable real HTTP sidecar in main path
 - keep fixture mode for deterministic local/dev verifier
 - verify S&R repro mission completes
@@ -825,7 +837,7 @@ Phase 5: Live stream lane
 
 - add `stream-worker` mode in same public image
 - add CHRIS stream session/control API
-- emit live detections to Kafka/websocket
+- select and implement a live detection delivery contract
 - define persistence/georef policy
 
 ## Open Questions
