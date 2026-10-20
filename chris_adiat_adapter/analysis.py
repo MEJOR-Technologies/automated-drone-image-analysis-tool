@@ -52,6 +52,7 @@ def run_batch(
     progress_callback=None,
     apply_result_byte_limit=True,
     artifact_s3_client=None,
+    cancellation_check=None,
 ):
     source_loader = source_loader or load_source
     algorithm_runner = algorithm_runner or run_adiat_algorithm
@@ -159,6 +160,12 @@ def run_batch(
             _max_observations_per_source(),
         )
         for source_index, source in enumerate(sources):
+            if cancellation_check is not None and cancellation_check():
+                if artifact_writer is not None:
+                    artifact_writer.close()
+                return _empty_response(
+                    "cancelled", "cancelled", "analysis cancelled", payload
+                )
             remaining_batch_seconds = batch_deadline - time.monotonic()
             if remaining_batch_seconds <= 0:
                 unprocessed_sources = sources[source_index:]
@@ -198,6 +205,7 @@ def run_batch(
                         parquet_persistence,
                     ),
                     timeout_seconds=effective_timeout,
+                    cancellation_check=cancellation_check,
                     progress_callback=lambda event: _handle_source_event(
                         event,
                         artifact_writer=artifact_writer,
@@ -225,6 +233,12 @@ def run_batch(
                 except OSError as exc:
                     cleanup_error = exc
             processed_source_count += 1
+            if isolated.get("reason") == "cancelled":
+                if artifact_writer is not None:
+                    artifact_writer.close()
+                return _empty_response(
+                    "cancelled", "cancelled", "analysis cancelled", payload
+                )
             if cleanup_error is not None:
                 source_failures.append(
                     {
@@ -325,6 +339,10 @@ def run_batch(
 
         if artifact_writer is not None:
             prepared = artifact_writer.close()
+            if cancellation_check is not None and cancellation_check():
+                return _empty_response(
+                    "cancelled", "cancelled", "analysis cancelled", payload
+                )
             if successful_algorithm_runs and not artifact_errors:
                 try:
                     persistence_result = publish_prepared_observation_artifact(

@@ -187,6 +187,9 @@ def test_batch_worker_reports_dask_worker_identity(monkeypatch):
         nthreads = 1
         state = WorkerState()
 
+        def get_current_task(self):
+            return "fixture-task"
+
     monkeypatch.setattr("distributed.get_worker", lambda: Worker())
     monkeypatch.setattr(
         batch_worker,
@@ -240,6 +243,9 @@ def test_batch_worker_logs_progress_events_to_dask(monkeypatch):
         address = "tcp://worker-1:8790"
         nthreads = 1
         state = WorkerState()
+
+        def get_current_task(self):
+            return "fixture-task"
 
         def __init__(self):
             self.events = []
@@ -1152,3 +1158,49 @@ def test_exif_orientation_transposes_image_dimensions(tmp_path):
         (item["source_image_width"], item["source_image_height"])
         for item in result["result"]["observations"]
     } == {(240, 320)}
+
+
+def test_cancellation_before_first_source_does_not_admit_or_publish(tmp_path):
+    def unexpected_source(*args, **kwargs):
+        raise AssertionError("a cancelled batch must not load a source")
+
+    class NoPublication:
+        def put_object(self, **kwargs):
+            raise AssertionError("a cancelled batch must not publish an artifact")
+
+    result = run_batch(
+        _parquet_payload(),
+        source_loader=unexpected_source,
+        work_dir=str(tmp_path),
+        artifact_s3_client=NoPublication(),
+        cancellation_check=lambda: True,
+    )
+    assert result["status"] == "cancelled"
+    assert result["reason"] == "cancelled"
+    assert result["result"]["observations"] == []
+    assert result["details"]["processed_sources"] == []
+
+
+def test_cancellation_after_source_completion_prevents_artifact_publication(tmp_path):
+    state = {"cancelled": False}
+
+    def progress(event):
+        if event.get("event") == "source_terminal":
+            state["cancelled"] = True
+
+    class NoPublication:
+        def put_object(self, **kwargs):
+            raise AssertionError("cancellation must win before artifact publication")
+
+    result = run_batch(
+        _parquet_payload("ok"),
+        source_loader=_load_source,
+        algorithm_runner=_run_algorithm,
+        work_dir=str(tmp_path),
+        progress_callback=progress,
+        artifact_s3_client=NoPublication(),
+        cancellation_check=lambda: state["cancelled"],
+    )
+    assert state["cancelled"]
+    assert result["status"] == "cancelled"
+    assert "persistence" not in result

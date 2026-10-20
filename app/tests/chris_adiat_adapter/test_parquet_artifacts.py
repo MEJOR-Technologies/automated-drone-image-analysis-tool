@@ -344,10 +344,10 @@ def test_zero_row_artifact_manifest_retains_runtime_provenance(tmp_path):
     assert result["runtime_provenance"] == [provenance]
     assert result["artifacts"][0]["runtime_provenance"] == [provenance]
     parquet = pq.ParquetFile(path)
-    assert parquet.schema_arrow.metadata[b"chris.adapter_version"] == b"0.2.1"
+    assert parquet.schema_arrow.metadata[b"chris.adapter_version"] == b"0.2.2"
     assert (
         parquet.schema_arrow.metadata[b"chris.service_version"]
-        == b"chris-adiat-gpl-worker-0.2.1"
+        == b"chris-adiat-gpl-worker-0.2.2"
     )
 
 

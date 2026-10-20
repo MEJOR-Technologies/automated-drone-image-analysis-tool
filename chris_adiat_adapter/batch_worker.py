@@ -27,6 +27,7 @@ def run(payload):
         payload,
         progress_callback=_progress_callback(worker),
         apply_result_byte_limit=False,
+        cancellation_check=_cancellation_check(worker),
     )
     result.setdefault("metadata", {}).update(
         _worker_metadata(
@@ -37,6 +38,28 @@ def run(payload):
         )
     )
     return result
+
+
+def _cancellation_check(worker):
+    """Stop the isolated child when Dask releases this exact executing task.
+
+    Cancelling a Dask Future cannot interrupt a Python worker thread. The
+    parent polls its owning TaskState and terminates the separate computation
+    process; it never cancels a different task or the whole worker.
+    """
+    if worker is None:
+        return None
+    task_key = worker.get_current_task()
+
+    def cancelled():
+        task = worker.state.tasks.get(task_key)
+        return task is None or task.state not in {
+            "executing",
+            "long-running",
+            "resumed",
+        }
+
+    return cancelled
 
 
 def _uses_parquet_persistence(payload):

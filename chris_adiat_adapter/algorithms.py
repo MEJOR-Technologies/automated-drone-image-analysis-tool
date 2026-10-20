@@ -12,6 +12,7 @@ cv2.setNumThreads(1)
 DEFAULT_MAX_DETECTED_PIXEL_SAMPLES = 4096
 DEFAULT_MAX_CONTOUR_POINTS = 64
 DEFAULT_MAX_OBSERVATIONS = 1000
+NATIVE_THERMAL_RESIDUAL_SERVICE_VERSION = "upstream-00bf118f-thermal-residual-1"
 AOI_RESULT_FIELDS = (
     "center",
     "radius",
@@ -109,6 +110,14 @@ def default_options_for_algorithm(algorithm_name):
 
 
 def effective_options_for_algorithm(algorithm_name, overrides=None):
+    if (
+        algorithm_name == "ThermalResidualAnomaly"
+        and overrides
+        and "sensitivity" in overrides
+    ):
+        # The wizard's sensitivity is a different, versioned algorithm contract.
+        # Do not inject the legacy std-dev threshold into its delta-T settings.
+        return {"sensitivity": 5, "type": "Both", **dict(overrides)}
     options = default_options_for_algorithm(algorithm_name)
     if overrides:
         options.update(dict(overrides))
@@ -201,6 +210,15 @@ def _run_thermal_algorithm(
             runtime_provenance=_thermal_runtime_provenance(algorithm_name, options),
         )
     if algorithm_name == "ThermalResidualAnomaly":
+        if "sensitivity" in options:
+            return _run_native_thermal_algorithm(
+                algorithm_name,
+                temperatures,
+                image_path,
+                work_dir,
+                options,
+                max_observations=max_observations,
+            )
         filled_temperatures = np.where(
             valid_pixels,
             temperatures,
@@ -256,6 +274,12 @@ def _run_native_thermal_algorithm(
         )
 
         service_class = ThermalAnomalyService
+    elif algorithm_name == "ThermalResidualAnomaly":
+        from chris_adiat_adapter.native_thermal_residual import (
+            ThermalResidualAnomalyService,
+        )
+
+        service_class = ThermalResidualAnomalyService
     else:
         from algorithms.images.ThermalRange.services.ThermalRangeService import (
             ThermalRangeService,
@@ -298,12 +322,20 @@ def _run_native_thermal_algorithm(
 
 
 def _thermal_runtime_provenance(algorithm_name, options, service_version=None):
-    native = algorithm_name in {"ThermalAnomaly", "ThermalRange"}
+    native = algorithm_name in {"ThermalAnomaly", "ThermalRange"} or (
+        algorithm_name == "ThermalResidualAnomaly" and "sensitivity" in options
+    )
     return {
         "effective_options": dict(options),
         "adapter_version": __version__,
         "service_version": service_version
-        or ("1" if native else "adapter-thermal-residual-1"),
+        or (
+            NATIVE_THERMAL_RESIDUAL_SERVICE_VERSION
+            if native and algorithm_name == "ThermalResidualAnomaly"
+            else "1"
+            if native
+            else "adapter-thermal-residual-1"
+        ),
         "implementation": "native_service" if native else "adapter_residual",
         "ai_model_filename": None,
         "ai_model_sha256": None,
@@ -371,8 +403,8 @@ def _thermal_areas_of_interest(temperatures, mask, scores, *, max_observations=N
         mean_c = float(np.nanmean(component_temps)) if component_temps.size else None
         areas.append(
             {
-                "center": (int(round(cx)), int(round(cy))),
-                "radius": int(round(radius)),
+                "center": (round(cx), round(cy)),
+                "radius": round(radius),
                 "area": area,
                 "contour": points,
                 "confidence": min(100.0, raw_score),
