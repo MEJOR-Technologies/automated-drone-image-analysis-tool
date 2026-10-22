@@ -43,8 +43,23 @@ Production contract verified on 2026-07-10:
 - The worker reports bounded decode/schema/validation failure evidence through
   its Dask result contract. CHRIS owns durable PostgreSQL lifecycle state,
   retry decisions, checkpoint acceptance, and result persistence.
+- Per-source `metadata.detection_sizing` v1 is an optional, frozen input. A
+  `ready` record supplies positive finite `min_area_pixels` and
+  `max_area_pixels`, which the RGB and thermal ADIAT services apply for that
+  source. A malformed `ready` record fails the source instead of falling back
+  to unsized detection; `unavailable` and legacy-absent records retain service
+  defaults and record that decision in runtime provenance, including zero-AOI
+  results. Every worker result advertises top-level
+  `detection_sizing_contract_version: 1`; the CHRIS coordinator must reject a
+  worker response without the supported version before accepting results.
 - The GHCR package is public. Releases publish an SBOM, provenance attestation,
   immutable SHA tags, and a digest suitable for CHRIS deployment.
+
+The detection-sizing contract is backward compatible at the request boundary,
+but activation requires a worker image whose response advertises contract
+version 1. Publishing and pinning that compatible image remain separate release
+gates; the coordinator must not silently use a fixed-size worker for a request
+that carries per-source sizing metadata.
 
 Later sections retain the original sidecar investigation and migration context.
 Where historical wording conflicts with this production contract, this section

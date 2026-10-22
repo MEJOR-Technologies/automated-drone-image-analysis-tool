@@ -174,6 +174,7 @@ def test_batch_worker_rejects_daemonic_runtime(monkeypatch):
 
     assert result["status"] == "failed"
     assert result["reason"] == "isolation_unavailable"
+    assert result["detection_sizing_contract_version"] == 1
     assert result["details"]["processed_sources"] == []
     assert "non-daemonic" in result["error"]
 
@@ -187,6 +188,9 @@ def test_batch_worker_reports_dask_worker_identity(monkeypatch):
         nthreads = 1
         state = WorkerState()
 
+        def get_current_task(self):
+            return "fixture-task"
+
     monkeypatch.setattr("distributed.get_worker", lambda: Worker())
     monkeypatch.setattr(
         batch_worker,
@@ -197,6 +201,7 @@ def test_batch_worker_reports_dask_worker_identity(monkeypatch):
     result = batch_worker.run(_payload("ok"))
 
     assert result["metadata"]["worker_address"] == "tcp://worker-1:8790"
+    assert result["detection_sizing_contract_version"] == 1
     assert result["metadata"]["worker_nthreads"] == 1
     assert result["metadata"]["worker_resources"] == {"adiat_analysis": 1.0}
     assert result["metadata"]["worker_duration_seconds"] >= 0
@@ -240,6 +245,9 @@ def test_batch_worker_logs_progress_events_to_dask(monkeypatch):
         address = "tcp://worker-1:8790"
         nthreads = 1
         state = WorkerState()
+
+        def get_current_task(self):
+            return "fixture-task"
 
         def __init__(self):
             self.events = []
@@ -302,6 +310,17 @@ def _run_algorithm_without_detections_with_runtime(
     algorithm_name, image_path, source, work_dir, max_observations, algorithm_options
 ):
     return _RuntimeAois()
+
+
+def _run_algorithm_without_detections_with_source_sizing(
+    algorithm_name, image_path, source, work_dir, max_observations, algorithm_options
+):
+    result = _RuntimeAois()
+    result.runtime_provenance = {
+        "algorithm": algorithm_name,
+        "detection_sizing": source["metadata"]["detection_sizing"],
+    }
+    return result
 
 
 def _run_partially_failing_algorithms(
@@ -927,6 +946,39 @@ def test_parquet_run_publishes_zero_detection_runtime_provenance(tmp_path):
     ]
 
 
+def test_inline_result_retains_zero_detection_sizing_provenance(tmp_path):
+    payload = _payload("sized-empty")
+    sizing = {
+        "version": 1,
+        "status": "ready",
+        "min_area_pixels": 9,
+        "max_area_pixels": 121,
+        "provenance": {
+            "ground_scale": 0.1,
+            "object_size_min_m": 0.3,
+            "object_size_max_m": 2.0,
+            "conversion": "ADIAT wizard v1",
+        },
+    }
+    payload["request"]["sources"][0]["metadata"]["detection_sizing"] = sizing
+
+    result = run_batch(
+        payload,
+        source_loader=_load_source,
+        algorithm_runner=_run_algorithm_without_detections_with_source_sizing,
+        work_dir=str(tmp_path),
+        source_timeout_seconds=5,
+        batch_timeout_seconds=10,
+    )
+
+    assert result["status"] == "succeeded"
+    assert result["result"]["observations"] == []
+    assert result["details"]["runtime_provenance"] == [
+        {"algorithm": "MRMap", "detection_sizing": sizing},
+        {"algorithm": "RXAnomaly", "detection_sizing": sizing},
+    ]
+
+
 def test_parquet_run_returns_transient_promotion_diagnostics(tmp_path):
     payload = _parquet_payload()
 
@@ -1152,3 +1204,49 @@ def test_exif_orientation_transposes_image_dimensions(tmp_path):
         (item["source_image_width"], item["source_image_height"])
         for item in result["result"]["observations"]
     } == {(240, 320)}
+
+
+def test_cancellation_before_first_source_does_not_admit_or_publish(tmp_path):
+    def unexpected_source(*args, **kwargs):
+        raise AssertionError("a cancelled batch must not load a source")
+
+    class NoPublication:
+        def put_object(self, **kwargs):
+            raise AssertionError("a cancelled batch must not publish an artifact")
+
+    result = run_batch(
+        _parquet_payload(),
+        source_loader=unexpected_source,
+        work_dir=str(tmp_path),
+        artifact_s3_client=NoPublication(),
+        cancellation_check=lambda: True,
+    )
+    assert result["status"] == "cancelled"
+    assert result["reason"] == "cancelled"
+    assert result["result"]["observations"] == []
+    assert result["details"]["processed_sources"] == []
+
+
+def test_cancellation_after_source_completion_prevents_artifact_publication(tmp_path):
+    state = {"cancelled": False}
+
+    def progress(event):
+        if event.get("event") == "source_terminal":
+            state["cancelled"] = True
+
+    class NoPublication:
+        def put_object(self, **kwargs):
+            raise AssertionError("cancellation must win before artifact publication")
+
+    result = run_batch(
+        _parquet_payload("ok"),
+        source_loader=_load_source,
+        algorithm_runner=_run_algorithm,
+        work_dir=str(tmp_path),
+        progress_callback=progress,
+        artifact_s3_client=NoPublication(),
+        cancellation_check=lambda: state["cancelled"],
+    )
+    assert state["cancelled"]
+    assert result["status"] == "cancelled"
+    assert "persistence" not in result

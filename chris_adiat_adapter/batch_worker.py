@@ -11,13 +11,16 @@ from chris_adiat_adapter.analysis import (
 )
 
 PROGRESS_TOPIC = "adiat-analysis-progress"
+DETECTION_SIZING_CONTRACT_VERSION = 1
 
 
 def run(payload):
     if multiprocessing.current_process().daemon:
-        return _fit_response_to_byte_limit(
+        result = _fit_response_to_byte_limit(
             _isolation_failure(payload), _max_result_bytes()
         )
+        result["detection_sizing_contract_version"] = DETECTION_SIZING_CONTRACT_VERSION
+        return result
     started_at = time.time()
     worker = _dask_worker()
     # Preserve the complete domain-bounded logical result at the public worker
@@ -27,6 +30,7 @@ def run(payload):
         payload,
         progress_callback=_progress_callback(worker),
         apply_result_byte_limit=False,
+        cancellation_check=_cancellation_check(worker),
     )
     result.setdefault("metadata", {}).update(
         _worker_metadata(
@@ -36,7 +40,30 @@ def run(payload):
             parquet_persistence=_uses_parquet_persistence(payload),
         )
     )
+    result["detection_sizing_contract_version"] = DETECTION_SIZING_CONTRACT_VERSION
     return result
+
+
+def _cancellation_check(worker):
+    """Stop the isolated child when Dask releases this exact executing task.
+
+    Cancelling a Dask Future cannot interrupt a Python worker thread. The
+    parent polls its owning TaskState and terminates the separate computation
+    process; it never cancels a different task or the whole worker.
+    """
+    if worker is None:
+        return None
+    task_key = worker.get_current_task()
+
+    def cancelled():
+        task = worker.state.tasks.get(task_key)
+        return task is None or task.state not in {
+            "executing",
+            "long-running",
+            "resumed",
+        }
+
+    return cancelled
 
 
 def _uses_parquet_persistence(payload):
