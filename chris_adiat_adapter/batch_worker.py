@@ -11,13 +11,16 @@ from chris_adiat_adapter.analysis import (
 )
 
 PROGRESS_TOPIC = "adiat-analysis-progress"
+DETECTION_SIZING_CONTRACT_VERSION = 1
 
 
 def run(payload):
     if multiprocessing.current_process().daemon:
-        return _fit_response_to_byte_limit(
+        result = _fit_response_to_byte_limit(
             _isolation_failure(payload), _max_result_bytes()
         )
+        result["detection_sizing_contract_version"] = DETECTION_SIZING_CONTRACT_VERSION
+        return result
     started_at = time.time()
     worker = _dask_worker()
     # Preserve the complete domain-bounded logical result at the public worker
@@ -37,6 +40,7 @@ def run(payload):
             parquet_persistence=_uses_parquet_persistence(payload),
         )
     )
+    result["detection_sizing_contract_version"] = DETECTION_SIZING_CONTRACT_VERSION
     return result
 
 

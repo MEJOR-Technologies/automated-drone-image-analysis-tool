@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 from pathlib import Path
@@ -56,6 +57,8 @@ DEFAULT_SERVICE_KWARGS = {
     "aoi_radius": 25,
     "combine_aois": True,
 }
+
+DETECTION_SIZING_VERSION = 1
 
 # Person detections are individual findings. Keep the service from combining
 # nearby AOIs so each model box remains reviewable as its own observation.
@@ -124,6 +127,90 @@ def effective_options_for_algorithm(algorithm_name, overrides=None):
     return options
 
 
+def effective_area_limits_for_source(source):
+    """Resolve validated per-photo pixel-area limits and their audit record."""
+    metadata = source.get("metadata") or {}
+    if not isinstance(metadata, dict):
+        raise ValueError("source metadata must be an object")
+    sizing = metadata.get("detection_sizing")
+    defaults = {
+        "min_area": DEFAULT_SERVICE_KWARGS["min_area"],
+        "max_area": DEFAULT_SERVICE_KWARGS["max_area"],
+    }
+    if sizing is None and "detection_sizing" not in metadata:
+        return {
+            **defaults,
+            "runtime_provenance": {
+                "version": None,
+                "status": "absent",
+                "applied": False,
+                "min_area_pixels": defaults["min_area"],
+                "max_area_pixels": defaults["max_area"],
+                "provenance": {},
+            },
+        }
+    if not isinstance(sizing, dict):
+        raise ValueError("source detection_sizing must be an object")
+
+    version = sizing.get("version")
+    status = sizing.get("status")
+    if (
+        isinstance(version, bool)
+        or not isinstance(version, int)
+        or version != DETECTION_SIZING_VERSION
+    ):
+        raise ValueError(f"unsupported source detection_sizing version: {version!r}")
+    provenance = sizing.get("provenance", {})
+    if not isinstance(provenance, dict):
+        raise ValueError("source detection_sizing provenance must be an object")
+
+    if status == "unavailable":
+        min_area = defaults["min_area"]
+        max_area = defaults["max_area"]
+        applied = False
+    elif status == "ready":
+        min_area = _positive_area_limit(sizing.get("min_area_pixels"), "minimum")
+        max_area = _positive_area_limit(sizing.get("max_area_pixels"), "maximum")
+        if min_area > max_area:
+            raise ValueError(
+                "source detection_sizing minimum area exceeds maximum area"
+            )
+        applied = True
+    else:
+        raise ValueError(f"unsupported source detection_sizing status: {status!r}")
+
+    return {
+        "min_area": min_area,
+        "max_area": max_area,
+        "runtime_provenance": {
+            "version": version,
+            "status": status,
+            "applied": applied,
+            "min_area_pixels": min_area,
+            "max_area_pixels": max_area,
+            "provenance": dict(provenance),
+        },
+    }
+
+
+def _positive_area_limit(value, label):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(
+            f"source detection_sizing {label} area must be a positive number"
+        )
+    try:
+        parsed = float(value)
+    except OverflowError as exc:
+        raise ValueError(
+            f"source detection_sizing {label} area must be finite"
+        ) from exc
+    if not math.isfinite(parsed) or parsed <= 0:
+        raise ValueError(
+            f"source detection_sizing {label} area must be a positive finite number"
+        )
+    return parsed
+
+
 def run_adiat_algorithm(
     algorithm_name,
     image_path,
@@ -133,6 +220,7 @@ def run_adiat_algorithm(
     algorithm_options=None,
 ):
     options = effective_options_for_algorithm(algorithm_name, algorithm_options)
+    area_limits = effective_area_limits_for_source(source)
     if str(source.get("sensor_type") or "").strip().lower() == "thermal":
         return _run_thermal_algorithm(
             algorithm_name,
@@ -141,6 +229,7 @@ def run_adiat_algorithm(
             work_dir=work_dir,
             max_observations=max_observations,
             algorithm_options=options,
+            area_limits=area_limits,
         )
 
     service_class = _service_class_for_algorithm(algorithm_name)
@@ -153,8 +242,8 @@ def run_adiat_algorithm(
     )
     service = service_class(
         service_kwargs["identifier"],
-        service_kwargs["min_area"],
-        service_kwargs["max_area"],
+        area_limits["min_area"],
+        area_limits["max_area"],
         service_kwargs["aoi_radius"],
         service_kwargs["combine_aois"],
         options,
@@ -175,6 +264,7 @@ def run_adiat_algorithm(
         areas_of_interest = []
     runtime_provenance = {
         "effective_options": options,
+        "detection_sizing": area_limits["runtime_provenance"],
         "adapter_version": __version__,
         **(
             service.runtime_provenance()
@@ -199,15 +289,19 @@ def _run_thermal_algorithm(
     work_dir=".",
     max_observations=None,
     algorithm_options=None,
+    area_limits=None,
 ):
     options = effective_options_for_algorithm(algorithm_name, algorithm_options)
+    area_limits = area_limits or effective_area_limits_for_source(source)
     temperatures = _load_thermal_raster(image_path, source)
     valid_pixels = np.isfinite(temperatures)
     if not valid_pixels.any():
         return BoundedAois(
             [],
             available_count=0,
-            runtime_provenance=_thermal_runtime_provenance(algorithm_name, options),
+            runtime_provenance=_thermal_runtime_provenance(
+                algorithm_name, options, area_limits=area_limits
+            ),
         )
     if algorithm_name == "ThermalResidualAnomaly":
         if "sensitivity" in options:
@@ -218,6 +312,7 @@ def _run_thermal_algorithm(
                 work_dir,
                 options,
                 max_observations=max_observations,
+                area_limits=area_limits,
             )
         filled_temperatures = np.where(
             valid_pixels,
@@ -241,6 +336,7 @@ def _run_thermal_algorithm(
             work_dir,
             options,
             max_observations=max_observations,
+            area_limits=area_limits,
         )
     else:
         raise AlgorithmNotConfigured(f"Unsupported thermal algorithm: {algorithm_name}")
@@ -250,8 +346,12 @@ def _run_thermal_algorithm(
         mask,
         scores,
         max_observations=max_observations,
+        min_area=area_limits["min_area"],
+        max_area=area_limits["max_area"],
     )
-    runtime_provenance = _thermal_runtime_provenance(algorithm_name, options)
+    runtime_provenance = _thermal_runtime_provenance(
+        algorithm_name, options, area_limits=area_limits
+    )
     if _unbounded_iterator_requested(max_observations):
         return CompactAoiIterator(areas_of_interest, runtime_provenance)
     areas_of_interest.runtime_provenance = runtime_provenance
@@ -266,6 +366,7 @@ def _run_native_thermal_algorithm(
     options,
     *,
     max_observations=None,
+    area_limits=None,
 ):
     _ensure_app_on_path()
     if algorithm_name == "ThermalAnomaly":
@@ -288,8 +389,8 @@ def _run_native_thermal_algorithm(
         service_class = ThermalRangeService
     service = service_class(
         DEFAULT_SERVICE_KWARGS["identifier"],
-        DEFAULT_SERVICE_KWARGS["min_area"],
-        DEFAULT_SERVICE_KWARGS["max_area"],
+        area_limits["min_area"],
+        area_limits["max_area"],
         DEFAULT_SERVICE_KWARGS["aoi_radius"],
         DEFAULT_SERVICE_KWARGS["combine_aois"],
         options,
@@ -311,6 +412,7 @@ def _run_native_thermal_algorithm(
         algorithm_name,
         options,
         service_version=service.SERVICE_VERSION,
+        area_limits=area_limits,
     )
     if _unbounded_iterator_requested(max_observations):
         return CompactAoiIterator(areas_of_interest, runtime_provenance)
@@ -321,11 +423,13 @@ def _run_native_thermal_algorithm(
     )
 
 
-def _thermal_runtime_provenance(algorithm_name, options, service_version=None):
+def _thermal_runtime_provenance(
+    algorithm_name, options, service_version=None, area_limits=None
+):
     native = algorithm_name in {"ThermalAnomaly", "ThermalRange"} or (
         algorithm_name == "ThermalResidualAnomaly" and "sensitivity" in options
     )
-    return {
+    provenance = {
         "effective_options": dict(options),
         "adapter_version": __version__,
         "service_version": service_version
@@ -341,6 +445,9 @@ def _thermal_runtime_provenance(algorithm_name, options, service_version=None):
         "ai_model_sha256": None,
         "actual_provider": None,
     }
+    if area_limits is not None:
+        provenance["detection_sizing"] = area_limits["runtime_provenance"]
+    return provenance
 
 
 def _load_thermal_raster(image_path, source):
@@ -374,14 +481,23 @@ def _load_thermal_raster(image_path, source):
     return temperatures
 
 
-def _thermal_areas_of_interest(temperatures, mask, scores, *, max_observations=None):
+def _thermal_areas_of_interest(
+    temperatures,
+    mask,
+    scores,
+    *,
+    max_observations=None,
+    min_area=DEFAULT_SERVICE_KWARGS["min_area"],
+    max_area=DEFAULT_SERVICE_KWARGS["max_area"],
+):
     mask_u8 = np.asarray(mask, dtype=np.uint8) * 255
     contours, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     areas = []
     max_contour_points = _max_contour_points()
     for contour in contours:
         area = float(cv2.contourArea(contour))
-        if area < 1.0:
+        pixel_area = _filled_contour_pixel_area(contour)
+        if pixel_area < min_area or (max_area > 0 and pixel_area > max_area):
             continue
         points = contour.reshape(-1, 2).tolist()
         if len(points) > max_contour_points:
@@ -424,6 +540,14 @@ def _thermal_areas_of_interest(temperatures, mask, scores, *, max_observations=N
         areas[: _observation_limit(max_observations)],
         available_count=len(areas),
     )
+
+
+def _filled_contour_pixel_area(contour):
+    x, y, width, height = cv2.boundingRect(contour)
+    local_contour = contour - np.array([[[x, y]]], dtype=contour.dtype)
+    mask = np.zeros((height, width), dtype=np.uint8)
+    cv2.drawContours(mask, [local_contour], -1, 255, thickness=cv2.FILLED)
+    return cv2.countNonZero(mask)
 
 
 def _compact_areas_of_interest(

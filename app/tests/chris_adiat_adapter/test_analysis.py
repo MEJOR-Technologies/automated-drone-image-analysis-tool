@@ -174,6 +174,7 @@ def test_batch_worker_rejects_daemonic_runtime(monkeypatch):
 
     assert result["status"] == "failed"
     assert result["reason"] == "isolation_unavailable"
+    assert result["detection_sizing_contract_version"] == 1
     assert result["details"]["processed_sources"] == []
     assert "non-daemonic" in result["error"]
 
@@ -200,6 +201,7 @@ def test_batch_worker_reports_dask_worker_identity(monkeypatch):
     result = batch_worker.run(_payload("ok"))
 
     assert result["metadata"]["worker_address"] == "tcp://worker-1:8790"
+    assert result["detection_sizing_contract_version"] == 1
     assert result["metadata"]["worker_nthreads"] == 1
     assert result["metadata"]["worker_resources"] == {"adiat_analysis": 1.0}
     assert result["metadata"]["worker_duration_seconds"] >= 0
@@ -308,6 +310,17 @@ def _run_algorithm_without_detections_with_runtime(
     algorithm_name, image_path, source, work_dir, max_observations, algorithm_options
 ):
     return _RuntimeAois()
+
+
+def _run_algorithm_without_detections_with_source_sizing(
+    algorithm_name, image_path, source, work_dir, max_observations, algorithm_options
+):
+    result = _RuntimeAois()
+    result.runtime_provenance = {
+        "algorithm": algorithm_name,
+        "detection_sizing": source["metadata"]["detection_sizing"],
+    }
+    return result
 
 
 def _run_partially_failing_algorithms(
@@ -930,6 +943,39 @@ def test_parquet_run_publishes_zero_detection_runtime_provenance(tmp_path):
     ]
     assert result["persistence"]["artifacts"][0]["runtime_provenance"] == [
         _RuntimeAois.runtime_provenance
+    ]
+
+
+def test_inline_result_retains_zero_detection_sizing_provenance(tmp_path):
+    payload = _payload("sized-empty")
+    sizing = {
+        "version": 1,
+        "status": "ready",
+        "min_area_pixels": 9,
+        "max_area_pixels": 121,
+        "provenance": {
+            "ground_scale": 0.1,
+            "object_size_min_m": 0.3,
+            "object_size_max_m": 2.0,
+            "conversion": "ADIAT wizard v1",
+        },
+    }
+    payload["request"]["sources"][0]["metadata"]["detection_sizing"] = sizing
+
+    result = run_batch(
+        payload,
+        source_loader=_load_source,
+        algorithm_runner=_run_algorithm_without_detections_with_source_sizing,
+        work_dir=str(tmp_path),
+        source_timeout_seconds=5,
+        batch_timeout_seconds=10,
+    )
+
+    assert result["status"] == "succeeded"
+    assert result["result"]["observations"] == []
+    assert result["details"]["runtime_provenance"] == [
+        {"algorithm": "MRMap", "detection_sizing": sizing},
+        {"algorithm": "RXAnomaly", "detection_sizing": sizing},
     ]
 
 

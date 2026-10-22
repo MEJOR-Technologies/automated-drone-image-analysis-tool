@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from algorithms.AlgorithmService import BoundedAreasOfInterest
 from algorithms.images.ThermalAnomaly.services.ThermalAnomalyService import (
@@ -309,6 +310,222 @@ def test_run_configures_worker_generation_caps_before_processing(tmp_path, monke
     )
 
     assert result.available_count == 0
+
+
+def test_rgb_services_receive_distinct_source_area_limits_and_audit_them(
+    tmp_path, monkeypatch
+):
+    source_path = tmp_path / "source.png"
+    source_path.touch()
+    received_limits = []
+
+    class FakeService:
+        def __init__(self, identifier, min_area, max_area, radius, combine, options):
+            received_limits.append((min_area, max_area))
+
+        def process_image(self, *args):
+            return SimpleNamespace(error_message=None, areas_of_interest=[])
+
+    monkeypatch.setattr(
+        algorithms, "_service_class_for_algorithm", lambda name: FakeService
+    )
+    monkeypatch.setattr(algorithms.cv2, "imread", lambda path: np.zeros((1, 1, 3)))
+
+    results = []
+    for minimum, maximum in ((9, 121), (25, 400)):
+        results.append(
+            algorithms.run_adiat_algorithm(
+                "MRMap",
+                str(source_path),
+                {
+                    "metadata": {
+                        "detection_sizing": {
+                            "version": 1,
+                            "status": "ready",
+                            "min_area_pixels": minimum,
+                            "max_area_pixels": maximum,
+                            "provenance": {
+                                "ground_scale": 0.1,
+                                "object_size_min_m": 0.3,
+                                "object_size_max_m": 2.0,
+                                "conversion": "ADIAT wizard v1",
+                            },
+                        }
+                    }
+                },
+                str(tmp_path),
+            )
+        )
+
+    assert received_limits == [(9.0, 121.0), (25.0, 400.0)]
+    assert [
+        result.runtime_provenance["detection_sizing"]["min_area_pixels"]
+        for result in results
+    ] == [9.0, 25.0]
+    assert all(not result for result in results)
+    assert (
+        results[0].runtime_provenance["detection_sizing"]["provenance"]["conversion"]
+        == "ADIAT wizard v1"
+    )
+
+
+def test_invalid_explicit_ready_area_limits_are_rejected_before_analysis(tmp_path):
+    source_path = tmp_path / "source.png"
+
+    with pytest.raises(ValueError, match="positive"):
+        algorithms.run_adiat_algorithm(
+            "MRMap",
+            str(source_path),
+            {
+                "metadata": {
+                    "detection_sizing": {
+                        "version": 1,
+                        "status": "ready",
+                        "min_area_pixels": 0,
+                        "max_area_pixels": 100,
+                        "provenance": {},
+                    }
+                }
+            },
+        )
+
+
+def test_native_thermal_service_receives_source_area_limits(monkeypatch):
+    captured = {}
+
+    def process_temperature_raster(self, *args, **kwargs):
+        captured["limits"] = (self.min_area, self.max_area)
+        return SimpleNamespace(error_message=None, areas_of_interest=[])
+
+    monkeypatch.setattr(algorithms, "_load_thermal_raster", lambda *_: np.ones((8, 8)))
+    monkeypatch.setattr(
+        ThermalRangeService, "process_temperature_raster", process_temperature_raster
+    )
+
+    result = algorithms._run_thermal_algorithm(
+        "ThermalRange",
+        "thermal.raw",
+        {
+            "sensor_type": "thermal",
+            "metadata": {
+                "detection_sizing": {
+                    "version": 1,
+                    "status": "ready",
+                    "min_area_pixels": 6,
+                    "max_area_pixels": 80,
+                    "provenance": {"conversion": "ADIAT wizard v1"},
+                }
+            },
+        },
+    )
+
+    assert captured["limits"] == (6.0, 80.0)
+    assert result.runtime_provenance["detection_sizing"]["applied"] is True
+    assert result.runtime_provenance["detection_sizing"]["max_area_pixels"] == 80.0
+    assert result.runtime_provenance["detection_sizing"]["provenance"] == {
+        "conversion": "ADIAT wizard v1"
+    }
+
+
+def test_real_thermal_service_applies_per_source_area_limits_to_same_anomaly(
+    tmp_path,
+):
+    temperatures = np.full((20, 20), 20.0, dtype="<f4")
+    temperatures[6:9, 6:9] = 40.0
+    source_path = tmp_path / "thermal.raw"
+    temperatures.tofile(source_path)
+
+    def source_with_area_limits(minimum, maximum):
+        return {
+            "sensor_type": "thermal",
+            "metadata": {
+                "image_width": 20,
+                "image_height": 20,
+                "detection_sizing": {
+                    "version": 1,
+                    "status": "ready",
+                    "min_area_pixels": minimum,
+                    "max_area_pixels": maximum,
+                    "provenance": {"conversion": "ADIAT wizard v1"},
+                },
+            },
+        }
+
+    rejected = algorithms.run_adiat_algorithm(
+        "ThermalRange",
+        str(source_path),
+        source_with_area_limits(1, 8),
+        work_dir=str(tmp_path),
+    )
+    accepted = algorithms.run_adiat_algorithm(
+        "ThermalRange",
+        str(source_path),
+        source_with_area_limits(9, 12),
+        work_dir=str(tmp_path),
+    )
+
+    assert not rejected
+    assert len(accepted) == 1
+    assert accepted[0]["area"] == 9
+    assert accepted.runtime_provenance["detection_sizing"]["min_area_pixels"] == 9
+
+
+def test_unavailable_area_sizing_keeps_legacy_service_defaults(tmp_path, monkeypatch):
+    source_path = tmp_path / "source.png"
+    source_path.touch()
+    captured = {}
+
+    class FakeService:
+        def __init__(self, identifier, min_area, max_area, radius, combine, options):
+            captured["limits"] = (min_area, max_area)
+
+        def process_image(self, *args):
+            return SimpleNamespace(error_message=None, areas_of_interest=[])
+
+    monkeypatch.setattr(
+        algorithms, "_service_class_for_algorithm", lambda name: FakeService
+    )
+    monkeypatch.setattr(algorithms.cv2, "imread", lambda path: np.zeros((1, 1, 3)))
+
+    result = algorithms.run_adiat_algorithm(
+        "MRMap",
+        str(source_path),
+        {
+            "metadata": {
+                "detection_sizing": {
+                    "version": 1,
+                    "status": "unavailable",
+                    "provenance": {"reason": "camera metadata missing"},
+                }
+            }
+        },
+        str(tmp_path),
+    )
+
+    assert captured["limits"] == (1, 0)
+    assert result.runtime_provenance["detection_sizing"]["applied"] is False
+    assert result.runtime_provenance["detection_sizing"]["provenance"] == {
+        "reason": "camera metadata missing"
+    }
+
+
+def test_adapter_thermal_residual_uses_source_area_limits():
+    temperatures = np.ones((20, 20), dtype=np.float32)
+    mask = np.zeros((20, 20), dtype=bool)
+    mask[1:4, 1:4] = True  # contour area 4
+    mask[7:11, 7:11] = True  # pixel area 16
+    mask[14:19, 14:19] = True  # pixel area 25
+
+    areas = algorithms._thermal_areas_of_interest(
+        temperatures,
+        mask,
+        temperatures,
+        min_area=10,
+        max_area=20,
+    )
+
+    assert len(areas) == 1
+    assert areas[0]["area"] == 9
 
 
 def test_unbounded_artifact_mode_releases_materialized_aois_as_consumed(

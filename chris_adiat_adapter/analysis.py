@@ -410,6 +410,7 @@ def run_batch(
             "source_failures": source_failures,
             "algorithm_failures": algorithm_failures,
             "truncations": truncations,
+            "runtime_provenance": runtime_provenance,
             "configured_limits": {
                 "max_observations_per_source": _max_observations_per_source(),
                 "max_observations_per_batch": max_batch_observations,
