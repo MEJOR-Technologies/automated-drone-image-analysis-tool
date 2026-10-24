@@ -9,6 +9,7 @@ from chris_adiat_adapter.analysis import (
     _max_result_bytes,
     run_batch,
 )
+from chris_adiat_adapter.schemas import DETECTOR_CONTROLS_CONTRACT_VERSION
 
 PROGRESS_TOPIC = "adiat-analysis-progress"
 DETECTION_SIZING_CONTRACT_VERSION = 1
@@ -20,6 +21,9 @@ def run(payload):
             _isolation_failure(payload), _max_result_bytes()
         )
         result["detection_sizing_contract_version"] = DETECTION_SIZING_CONTRACT_VERSION
+        result["detector_controls_contract_version"] = (
+            DETECTOR_CONTROLS_CONTRACT_VERSION
+        )
         return result
     started_at = time.time()
     worker = _dask_worker()
@@ -41,6 +45,9 @@ def run(payload):
         )
     )
     result["detection_sizing_contract_version"] = DETECTION_SIZING_CONTRACT_VERSION
+    result["detector_controls_contract_version"] = (
+        DETECTOR_CONTROLS_CONTRACT_VERSION
+    )
     return result
 
 
@@ -126,6 +133,7 @@ def _worker_metadata(
 
 def _isolation_failure(payload):
     return {
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "status": "failed",
         "reason": "isolation_unavailable",
         "result": {

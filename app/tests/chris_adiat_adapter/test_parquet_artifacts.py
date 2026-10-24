@@ -341,14 +341,32 @@ def test_zero_row_artifact_manifest_retains_runtime_provenance(tmp_path):
     )
 
     assert result["observation_count"] == 0
+    assert result["detector_controls_contract_version"] == 2
     assert result["runtime_provenance"] == [provenance]
     assert result["artifacts"][0]["runtime_provenance"] == [provenance]
     parquet = pq.ParquetFile(path)
-    assert parquet.schema_arrow.metadata[b"chris.adapter_version"] == b"0.2.2"
+    assert parquet.schema_arrow.metadata[b"chris.adapter_version"] == b"0.3.0"
+    assert (
+        parquet.schema_arrow.metadata[b"chris.detector_controls_contract_version"]
+        == b"2"
+    )
     assert (
         parquet.schema_arrow.metadata[b"chris.service_version"]
-        == b"chris-adiat-gpl-worker-0.2.2"
+        == b"chris-adiat-gpl-worker-0.3.0"
     )
+
+
+def test_detector_controls_contract_is_in_external_parquet_attestation(tmp_path):
+    client = MemoryS3()
+    result = publish_observation_artifact(
+        _payload(), [], work_dir=tmp_path, s3_client=client
+    )
+
+    canonical_key = _payload()["request"]["persistence"]["canonical_object_key"]
+    canonical = client.objects[("processed", canonical_key)]
+    assert canonical["Metadata"]["detector-controls-contract-version"] == "2"
+    assert result["detector_controls_contract_version"] == 2
+    assert result["artifacts"][0]["metadata"]["detector_controls_contract_version"] == 2
 
 
 def test_rejects_conflicting_immutable_retry(tmp_path):

@@ -175,6 +175,7 @@ def test_batch_worker_rejects_daemonic_runtime(monkeypatch):
     assert result["status"] == "failed"
     assert result["reason"] == "isolation_unavailable"
     assert result["detection_sizing_contract_version"] == 1
+    assert result["detector_controls_contract_version"] == 2
     assert result["details"]["processed_sources"] == []
     assert "non-daemonic" in result["error"]
 
@@ -202,6 +203,7 @@ def test_batch_worker_reports_dask_worker_identity(monkeypatch):
 
     assert result["metadata"]["worker_address"] == "tcp://worker-1:8790"
     assert result["detection_sizing_contract_version"] == 1
+    assert result["detector_controls_contract_version"] == 2
     assert result["metadata"]["worker_nthreads"] == 1
     assert result["metadata"]["worker_resources"] == {"adiat_analysis": 1.0}
     assert result["metadata"]["worker_duration_seconds"] >= 0
@@ -471,6 +473,7 @@ def test_run_batch_treats_zero_detections_as_success(tmp_path):
     )
 
     assert result["status"] == "succeeded"
+    assert result["detector_controls_contract_version"] == 2
     assert result["metadata"]["attempt_id"] == "attempt-1"
     assert result["result"]["observations"] == []
     assert result["details"]["processed_sources"] == [

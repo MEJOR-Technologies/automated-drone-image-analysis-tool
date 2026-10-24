@@ -12,6 +12,7 @@ import pyarrow.parquet as pq
 from botocore.exceptions import BotoCoreError, ClientError
 
 from chris_adiat_adapter import __version__
+from chris_adiat_adapter.schemas import DETECTOR_CONTROLS_CONTRACT_VERSION
 from chris_adiat_adapter.legacy_xml_artifacts import (
     LEGACY_XML_CONTENT_TYPE,
     LegacyXmlArtifactWriter,
@@ -98,6 +99,9 @@ class ObservationArtifactWriter:
         schema_metadata.update(
             {
                 b"chris.adapter_version": __version__.encode("utf-8"),
+                b"chris.detector_controls_contract_version": str(
+                    DETECTOR_CONTROLS_CONTRACT_VERSION
+                ).encode("ascii"),
                 b"chris.service_version": (
                     f"chris-adiat-gpl-worker-{__version__}".encode("utf-8")
                 ),
@@ -225,6 +229,9 @@ def publish_prepared_observation_artifact(payload, prepared, s3_client=None):
         "analysis-run-id": run_id,
         "source-media-id": str(source["media_id"]),
         "algorithm": algorithm,
+        "detector-controls-contract-version": str(
+            DETECTOR_CONTROLS_CONTRACT_VERSION
+        ),
     }
     try:
         _put_object(
@@ -278,6 +285,7 @@ def publish_prepared_observation_artifact(payload, prepared, s3_client=None):
             "attempt_uri": attempt_uri,
             "unmerged": True,
             "geometry": "source_pixels_and_wgs84",
+            "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         },
     }
     digest = hashlib.sha256(
@@ -285,6 +293,7 @@ def publish_prepared_observation_artifact(payload, prepared, s3_client=None):
     ).hexdigest()
     result = {
         "mode": "parquet",
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "contract_version": int(persistence["contract_version"]),
         "run_id": run_id,
         "attempt_id": attempt_id,
