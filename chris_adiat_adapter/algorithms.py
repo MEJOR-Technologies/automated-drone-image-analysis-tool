@@ -181,9 +181,7 @@ def _validate_v2_detector_options(algorithm_name, options):
         "MatchedFilter": ({"color_configs"}, {"color_configs"}),
     }
     if algorithm_name not in schemas:
-        raise AlgorithmNotConfigured(
-            f"Unsupported ADIAT algorithm: {algorithm_name}"
-        )
+        raise AlgorithmNotConfigured(f"Unsupported ADIAT algorithm: {algorithm_name}")
 
     required, allowed = schemas[algorithm_name]
     allowed = set(allowed) | {"processing_resolution_percent"}
@@ -207,7 +205,9 @@ def _validate_v2_detector_options(algorithm_name, options):
             or not math.isfinite(float(confidence))
             or not 0 <= confidence <= 100
         ):
-            raise ValueError("AIPersonDetector person_detector_confidence must be in [0, 100]")
+            raise ValueError(
+                "AIPersonDetector person_detector_confidence must be in [0, 100]"
+            )
         if not isinstance(options["cpu_only"], bool):
             raise ValueError("AIPersonDetector cpu_only must be a boolean")
     elif algorithm_name in {"MRMap", "RXAnomaly", "ThermalAnomaly"}:
@@ -218,7 +218,9 @@ def _validate_v2_detector_options(algorithm_name, options):
             if options["colorspace"] not in {"LAB", "RGB", "HSV"}:
                 raise ValueError("MRMap colorspace must be LAB, RGB, or HSV")
         elif algorithm_name == "RXAnomaly":
-            _validate_integer_option(options["sensitivity"], "RXAnomaly sensitivity", 1, 10)
+            _validate_integer_option(
+                options["sensitivity"], "RXAnomaly sensitivity", 1, 10
+            )
         else:
             threshold = _validate_finite_number(
                 options["threshold"], "ThermalAnomaly threshold"
@@ -257,7 +259,11 @@ def _validate_segment_count(value, algorithm_name):
 
 
 def _validate_integer_option(value, label, minimum, maximum):
-    if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not minimum <= value <= maximum
+    ):
         raise ValueError(f"{label} must be an integer in [{minimum}, {maximum}]")
 
 
@@ -310,8 +316,12 @@ def _validate_color_algorithm_options(algorithm_name, options):
                 raise ValueError(
                     f"ColorRange color_ranges[{index}].color_range must have RGB minimum and maximum"
                 )
-            minimum = _validate_rgb(bounds[0], f"ColorRange color_ranges[{index}] minimum")
-            maximum = _validate_rgb(bounds[1], f"ColorRange color_ranges[{index}] maximum")
+            minimum = _validate_rgb(
+                bounds[0], f"ColorRange color_ranges[{index}] minimum"
+            )
+            maximum = _validate_rgb(
+                bounds[1], f"ColorRange color_ranges[{index}] maximum"
+            )
             if any(low > high for low, high in zip(minimum, maximum)):
                 raise ValueError(
                     f"ColorRange color_ranges[{index}] minimum must not exceed maximum"
@@ -351,7 +361,9 @@ def _validate_color_algorithm_options(algorithm_name, options):
                 "hsv_window",
             )
         ):
-            raise ValueError("HSVColorRange must use either hsv_configs or legacy options")
+            raise ValueError(
+                "HSVColorRange must use either hsv_configs or legacy options"
+            )
         configs = options["hsv_configs"]
         _validate_sample_list(configs, "HSVColorRange hsv_configs")
         expected_range_keys = {
@@ -378,7 +390,10 @@ def _validate_color_algorithm_options(algorithm_name, options):
                 f"HSVColorRange hsv_configs[{index}].selected_color",
             )
             hsv_ranges = config["hsv_ranges"]
-            if not isinstance(hsv_ranges, dict) or set(hsv_ranges) != expected_range_keys:
+            if (
+                not isinstance(hsv_ranges, dict)
+                or set(hsv_ranges) != expected_range_keys
+            ):
                 raise ValueError(
                     f"HSVColorRange hsv_configs[{index}].hsv_ranges has invalid fields"
                 )
@@ -397,8 +412,14 @@ def _validate_color_algorithm_options(algorithm_name, options):
         ("value_threshold", 255),
     ):
         value = options.get(key)
-        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= maximum:
-            raise ValueError(f"HSVColorRange {key} must be an integer in [0, {maximum}]")
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or not 0 <= value <= maximum
+        ):
+            raise ValueError(
+                f"HSVColorRange {key} must be an integer in [0, {maximum}]"
+            )
     if "hsv_ranges" in options and not isinstance(options["hsv_ranges"], dict):
         raise ValueError("HSVColorRange hsv_ranges must be an object")
     if "hsv_window" in options and not isinstance(options["hsv_window"], dict):
@@ -407,7 +428,9 @@ def _validate_color_algorithm_options(algorithm_name, options):
 
 def _validate_sample_list(value, label):
     if not isinstance(value, list) or not 1 <= len(value) <= MAX_COLOR_SAMPLES:
-        raise ValueError(f"{label} must contain between 1 and {MAX_COLOR_SAMPLES} entries")
+        raise ValueError(
+            f"{label} must contain between 1 and {MAX_COLOR_SAMPLES} entries"
+        )
 
 
 def _validate_rgb(value, label):
@@ -415,7 +438,11 @@ def _validate_rgb(value, label):
         raise ValueError(f"{label} must be an RGB triple")
     parsed = []
     for channel in value:
-        if isinstance(channel, bool) or not isinstance(channel, int) or not 0 <= channel <= 255:
+        if (
+            isinstance(channel, bool)
+            or not isinstance(channel, int)
+            or not 0 <= channel <= 255
+        ):
             raise ValueError(f"{label} channels must be uint8 integers")
         parsed.append(channel)
     return parsed
@@ -595,9 +622,7 @@ def _scale_area_limits_for_processing(area_limits, scale_x, scale_y):
     )
     processing_min_area = source_min_area * pixel_area_scale
     processing_max_area = (
-        0
-        if source_max_area in (0, None)
-        else float(source_max_area) * pixel_area_scale
+        0 if source_max_area in (0, None) else float(source_max_area) * pixel_area_scale
     )
     runtime_provenance = dict(area_limits["runtime_provenance"])
     runtime_provenance.update(
@@ -687,9 +712,7 @@ def _transform_aois_to_source_resolution(
                 for point in detected_pixels
             ]
         if "area" in aoi:
-            aoi["area"] = max(
-                1, int(round(float(aoi["area"]) / (scale_x * scale_y)))
-            )
+            aoi["area"] = max(1, int(round(float(aoi["area"]) / (scale_x * scale_y))))
     return areas_of_interest
 
 

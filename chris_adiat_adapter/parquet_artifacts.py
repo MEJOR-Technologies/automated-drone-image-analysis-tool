@@ -229,9 +229,7 @@ def publish_prepared_observation_artifact(payload, prepared, s3_client=None):
         "analysis-run-id": run_id,
         "source-media-id": str(source["media_id"]),
         "algorithm": algorithm,
-        "detector-controls-contract-version": str(
-            DETECTOR_CONTROLS_CONTRACT_VERSION
-        ),
+        "detector-controls-contract-version": str(DETECTOR_CONTROLS_CONTRACT_VERSION),
     }
     try:
         _put_object(

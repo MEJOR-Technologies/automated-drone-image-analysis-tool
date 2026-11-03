@@ -140,9 +140,7 @@ def test_native_color_range_tolerance_and_dem_area_survive_downscaling(tmp_path)
         max_observations=10,
         algorithm_options={
             "processing_resolution_percent": 50,
-            "color_ranges": [
-                {"color_range": [[250, 0, 0], [255, 5, 5]]}
-            ],
+            "color_ranges": [{"color_range": [[250, 0, 0], [255, 5, 5]]}],
         },
     )
 
@@ -277,11 +275,7 @@ def test_ready_sizing_null_maximum_is_native_uncapped_sentinel():
         ),
         (
             "MatchedFilter",
-            {
-                "color_configs": [
-                    {"selected_color": [255, 0, 0], "threshold": 0.5}
-                ]
-            },
+            {"color_configs": [{"selected_color": [255, 0, 0], "threshold": 0.5}]},
             "must contain selected_color",
         ),
         (

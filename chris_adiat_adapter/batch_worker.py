@@ -45,9 +45,7 @@ def run(payload):
         )
     )
     result["detection_sizing_contract_version"] = DETECTION_SIZING_CONTRACT_VERSION
-    result["detector_controls_contract_version"] = (
-        DETECTOR_CONTROLS_CONTRACT_VERSION
-    )
+    result["detector_controls_contract_version"] = DETECTOR_CONTROLS_CONTRACT_VERSION
     return result
 
 
