@@ -24,7 +24,11 @@ from chris_adiat_adapter.parquet_artifacts import (
 )
 from chris_adiat_adapter.profiles import algorithms_for_profile
 from chris_adiat_adapter.s3_sources import load_source
-from chris_adiat_adapter.schemas import PayloadValidationError, validate_payload
+from chris_adiat_adapter.schemas import (
+    DETECTOR_CONTROLS_CONTRACT_VERSION,
+    PayloadValidationError,
+    validate_payload,
+)
 
 
 DEFAULT_MAX_OBSERVATIONS_PER_SOURCE = 1000
@@ -387,6 +391,7 @@ def run_batch(
         processed_sources = []
 
     response = {
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "status": status,
         "reason": reason,
         "result": {
@@ -1117,6 +1122,7 @@ def _fit_response_to_byte_limit(response, max_result_bytes):
 
 def _minimal_oversize_response(response, max_result_bytes):
     return {
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "status": "failed",
         "reason": "result_byte_limit",
         "result": {
@@ -1209,6 +1215,7 @@ def _empty_response(status, reason, error, payload):
     sources = request.get("sources")
     source_count = len(sources) if isinstance(sources, list) else 0
     response = {
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "status": status,
         "reason": reason,
         "result": {
