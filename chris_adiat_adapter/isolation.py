@@ -17,6 +17,7 @@ def run_with_timeout(
     kwargs=None,
     timeout_seconds=270,
     progress_callback=None,
+    cancellation_check=None,
 ):
     """Run one serialized call in a spawn child retained by this worker process."""
     if multiprocessing.current_process().daemon:
@@ -62,6 +63,14 @@ def run_with_timeout(
 
         deadline = time.monotonic() + timeout_seconds
         while True:
+            if cancellation_check is not None and cancellation_check():
+                _reset_worker()
+                return {
+                    "status": "cancelled",
+                    "reason": "cancelled",
+                    "value": None,
+                    "error": "analysis cancelled by its owning task",
+                }
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 _reset_worker()

@@ -85,3 +85,28 @@ durable checkpoint acceptance, and PostgreSQL lifecycle/result persistence.
 Source objects require a valid SHA256 checksum and are fetched
 read-only from S3 or MinIO. JPEG, DJI MPO-encoded JPEG, PNG, TIFF, and WebP are
 supported.
+
+## Wizard residual detector and cancellation (0.2.2)
+
+`ThermalResidualAnomaly` requests containing `sensitivity` use the native local
+radiometric residual algorithm from upstream ADIAT commit
+`00bf118f50d27559ba636463bfd33c818524ccb3`. The wizard starts at sensitivity 5
+and direction `Both`; `Hot` and `Cold` restrict the anomaly direction. CHRIS
+passes its decoded Celsius raster directly and retains source-pixel geometry,
+AOI limits and immutable result publication. Runtime provenance identifies the
+implementation as `native_service` and service version as
+`upstream-00bf118f-thermal-residual-1`.
+
+Historical requests without `sensitivity` retain `adapter-thermal-residual-1`
+semantics and their explicit legacy threshold. The adapter does not silently
+reinterpret old frozen settings as the new algorithm. CHRIS must activate its
+approved wizard profile only after deploying and pinning a compatible image.
+
+During Dask execution, the adapter watches the state of its exact owning task.
+Cancellation terminates its isolated computation process, stops further source
+admission and prevents terminal Parquet publication. It leaves the worker alive
+for another task. Polling is every 50 ms during computation; process shutdown
+uses the existing five-second terminate and five-second kill/join bounds. A
+real Dask regression verifies active-child termination within five seconds in
+the fixture and successful isolated execution of the next task. This is local
+functional evidence, not an AWS deployment or production cancellation canary.

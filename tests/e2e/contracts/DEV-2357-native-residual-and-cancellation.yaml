@@ -1,0 +1,56 @@
+id: DEV-2357
+name: Native residual parameters and exact-task worker cancellation
+status: runnable
+owner_area: adiat-public-worker
+nightly: true
+nightly_runner: generic-repository
+target_profiles: [pull-request, develop]
+optional_target_profiles: []
+prod_safe: false
+prod_safety:
+  allowed_account_ids: []
+  allowed_org_slugs: []
+  purge_prefixes: []
+requires:
+  api_key_source: none
+  test_org: none
+  test_user: none
+  seed_data:
+    bucket: none
+    prefixes: []
+  feature_flags: []
+  services: [Python 3.12 with requirements-chris-test.txt, loopback Dask, child process isolation]
+fixtures:
+  - Generated 97x97 Celsius rasters with independently known hot and cold targets and invalid pixels.
+  - A real Dask task with an isolated child process, a PID marker and a forbidden late-write marker.
+cleanup:
+  purge_before_run: false
+  purge_prefixes: []
+  keep_failed_data: false
+  notes:
+    - Temporary fixture directories and the local Dask cluster are context-managed.
+    - The exact isolated child is reset in finally; no shared application worker is stopped.
+commands:
+  - name: native-residual-and-dask-cancellation
+    execution: deterministic
+    run: >-
+      mkdir -p .ci/adiat-worker-contract &&
+      python3 -m pytest -q -p no:cacheprovider
+      --confcutdir=app/tests/chris_adiat_adapter
+      app/tests/chris_adiat_adapter/test_native_thermal_residual.py
+      app/tests/chris_adiat_adapter/test_dask_cancellation.py
+      app/tests/chris_adiat_adapter/test_analysis.py::test_cancellation_before_first_source_does_not_admit_or_publish
+      app/tests/chris_adiat_adapter/test_analysis.py::test_cancellation_after_source_completion_prevents_artifact_publication
+      --junitxml=.ci/adiat-worker-contract/junit.xml
+    env: {}
+assertions:
+  - Hot, Cold and Both select independently known Celsius targets; sensitivity changes actual detection of a four-degree target.
+  - Invalid pixels produce no false detections and observation/contour limits remain bounded.
+  - New residual requests carry native version provenance; historical requests retain adapter-thermal-residual-1.
+  - Cancelling the exact Dask task terminates its active child within five seconds in the fixture and allows a successor isolated task.
+  - A cancelled batch admits no further source and cannot publish its terminal Parquet artifact.
+artifacts:
+  - .ci/adiat-worker-contract/junit.xml
+known_gaps:
+  - Source checks are runnable in this repository with its locked test dependencies; scheduled cross-repository execution is not claimed.
+  - AWS production cancellation, compatible image publication/pinning and CHRIS wizard-default activation remain separate acceptance gates.

@@ -1,0 +1,58 @@
+id: DEV-2301
+name: Per-source ADIAT physical detection sizing
+status: runnable
+owner_area: adiat-public-worker
+nightly: true
+nightly_runner: generic-repository
+target_profiles: [pull-request, develop]
+optional_target_profiles: []
+prod_safe: false
+prod_safety:
+  allowed_account_ids: []
+  allowed_org_slugs: []
+  purge_prefixes: []
+requires:
+  api_key_source: none
+  test_org: none
+  test_user: none
+  seed_data:
+    bucket: none
+    prefixes: []
+  feature_flags: []
+  services: [Python 3.12 with requirements-chris-test.txt]
+fixtures:
+  - A generated 20x20 Celsius raster containing one 3x3 target with known area.
+  - Adapter service fakes for RGB parameter handoff and malformed sizing validation.
+cleanup:
+  purge_before_run: false
+  purge_prefixes: []
+  keep_failed_data: false
+  notes:
+    - Generated raster and adapter test files use pytest-managed temporary directories.
+commands:
+  - name: per-source-detection-sizing
+    execution: deterministic
+    run: >-
+      mkdir -p .ci/adiat-worker-contract &&
+      python3 -m pytest -q -p no:cacheprovider
+      --confcutdir=app/tests/chris_adiat_adapter
+      app/tests/chris_adiat_adapter/test_algorithms.py::test_rgb_services_receive_distinct_source_area_limits_and_audit_them
+      app/tests/chris_adiat_adapter/test_algorithms.py::test_invalid_explicit_ready_area_limits_are_rejected_before_analysis
+      app/tests/chris_adiat_adapter/test_algorithms.py::test_native_thermal_service_receives_source_area_limits
+      app/tests/chris_adiat_adapter/test_algorithms.py::test_real_thermal_service_applies_per_source_area_limits_to_same_anomaly
+      app/tests/chris_adiat_adapter/test_algorithms.py::test_unavailable_area_sizing_keeps_legacy_service_defaults
+      app/tests/chris_adiat_adapter/test_algorithms.py::test_adapter_thermal_residual_uses_source_area_limits
+      app/tests/chris_adiat_adapter/test_analysis.py::test_inline_result_retains_zero_detection_sizing_provenance
+      app/tests/chris_adiat_adapter/test_analysis.py::test_batch_worker_rejects_daemonic_runtime
+      app/tests/chris_adiat_adapter/test_analysis.py::test_batch_worker_reports_dask_worker_identity
+      --junitxml=.ci/adiat-worker-contract/per-source-sizing.xml
+    env: {}
+assertions:
+  - Distinct per-source limits reach RGB and native thermal services; a real ThermalRange service accepts the same 9-pixel target at area limits 9-12 and rejects it at limits 1-8.
+  - Malformed explicit ready sizing fails before analysis; unavailable and legacy-absent sizing retain their documented service defaults.
+  - Effective limits and their provenance remain in inline runtime provenance when a source returns zero detections.
+  - Every worker result advertises detection_sizing_contract_version 1, including the isolation-unavailable failure response.
+artifacts:
+  - .ci/adiat-worker-contract/per-source-sizing.xml
+known_gaps:
+  - The deterministic contract verifies source behavior; compatible image publication/pinning and coordinator-to-worker end-to-end acceptance are separate release gates.

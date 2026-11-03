@@ -6,6 +6,9 @@ class PayloadValidationError(ValueError):
     """Raised when a CHRIS ADIAT task payload is not executable."""
 
 
+DETECTOR_CONTROLS_CONTRACT_VERSION = 2
+
+
 SUPPORTED_ALGORITHMS = frozenset(
     {
         "AIPersonDetector",
@@ -15,6 +18,8 @@ SUPPORTED_ALGORITHMS = frozenset(
         "ThermalAnomaly",
         "ThermalRange",
         "HSVColorRange",
+        "ColorRange",
+        "MatchedFilter",
     }
 )
 SUPPORTED_PROFILE = "search_rescue"

@@ -1,0 +1,60 @@
+id: DEV-2301
+name: ADIAT detector controls, colour matching, and processing resolution
+status: runnable
+owner_area: adiat-public-worker
+nightly: true
+nightly_runner: generic-repository
+target_profiles: [develop]
+optional_target_profiles: []
+prod_safe: false
+prod_safety:
+  allowed_account_ids: []
+  allowed_org_slugs: []
+  purge_prefixes: []
+requires:
+  api_key_source: none
+  test_org: none
+  test_user: none
+  seed_data:
+    bucket: none
+    prefixes: []
+  feature_flags: []
+  services: [Python 3.12 with requirements-chris-test.txt]
+fixtures:
+  - Generated RGB images with separate red and green targets and a fixed-seed noisy Matched Filter image.
+  - A generated float32 Celsius raster with a known 28x28 target; thresholds 2.5 and 3.0 exercise native fractional anomaly behavior.
+  - Per-source sizing metadata derived from a known DEM pixel area and target area.
+cleanup:
+  purge_before_run: false
+  purge_prefixes: []
+  keep_failed_data: false
+  notes:
+    - pytest-managed temporary directories contain generated image/raster fixtures and are removed automatically.
+    - The JUnit report is retained at .ci/adiat-worker-contract/DEV-2301-detector-colour-controls.xml.
+commands:
+  - name: detector-colour-controls-and-resolution
+    execution: deterministic
+    run: >-
+      repo_root="${ADIAT_WORKER_CONTRACT_REPO_ROOT:-.}" &&
+      artifact_dir="${ADIAT_WORKER_CONTRACT_ARTIFACT_DIR:-.ci/adiat-worker-contract}" &&
+      mkdir -p "$artifact_dir" &&
+      PYTHONPATH="$repo_root:$repo_root/app${PYTHONPATH:+:$PYTHONPATH}" python3 -m pytest -q -p no:cacheprovider
+      --confcutdir="$repo_root/app/tests/chris_adiat_adapter"
+      "$repo_root/app/tests/chris_adiat_adapter/test_color_algorithms.py"
+      "$repo_root/app/tests/chris_adiat_adapter/test_analysis.py::test_batch_worker_rejects_daemonic_runtime"
+      "$repo_root/app/tests/chris_adiat_adapter/test_analysis.py::test_batch_worker_reports_dask_worker_identity"
+      "$repo_root/app/tests/chris_adiat_adapter/test_analysis.py::test_run_batch_treats_zero_detections_as_success"
+      "$repo_root/app/tests/chris_adiat_adapter/test_parquet_artifacts.py::test_zero_row_artifact_manifest_retains_runtime_provenance"
+      "$repo_root/app/tests/chris_adiat_adapter/test_parquet_artifacts.py::test_detector_controls_contract_is_in_external_parquet_attestation"
+      --junitxml="$artifact_dir/DEV-2301-detector-colour-controls.xml"
+    env: {}
+assertions:
+  - Native ColorRange, HSVColorRange, and MatchedFilter detect two independent sampled RGB targets using their real native services; malformed or unsupported options fail explicitly.
+  - Per-source pixel-area limits scale by the realized resize factor, and RGB plus thermal detections map back to original source-pixel geometry.
+  - ThermalAnomaly preserves a fractional 2.5 threshold and detects the generated target; threshold 3.0 does not, proving the control reaches the native numeric calculation without rounding.
+  - Runtime provenance records detector-controls contract version 2, effective controls, source and processing dimensions, and realized scale; analysis responses and Parquet attestations expose contract version 2.
+artifacts:
+  - .ci/adiat-worker-contract/DEV-2301-detector-colour-controls.xml
+known_gaps:
+  - The contract uses generated local numeric inputs and synthetic persistence clients; it does not write a mission, access production data, or verify an image published to a coordinator runtime.
+  - API and frontend plan serialization and compatible-image activation remain separate release acceptance checks.

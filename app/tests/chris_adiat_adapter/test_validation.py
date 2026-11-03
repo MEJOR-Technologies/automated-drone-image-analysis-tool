@@ -220,7 +220,7 @@ def test_validate_payload_rejects_oversized_algorithm_list():
     payload = valid_payload()
     payload["request"]["algorithms"] = ["MRMap"] * 17
 
-    with pytest.raises(PayloadValidationError, match="at most 7"):
+    with pytest.raises(PayloadValidationError, match="at most 9"):
         validate_payload(payload)
 
 

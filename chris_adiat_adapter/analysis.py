@@ -24,7 +24,11 @@ from chris_adiat_adapter.parquet_artifacts import (
 )
 from chris_adiat_adapter.profiles import algorithms_for_profile
 from chris_adiat_adapter.s3_sources import load_source
-from chris_adiat_adapter.schemas import PayloadValidationError, validate_payload
+from chris_adiat_adapter.schemas import (
+    DETECTOR_CONTROLS_CONTRACT_VERSION,
+    PayloadValidationError,
+    validate_payload,
+)
 
 
 DEFAULT_MAX_OBSERVATIONS_PER_SOURCE = 1000
@@ -52,6 +56,7 @@ def run_batch(
     progress_callback=None,
     apply_result_byte_limit=True,
     artifact_s3_client=None,
+    cancellation_check=None,
 ):
     source_loader = source_loader or load_source
     algorithm_runner = algorithm_runner or run_adiat_algorithm
@@ -159,6 +164,12 @@ def run_batch(
             _max_observations_per_source(),
         )
         for source_index, source in enumerate(sources):
+            if cancellation_check is not None and cancellation_check():
+                if artifact_writer is not None:
+                    artifact_writer.close()
+                return _empty_response(
+                    "cancelled", "cancelled", "analysis cancelled", payload
+                )
             remaining_batch_seconds = batch_deadline - time.monotonic()
             if remaining_batch_seconds <= 0:
                 unprocessed_sources = sources[source_index:]
@@ -198,6 +209,7 @@ def run_batch(
                         parquet_persistence,
                     ),
                     timeout_seconds=effective_timeout,
+                    cancellation_check=cancellation_check,
                     progress_callback=lambda event: _handle_source_event(
                         event,
                         artifact_writer=artifact_writer,
@@ -225,6 +237,12 @@ def run_batch(
                 except OSError as exc:
                     cleanup_error = exc
             processed_source_count += 1
+            if isolated.get("reason") == "cancelled":
+                if artifact_writer is not None:
+                    artifact_writer.close()
+                return _empty_response(
+                    "cancelled", "cancelled", "analysis cancelled", payload
+                )
             if cleanup_error is not None:
                 source_failures.append(
                     {
@@ -325,6 +343,10 @@ def run_batch(
 
         if artifact_writer is not None:
             prepared = artifact_writer.close()
+            if cancellation_check is not None and cancellation_check():
+                return _empty_response(
+                    "cancelled", "cancelled", "analysis cancelled", payload
+                )
             if successful_algorithm_runs and not artifact_errors:
                 try:
                     persistence_result = publish_prepared_observation_artifact(
@@ -369,6 +391,7 @@ def run_batch(
         processed_sources = []
 
     response = {
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "status": status,
         "reason": reason,
         "result": {
@@ -392,6 +415,7 @@ def run_batch(
             "source_failures": source_failures,
             "algorithm_failures": algorithm_failures,
             "truncations": truncations,
+            "runtime_provenance": runtime_provenance,
             "configured_limits": {
                 "max_observations_per_source": _max_observations_per_source(),
                 "max_observations_per_batch": max_batch_observations,
@@ -1098,6 +1122,7 @@ def _fit_response_to_byte_limit(response, max_result_bytes):
 
 def _minimal_oversize_response(response, max_result_bytes):
     return {
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "status": "failed",
         "reason": "result_byte_limit",
         "result": {
@@ -1190,6 +1215,7 @@ def _empty_response(status, reason, error, payload):
     sources = request.get("sources")
     source_count = len(sources) if isinstance(sources, list) else 0
     response = {
+        "detector_controls_contract_version": DETECTOR_CONTROLS_CONTRACT_VERSION,
         "status": status,
         "reason": reason,
         "result": {
